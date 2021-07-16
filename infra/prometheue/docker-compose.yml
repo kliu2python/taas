@@ -1,0 +1,110 @@
+version: '3.8'
+services:
+  prometheus:
+    image: prom/prometheus
+    ports:
+        - "9090:9090"
+    container_name: prometheus
+    command:
+        - '--config.file=/etc/prometheus/prometheus.yml'
+        - '--storage.tsdb.path=/prometheus'
+        - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+        - '--web.console.templates=/usr/share/prometheus/consoles'
+        - '--storage.tsdb.retention.time=1y'
+        - '--web.enable-lifecycle'
+    hostname: prometheus
+    volumes:
+        - type: bind
+          source: /opt/prometheus/prometheus.yml
+          target: /etc/prometheus/prometheus.yml
+          read_only: true
+        - type: volume
+          source: prometheus
+          target: /prometheus
+
+  prom-pushgateway:
+    image: prom/pushgateway
+    container_name: prom-pushgateway
+    ports:
+        - "9091:9091"
+    hostname: prom-pushgateway
+
+  grafana:
+    image: grafana/grafana
+    environment:
+        - "GF_INSTALL_PLUGINS=flant-statusmap-panel,grafana-polystat-panel"
+    ports:
+        - "3000:3000"
+    hostname: grafana
+    volumes:
+        - type: volume
+          source: grafana
+          target: /var/lib/grafana
+
+  exsi-exporter-41.24:
+    image: 10.160.16.60/tools/prometheus-vmware-exporter
+    hostname: esxi-exporter-41.24
+    command:
+        - '-host=10.160.41.24'
+        - '-username=root'
+        - '-password=fortinet'
+
+
+  exsi-exporter-50.117:
+    image: 10.160.16.60/tools/prometheus-vmware-exporter
+    hostname: esxi-exporter-50.117
+    command:
+        - '-host=10.160.50.117'
+        - '-username=root'
+        - '-password=fortinet'
+
+  exsi-exporter-1.55:
+    image: 10.160.16.60/tools/prometheus-vmware-exporter
+    hostname: esxi-exporter-1.55
+    command:
+        - '-host=10.160.1.55'
+        - '-username=root'
+        - '-password=fortinet'
+
+  exsi-exporter-1.59:
+    image: 10.160.16.60/tools/prometheus-vmware-exporter
+    hostname: esxi-exporter-1.55
+    command:
+        - '-host=10.160.1.59'
+        - '-username=root'
+        - '-password=Fortinet_123'
+
+  exsi-exporter-16.5:
+    image: 10.160.16.60/tools/prometheus-vmware-exporter
+    hostname: esxi-exporter-16.5
+    command:
+        - '-host=10.160.16.5'
+        - '-username=root'
+        - '-password=fortinet'
+
+  exsi-exporter-1.70:
+    image: 10.160.16.60/tools/prometheus-vmware-exporter
+    hostname: esxi-exporter-1.70
+    command:
+        - '-host=10.160.1.70'
+        - '-username=root'
+        - '-password=Fortinet_123'
+
+  blackbox-exporter-41.30:
+    image: prom/blackbox-exporter:master
+    hostname: blackbox-exporter-40.31
+    ports:
+      - "9115:9115"
+    dns:
+      - 10.160.41.30
+    command:
+      - '--config.file=/config/blackbox.yml'
+    volumes:
+      - type: bind
+        source: /opt/blackbox_exporter
+        target: /config
+
+
+volumes:
+  prometheus:
+  grafana:

@@ -1,0 +1,76 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ca-services
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pki-ca
+  namespace: ca-services
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pki-ca
+  template:
+    metadata:
+      labels:
+        app: pki-ca
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - kubecluster-1-master
+      containers:
+      - name: pki-ca
+        image: 10.160.16.60/ca-services/pki-ca
+        ports:
+        - containerPort: 8888
+          name: pki-ca-port
+          protocol: TCP
+        securityContext:
+          readOnlyRootFilesystem: false
+        volumeMounts:
+          - name: ca-service-data
+            mountPath: /shared_folder
+      volumes:
+        - name: ca-service-data
+          hostPath:
+            path: /home/fortinet/data/ca-services
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pki-ca-svc
+  namespace: ca-services
+spec:
+  selector:
+   app: pki-ca
+  ports:
+  - name: pki-ca-port
+    port: 8888
+    protocol: TCP
+---
+apiVersion: k8s.nginx.org/v1alpha1
+kind: TransportServer
+metadata:
+ name: ca-pki-svr
+ namespace: ca-services
+spec:
+ listener:
+   name: ca-pki-listener
+   protocol: TCP
+ upstreams:
+ - name: ca-pki-upstream
+   service: pki-ca-svc
+   port: 8888
+ action:
+   pass: ca-pki-upstream

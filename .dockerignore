@@ -1,0 +1,12 @@
+.idea/misc.xml
+.idea/workspace.xml
+ftc/integration_tests/__pycache__
+__pycache__
+playground.py
+.pytest_cache
+mailing_list.py
+test_playground.py
+venv
+pytest_automation.egg-info
+.git
+allure*

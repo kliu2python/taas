@@ -1,0 +1,4 @@
+zone "cloudsolutionsqa.com" {
+    type master;
+    file "/etc/bind/zones/db.cloudsolutionsqa.com";
+};

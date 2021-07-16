@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block content %}
+<form action="/list_sessions/" method="post">
+    {% csrf_token %}
+    <input type="submit" value="Refresh">
+</form>
+{% if data == 'no_data' %}
+    <p>No Active Sessions</p>
+{% elif data == 'connection_error' %}
+    <p>Error: A connection error has occurred, please check your network!</p>
+{% else %}
+<ul>
+    {% for session_id in data%}
+    <li>
+        <form method="post" action="">
+            {% csrf_token %}
+            <p name="session_id">{{session_id}}</p>
+            <input type="hidden" name="session_id" value="{{ session_id }}">
+            <input type="submit" name="action" value="Delete">
+            <button><a style="text-decoration:none" href="http://10.160.50.8:3000/">View Details</a></button>
+        </form>
+    </li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,194 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: monitor-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - kubecluster-1-node1
+      containers:
+      - name: prometheus
+        image: prom/prometheus
+        args:
+          - '--config.file=/etc/prometheus/prometheus.yml'
+          - '--web.config.file=/etc/prometheus/webconfig.yml'
+          - '--storage.tsdb.path=/prometheus'
+          - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+          - '--web.console.templates=/usr/share/prometheus/consoles'
+          - '--storage.tsdb.retention.time=1y'
+          - '--web.enable-lifecycle'
+        ports:
+        - containerPort: 9090
+          name: prometheus
+          protocol: TCP
+        securityContext:
+          readOnlyRootFilesystem: false
+          runAsUser: 0
+        volumeMounts:
+          - mountPath: /etc/prometheus
+            name: prometheus-config
+          - mountPath: /prometheus
+            name: prometheus-data
+      volumes:
+      - name: prometheus-config
+        configMap:
+          name: prometheus-config
+      - name: prometheus-data
+        hostPath:
+          path: /home/fortinet/data/prometheus
+          type: DirectoryOrCreate
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pushgateway
+  namespace: monitor-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pushgateway
+  template:
+    metadata:
+      labels:
+        app: pushgateway
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - kubecluster-1-node1
+      containers:
+      - name: pushgateway
+        image: prom/pushgateway
+        ports:
+        - containerPort: 9091
+          name: pushgateway
+          protocol: TCP
+        securityContext:
+          readOnlyRootFilesystem: false
+          runAsUser: 0
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blackboxexporter
+  namespace: monitor-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blackboxexporter
+  template:
+    metadata:
+      labels:
+        app: blackboxexporter
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - kubecluster-1-node1
+      containers:
+      - name: pushgateway
+        image: prom/blackbox-exporter
+        args:
+          - '--config.file=/config/blackbox.yml'
+        ports:
+        - containerPort: 9115
+          name: pushgateway
+          protocol: TCP
+        securityContext:
+          readOnlyRootFilesystem: false
+          runAsUser: 0
+        volumeMounts:
+          - mountPath: /config
+            name: blackboxexporter-config
+      volumes:
+        - name: blackboxexporter-config
+          configMap:
+            name: blackboxexporter-config
+      dnsConfig:
+        nameservers:
+          - 10.160.41.30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: monitor-system
+spec:
+  selector:
+   app: prometheus
+  ports:
+  - name: prometheus
+    port: 9090
+    protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pushgateway
+  namespace: monitor-system
+spec:
+  selector:
+   app: pushgateway
+  ports:
+  - name: pushgateway
+    port: 9091
+    protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blackboxexporter
+  namespace: monitor-system
+spec:
+  selector:
+   app: blackboxexporter
+  ports:
+  - name: blackboxexporter
+    port: 9115
+    protocol: TCP
+
+---
+apiVersion: k8s.nginx.org/v1alpha1
+kind: TransportServer
+metadata:
+ name: pushgateway-ts
+ namespace: monitor-system
+spec:
+ listener:
+   name: pushgateway
+   protocol: TCP
+ upstreams:
+ - name: pushgateway
+   service: pushgateway
+   port: 9091
+ action:
+   pass: pushgateway

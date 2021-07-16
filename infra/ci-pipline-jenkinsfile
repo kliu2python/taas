@@ -1,0 +1,223 @@
+//        	--dns=10.160.41.30 \
+//            --add-host=ftc.fortinet.com:10.160.44.172 \
+def run_smoke_test() {
+    sh '''
+        echo "Determin which suits to run"
+        MARKERS=$(sudo -u jenkins docker run --rm \
+        -v ${WORKSPACE}:/pytest-automation \
+        -v /home/jenkins/custom_config:/test_files \
+        10.160.16.60/tools/pylint \
+        python3 tools/ci_tools/ci_test_selector.py --marker_config=/test_files/marker_maps.yml)
+        
+        echo "using lab config file: http://10.160.50.118:8888/lab/tree/custom_config/ci_test_config.yml"
+        sudo -u jenkins docker pull 10.160.16.60/pytest-automation/pytest_automation_ci
+        sudo -u jenkins docker run --rm --name pytest_ci \
+            -v ${WORKSPACE}:/pytest-automation \
+            -v /home/jenkins/custom_config:/test_files \
+            -v /home/jenkins/.faas/:/faas \
+        	--env="DISPLAY" \
+            --env="QT_X11_NO_MITSHM=1" \
+            --network=host \
+            --dns=10.160.41.22 \
+            --add-host=ftc.fortinet.com:10.160.11.147 \
+            -v /tmp/.X11-unix/:/tmp/.X11-unix:rw \
+            -v /dev/shm:/dev/shm \
+        	10.160.16.60/pytest-automation/pytest_automation_ci /bin/bash -c \
+        	"pip3 install -e /faas/ --no-dependencies;\
+        	pip3 install -e .;\
+        	python3 -m pytest -m '$MARKERS' \
+            --lab_config=/test_files/ci_test_config.yml \
+            --alluredir=/pytest-automation/allure-results"
+    '''
+}
+
+def should_run_this_step() {
+    return gitlabSourceBranch == 'master' || !(gitlabActionType == 'PUSH')
+}
+
+def should_build_docker_img() {
+    return gitlabSourceBranch == 'master'
+}
+
+def run_pylint_change_only() {
+    sh '''
+    sudo -u jenkins docker run --rm -v ${WORKSPACE}:/pytest-automation 10.160.16.60/tools/pylint \
+    pylint_checker.py --changed-files-only --threshold 10.0
+    '''
+}
+
+def run_pylint_all() {
+    sh '''
+    sudo -u jenkins docker run --rm -v ${WORKSPACE}:/pytest-automation 10.160.16.60/tools/pylint \
+    pylint_checker.py --threshold 10.0
+    '''
+}
+
+def send_slack_message_ci_status(String result, String result_color, String to_channel){
+    if (!should_run_this_step()) {
+        return
+    }
+    def msg = """
+    ${result} \n 
+    USER: ${gitlabUserName} \n 
+    Source Branch: ${gitlabSourceBranch} \n 
+    commit: ${gitlabMergeRequestLastCommit} \n 
+    Job URL: ${BUILD_URL} \n 
+    Repro URL: ${gitlabSourceRepoHomepage}
+    """
+    slackSend color: result_color, message: msg, channel: to_channel
+}
+
+def send_slack_message_merge_request(){
+    return
+    if (should_build_docker_img() || !should_run_this_step()) {
+        return
+    }
+    def msg = """
+    *${gitlabUserName} has created a merge request and it passed CI, please review it for her/him.* :pray: \n
+    *URL*: https://dops-git.fortinet-us.com/FGT_QA/pytest-automation/-/merge_requests/${gitlabMergeRequestIid}/diffs \n
+    *Title*: ${gitlabMergeRequestTitle} \n
+    *Comments*: Coming Soon \n
+    
+    *_Thank you very much!!!_* \n
+    
+    """
+    slackSend color: '#BF3EFF', message: msg, channel: '#merge-request-review'
+}
+
+def kill_docker_container(){
+    sh '''
+    $(sudo -u jenkins docker kill $(sudo -u jenkins docker ps -aqf name=pytest_ci)) || true
+    '''
+}
+
+def should_skip_ci(){
+    if (!should_run_this_step()) {
+        currentBuild.result = 'ABORTED'
+    }
+}
+
+pipeline {
+    agent {label 'master'}
+    options {
+        timeout(time: 3, unit: 'HOURS') 
+    }
+    environment { 
+        gitlab_job_name = 'Test Changes'
+    }
+    stages {
+        stage('Prepare') {
+            steps {
+                should_skip_ci()
+                echo "notify gitlab"
+                //updateGitlabCommitStatus name: "${gitlab_job_name}", state: 'pending'
+                updateGitlabCommitStatus name: "${gitlab_job_name}", state: 'running'
+                kill_docker_container()
+                
+                // slackSend color: "#6699FF", message: get_slack_message_success(':pray: CI STARTED'), channel: "#ci"
+                send_slack_message_ci_status ':pray: CI STARTED', '#6699FF', '#ci'
+                
+                echo "clean ws and create allure dir"
+                cleanWs()
+                sh """
+                sudo rm -rf ${WORKSPACE}/allure-results
+                mkdir -p ${WORKSPACE}/allure-results
+                """
+                
+                echo "checkout source"
+                checkout(
+                    [
+                        $class: 'GitSCM',
+                        branches: [[name: "origin/${gitlabSourceBranch}"]],
+                        userRemoteConfigs: [[
+                            url: 'git@dops-git.fortinet-us.com:cloudsolutions_qa/automation.git'
+                        ]]
+                    ]
+                )
+                
+                sh 'printenv'
+            }
+        }
+        stage('Commit Pylint Check') {
+            steps {
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    run_pylint_change_only()
+                }
+            }
+        }
+        
+        stage('Smoke Test') {
+            when {
+                expression {
+                    return should_run_this_step()
+                }
+            }
+            steps {
+                wrap([$class: 'Xvnc']) {
+                    run_smoke_test()
+                }
+            }
+        }
+        
+        stage("Project Pylint Check") {
+            when {
+                expression {
+                    return should_build_docker_img()
+                }
+            }
+            steps{
+                catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
+                    run_pylint_all()
+                }
+            }
+        }
+        
+        stage("Build and Push Docker Image") {
+            when {
+                expression {
+                    return should_build_docker_img()
+                }
+            }
+            steps{
+                sh """
+                cd ${WORKSPACE}
+                printenv > build.info
+                sudo -u jenkins make push_docker_image TAG_NAME=\$(python3.6m -c 'print("${gitlabSourceBranch}".split("/")[-1]) if "/" in "${gitlabSourceBranch}" else print("latest")')
+                """
+            }
+        }
+    }
+    post {
+        always {
+            kill_docker_container()
+            script {
+                try {
+                    allure includeProperties: false, jdk: '', properties: [], results: [[path: '${WORKSPACE}/allure-results']]
+                }
+                catch(exc) {
+                    echo "Error when create allure report"
+                }
+            }
+        }
+        success {
+            updateGitlabCommitStatus name: "${gitlab_job_name}", state: 'success'
+            //slackSend color: , message: get_slack_message_success(), channel: 
+            send_slack_message_ci_status ':tada: CI SUCCESS', 'good', '#ci'
+            send_slack_message_merge_request()
+        }
+        // unstable {
+        //     updateGitlabCommitStatus name: "${gitlab_job_name}", state: 'success'
+        // }
+        unsuccessful {
+            updateGitlabCommitStatus name: "${gitlab_job_name}", state: 'failed'
+            //slackSend color: "danger", message: get_slack_message_success(':anger: CI FAIL'), channel: "#smoking"
+            send_slack_message_ci_status ':anger: CI FAIL', 'danger', '#ci'
+        }
+        notBuilt {
+            updateGitlabCommitStatus name: "${gitlab_job_name}", state: 'failed'
+        }
+        aborted {
+            updateGitlabCommitStatus name: "${gitlab_job_name}", state: 'canceled'
+        }
+    }
+}

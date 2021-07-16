@@ -1,0 +1,160 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: resource-manager
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resource-manager-api
+  namespace: resource-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: resource-manager-api
+  template:
+    metadata:
+      labels:
+        app: resource-manager-api
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - kubecluster-1-master
+      containers:
+      - name: resource-manager-api
+        image: 10.160.16.60/resource-manager/resource-manager-api
+        env:
+        - name: DEBUG
+          value: "False"
+        ports:
+        - containerPort: 8000
+          name: res-mgr-api
+          protocol: TCP
+        securityContext:
+          readOnlyRootFilesystem: false
+        # resources:
+        #   requests:
+        #     cpu: 1000m
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: resource-manager-api
+  namespace: resource-manager
+spec:
+  selector:
+   app: resource-manager-api
+  ports:
+  - name: res-mgr-api
+    port: 8000
+    protocol: TCP
+
+# ---
+# apiVersion: k8s.nginx.org/v1alpha1
+# kind: TransportServer
+# metadata:
+#   name: test-assistant
+#   namespace: model-services
+# spec:
+#   listener:
+#     name: test-assistant
+#     protocol: TCP
+#   upstreams:
+#   - name: test-assistant
+#     service: model-service
+#     port: 8000
+#   action:
+#     pass: test-assistant
+
+---
+apiVersion: k8s.nginx.org/v1
+kind: VirtualServerRoute
+metadata:
+  name: resource-manager-route
+  namespace: resource-manager
+spec:
+  host: 10.160.13.11
+  upstreams:
+  - name: resource-manager-svc
+    service: resource-manager-api
+    port: 8000
+  subroutes:
+  - path: /resourcesmanager
+    action:
+      pass: resource-manager-svc
+
+# ---
+# apiVersion: autoscaling/v1
+# kind: HorizontalPodAutoscaler
+# metadata:
+#   name: image-classifier-hpa
+#   namespace: model-services
+# spec:
+#   scaleTargetRef:
+#     apiVersion: apps/v1
+#     kind: Deployment
+#     name: image-classifier
+#   minReplicas: 1
+#   maxReplicas: 4
+#   targetCPUUtilizationPercentage: 90
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-master
+  namespace: resource-manager
+  labels:
+    name: redis-master
+spec:
+  replicas: 1 
+  selector:
+    matchLabels:
+      name: redis-master
+  template:
+    metadata:
+      labels:
+        name: redis-master
+    spec:
+      nodeName: kubecluster-1-master
+      containers:
+      - name: redis-master
+        image: redis:6.0.9-alpine
+        command:
+          - "redis-server"
+        args:
+          - "--protected-mode"
+          - "no"
+        ports:
+        - containerPort: 6379
+        volumeMounts:
+          - name: redis-data-res-manager
+            mountPath: /data
+      volumes:
+        - name: redis-data-res-manager
+          hostPath:
+            path: /home/fortinet/data/resource_manager/redis-master
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-master
+  namespace: resource-manager
+spec:
+  type: ClusterIP
+  ports:
+  - protocol: TCP
+    port: 6379
+    targetPort: 6379
+    name: redis
+  selector:
+    name: redis-master

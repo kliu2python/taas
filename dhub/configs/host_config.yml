@@ -1,0 +1,11 @@
+host:
+  master_ip: localhost # if use localhost or 127.0.0.1 means this machine is master
+  device_limits: 4
+  recycle_interval: 10
+  host_ip: 10.160.16.4 # binding ip for host, in case you have multiple ips
+
+  master_config:
+    running_mode: load-blancer #load-blancer or load-optimize for now only res-blancer mode
+
+  node_config:
+    register_interval: 30 #in minutes: node mode on how long it will register to master, use -1 to denote only register once

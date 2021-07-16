@@ -1,0 +1,21 @@
+apiVersion: k8s.nginx.org/v1
+kind: VirtualServerRoute
+metadata:
+  name: kubernetes-dashboard-route
+  namespace: kubernetes-dashboard
+spec:
+  host: 10.160.13.11
+  # tls:
+  #   redirect:
+  #     enable: true
+  #     code: 301
+  upstreams:
+  - name: kubernetes-dashboard
+    service: kubernetes-dashboard
+    tls:
+      enable: true
+    port: 8443
+  subroutes:
+  - path: /kubedash
+    action:
+      pass: kubernetes-dashboard

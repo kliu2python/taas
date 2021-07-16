@@ -1,0 +1,15 @@
+apiVersion: k8s.nginx.org/v1
+kind: VirtualServer
+metadata:
+  name: api-server-ingress
+  namespace: scale-controller
+spec:
+  host: 10.160.13.11
+  upstreams:
+  - name: scale-api-svc
+    service: scale-api
+    port: 8000
+  routes:
+  - path: /scalecontroller
+    action:
+      pass: scale-api-svc

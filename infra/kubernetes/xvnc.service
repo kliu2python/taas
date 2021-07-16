@@ -1,0 +1,12 @@
+[Unit]
+Description=XVNC service
+After=syslog.target network.target
+
+[Service]
+User=jenkins
+ExecStart=/usr/bin/Xvnc :88 -geometry 1280x960 -SecurityTypes=none
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+

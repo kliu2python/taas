@@ -1,0 +1,11 @@
+device:
+  global:
+    device_life_span: 60 # in minutes: this only been used when client failed to call release device api
+  platform_config:
+    - platform_id: android_10
+      os: android
+      version: 10
+      type: emulator
+      clear_user_data: True
+      max_devices: 5
+      template_path: /home/fortinet/.android/avd/android_10_base.avd

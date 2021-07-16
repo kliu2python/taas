@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Create a new session</h1>
+<form action="" method="post">
+    {% csrf_token %}
+    {% for field in form %}
+    <div class="fieldWrapper">
+        {{ field.errors }}
+        {{ field.label_tag }} {{ field }}
+    </div>
+    {% endfor %}
+    <input type="submit" value="Create Session">
+</form>
+{%if message == "SUCCESS" %}
+<p>Create Session Succeeds. Your Session ID is {{ assigned_session_id }}. Check
+    all sessions <a href="{% url 'list_sessions' %}">here</a></p>
+{% elif message == "ERROR" %}
+<p>Connection Error! Please check connection</p>
+{% else %}
+<p>Create Session Failed</p>
+{% endif %}
+{% endblock %}

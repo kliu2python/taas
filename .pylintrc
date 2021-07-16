@@ -1,0 +1,26 @@
+[SIMILARITIES]
+min-similarity-lines=6
+ignore-comments=yes
+ignore-docstrings=yes
+ignore-imports=yes
+
+[MESSAGES CONTROL]
+
+disable=
+    missing-module-docstring,
+    missing-class-docstring,
+    missing-function-docstring,
+    import-error,
+    broad-except,
+    import-outside-toplevel,
+    inconsistent-return-statements,
+    invalid-name,
+    global-statement,
+    too-many-locals,
+    too-few-public-methods,
+    logging-fstring-interpolation,
+    too-many-branches,
+    no-self-use,
+    duplicate-code,
+    too-many-nested-blocks,
+    fixme

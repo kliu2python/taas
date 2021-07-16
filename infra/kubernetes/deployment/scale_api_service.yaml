@@ -1,0 +1,318 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: scale-controller
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scale-api
+  namespace: scale-controller
+spec:
+  replicas: 2
+  selector:
+   matchLabels:
+     app: scale-api
+  template:
+    metadata:
+      labels:
+        app: scale-api
+    spec:
+      affinity:
+        nodeAffinity:
+           preferredDuringSchedulingIgnoredDuringExecution:
+           - weight: 1
+             preference:
+               matchExpressions:
+               - key: kubernetes.io/hostname
+                 operator: In
+                 values:
+                 - kubecluster-1-master
+           - weight: 1
+             preference:
+               matchExpressions:
+               - key: kubernetes.io/hostname
+                 operator: In
+                 values:
+                 - kubecluster-1-node1
+      containers:
+      - name: scale-api
+        image: 10.160.16.60/scaling-test-services/scale-api
+        env:
+        - name: DEBUG
+          value: "False"
+        volumeMounts:
+          - name: scale-api-data
+            mountPath: /data
+        ports:
+        - containerPort: 8000
+          name: scale-api
+          protocol: TCP
+        securityContext:
+          readOnlyRootFilesystem: false
+#      nodeName: kubecluster-1-master
+      volumes:
+        - name: scale-api-data
+          hostPath:
+            path: /home/fortinet/data/scale-api
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scale-api
+  namespace: scale-controller
+spec:
+  selector:
+   app: scale-api
+  ports:
+  - name: scale-api
+    port: 8000
+    protocol: TCP
+---
+apiVersion: k8s.nginx.org/v1
+kind: VirtualServerRoute
+metadata:
+  name: scale-controller-route
+  namespace: scale-controller
+spec:
+  host: 10.160.13.11
+  upstreams:
+  - name: scale-api-svc
+    service: scale-api
+    port: 8000
+#  - name: scale-ui-svc
+#    service: scale-ui
+#    port: 8000
+  subroutes:
+  - path: /scalecontroller
+    action:
+      pass: scale-api-svc
+#  - path: /scalecontroller/scaleui
+#    action:
+#      proxy:
+#        upstream: scale-ui-svc
+#        rewritePath: /
+
+
+---
+apiVersion: k8s.nginx.org/v1alpha1
+kind: TransportServer
+metadata:
+ name: scale-ui-ts
+ namespace: scale-controller
+spec:
+ listener:
+   name: scale-ui
+   protocol: TCP
+ upstreams:
+ - name: scale-ui
+   service: scale-ui
+   port: 8000
+ action:
+   pass: scale-ui
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-master
+  namespace: scale-controller
+  labels:
+    name: redis-master
+spec:
+  replicas: 1 
+  selector:
+    matchLabels:
+      name: redis-master
+  template:
+    metadata:
+      labels:
+        name: redis-master
+    spec:
+      nodeName: kubecluster-1-master
+      containers:
+      - name: redis-master
+        image: redis:6.0.9-alpine
+        command:
+          - "redis-server"
+        args:
+          - "--protected-mode"
+          - "no"
+        ports:
+        - containerPort: 6379
+        volumeMounts:
+          - name: redis-data-master
+            mountPath: /data
+      volumes:
+        - name: redis-data-master
+          hostPath:
+            path: /home/fortinet/data/redis-master
+            type: DirectoryOrCreate
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-slave
+  namespace: scale-controller
+  labels:
+    name: redis-slave
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: redis-slave
+  template:
+    metadata:
+      labels:
+        name: redis-slave
+    spec:
+      nodeName: kubecluster-1-node1
+      containers:
+      - name: redis-slave
+        image: redis:6.0.9-alpine
+        command:
+          - "redis-server"
+        args:
+          - "--slaveof"
+          - "redis-master"
+          - "6379"
+          - "--protected-mode"
+          - "no"   
+        ports:
+        - containerPort: 6379
+        volumeMounts:
+          - name: redis-data-slave
+            mountPath: /data
+      volumes:
+        - name: redis-data-slave
+          hostPath:
+            path: /home/fortinet/data/redis-slave
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-master
+  namespace: scale-controller
+spec:
+  type: ClusterIP
+  ports:
+  - protocol: TCP
+    port: 6379
+    targetPort: 6379
+    name: redis
+  selector:
+    name: redis-master
+---
+apiVersion: k8s.nginx.org/v1alpha1
+kind: TransportServer
+metadata:
+ name: redis-ts
+ namespace: scale-controller
+spec:
+ listener:
+   name: redius
+   protocol: TCP
+ upstreams:
+ - name: redis-svc
+   service: redis-master
+   port: 6379
+ action:
+   pass: redis-svc
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scale-ui
+  namespace: scale-controller
+spec:
+  replicas: 1
+  selector:
+   matchLabels:
+     app: scale-ui
+  template:
+    metadata:
+      labels:
+        app: scale-ui
+    spec:
+      containers:
+      - name: scale-ui
+        image: 10.160.16.60/scaling-test-services/scaling-ui
+        ports:
+        - containerPort: 8000
+          name: scale-ui
+          protocol: TCP
+        securityContext:
+          readOnlyRootFilesystem: false
+      nodeName: kubecluster-1-master
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scale-ui
+  namespace: scale-controller
+spec:
+  selector:
+   app: scale-ui
+  ports:
+  - name: scale-ui
+    port: 8000
+    protocol: TCP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scale-worker
+  namespace: scale-controller
+spec:
+  replicas: 1
+  selector:
+   matchLabels:
+     app: scale-worker
+  template:
+    metadata:
+      labels:
+        app: scale-worker
+    spec:
+      containers:
+      - name: scale-worker
+        image: 10.160.16.60/scaling-test-services/scale-worker
+        env:
+        - name: CONCURRENCY
+          value: "5"
+        ports:
+        - containerPort: 8000
+          name: scale-worker
+          protocol: TCP
+        securityContext:
+          readOnlyRootFilesystem: false
+      nodeName: kubecluster-1-master
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scale-monitor
+  namespace: scale-controller
+spec:
+  replicas: 1
+  selector:
+   matchLabels:
+     app: scale-monitor
+  template:
+    metadata:
+      labels:
+        app: scale-monitor
+    spec:
+      containers:
+      - name: scale-monitor
+        image: 10.160.16.60/scaling-test-services/scale-monitor
+        ports:
+        - containerPort: 8000
+          name: scale-monitor
+          protocol: TCP
+        securityContext:
+          readOnlyRootFilesystem: false
+      nodeName: kubecluster-1-master

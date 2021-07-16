@@ -1,0 +1,11 @@
+[Unit]
+Description=Prometheus
+After=syslog.target network.target
+
+[Service]
+User=fortinet
+ExecStart=/usr/local/bin/docker-compose -f /opt/prometheus/docker-compose.yml up
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

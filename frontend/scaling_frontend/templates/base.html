@@ -1,0 +1,12 @@
+<!doctype html>
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static 'style.css' %}" />
+<html>
+<head>
+    <title>Scaling Service Control</title>
+</head>
+<body>
+    {% include 'nav.html' %}
+    {% block content %}{% endblock %}
+</body>
+</html>

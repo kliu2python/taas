@@ -1,0 +1,9 @@
+FROM python:3.6.12-alpine3.12
+
+COPY . /test_assistant_rest_api
+
+WORKDIR /test_assistant_rest_api
+
+RUN pip3 install --no-cache-dir -r requirements
+
+CMD ["sh", "docker_run.sh"]

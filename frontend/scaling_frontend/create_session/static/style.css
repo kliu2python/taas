@@ -1,0 +1,46 @@
+body {
+  font-family: verdana;
+}
+
+h1 {
+  color: Green;
+  text-align: center;
+}
+
+p {
+  font-family: verdana;
+  font-size: 20px;
+}
+
+ul {
+  list-style-type: none;
+}
+
+nav ul{
+  list-style-type: none;
+  margin: 0;
+  padding: 0
+}
+
+nav li {
+  float: left;
+}
+
+nav li a {
+  display: block;
+  padding: 8px;
+  background-color: lightgreen;
+}
+
+nav li a:hover {
+  background-color: green;
+}
+
+form {
+  background-color: lightgrey;
+  width: 300px;
+  border: 15px solid lightgreen;
+  padding: 50px;
+  margin: 20px;
+  color: green;
+}

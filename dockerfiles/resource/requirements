@@ -1,0 +1,6 @@
+redis==3.5.3
+pyotp==2.4.0
+pycryptodome==3.0
+PyMySQL==0.10.0
+paramiko==2.7.1
+paramiko-expect==0.2.8

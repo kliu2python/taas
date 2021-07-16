@@ -1,0 +1,25 @@
+---
+model_type: ImageClassifier
+result_save_path: null
+weights_file: "/test_assistant_rest_api/image_classifier_model.pth"
+cuda_device: "cpu"
+model: resnet18
+init_parameters:
+  pretrained: false
+  num_classes: 13
+class_mapping: [
+    "unknown",
+    "google_home",
+    "google_username",
+    "google_password",
+    "google_mail_home",
+    "google_mail_landing",
+    "google_drive_home",
+    "google_drive_landing",
+    "google_home_partial",
+    "ftc_home",
+    "ftc_landing",
+    "ftc_login",
+    "google_block_login"
+]
+

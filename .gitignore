@@ -1,0 +1,15 @@
+.idea
+ftc/integration_tests/__pycache__
+__pycache__
+playground.py
+.pytest_cache
+mailing_list.py
+test_playground.py
+venv
+*.iml
+pytest_automation.egg-info
+logs
+*.log
+.ipynb_checkpoints
+pylint-report
+oriole_report.json

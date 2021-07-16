@@ -1,0 +1,23 @@
+---
+# default_pool_life in minutes, 0 means unlimited hours
+default_pool_life: 3
+redis:
+  server: localhost
+  port: 6379
+spec:
+  data:
+    ftc:
+      cert_path: "C:\\Users\\znie\\Documents\\config_files\\automation\\ftm.crt"
+      key_path: "C:\\Users\\znie\\Documents\\config_files\\automation\\server.key"
+    sslcert:
+      folder_path: "/home/fortinet/data/ca-services"
+    fgt:
+      user: "admin"
+      password: "fortinet"
+      ldap:
+        user: "ad-ldap"
+        server: "10.160.13.21"
+        dn: "DC=cloudsolutionsqa,DC=COM"
+        username: "admin"
+        password: "Fortinet_123"
+        cnid: "cn"

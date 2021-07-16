@@ -1,0 +1,40 @@
+apiVersion: k8s.nginx.org/v1alpha1
+kind: GlobalConfiguration 
+metadata:
+  name: nginx-configuration
+  namespace: nginx-ingress
+spec:
+  listeners:
+  - name: pulsar
+    port: 6650
+    protocol: TCP
+  - name: pulsar-grafana
+    port: 3001
+    protocol: TCP
+  - name: scale-ui
+    port: 8000
+    protocol: TCP
+  - name: scale-api
+    port: 8002
+    protocol: TCP
+  - name: redius
+    port: 6379
+    protocol: TCP
+  - name: ca-pki-listener
+    port: 8888
+    protocol: TCP
+  - name: mysql
+    port: 3306
+    protocol: TCP
+  - name: general-grafana
+    port: 3000
+    protocol: TCP
+  - name: openldap
+    port: 389
+    protocol: TCP
+  - name: pushgateway
+    port: 9091
+    protocol: TCP
+  - name: snmpexporter
+    port: 9116
+    protocol: TCP

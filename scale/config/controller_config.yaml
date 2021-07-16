@@ -1,0 +1,15 @@
+---
+data_save_path: /data
+pulling_interval: 10
+pushgateway_ip: localhost:9091
+wait_seconds_after_notify: 120
+notifier_check_interval_seconds: 10
+pulsar_ip: pulsar://pulsar-proxy.pulsar.svc.cluster.local:6650
+pulsar_topic: non-persistent://public/default/scale_controller
+redis_server: localhost
+redis_port: 6379
+elastic_search_engine: 10.160.77.150:8086
+elastic_search_credential: "customer:elastic"
+grafana_dash_board:
+  ftc: http://10.160.50.8:3000/d/O9k5qKpGz/ftc-scaling-perf-test?orgId=1
+  fil: http://10.160.50.8:3000/d/1V34bd5Gk/fortiisolator-scaling-test?orgId=1

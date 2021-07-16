@@ -1,0 +1,45 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: scale-test-runner
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: test-runner
+  namespace: scale-test-runner
+spec:
+  backoffLimit: 0
+  parallelism: 1
+  template:
+    metadata:
+      labels:
+        identifier: "test-runner"
+    spec:
+      restartPolicy: Never
+      hostAliases:
+      - ip: "10.160.44.172"
+        hostnames:
+        - "ftc.fortinet.com"
+      containers:
+      - name: test-runner
+        image: 10.160.16.60/pytest-automation/pytest_automation:fil_test
+        imagePullPolicy: Always
+        volumeMounts:
+        - name: x11-data
+          mountPath: /tmp/.X11-unix/
+        env:
+        - name: QT_X11_NO_MITSHM
+          value: "1"
+        - name: DISPLAY
+          value: ":88"
+        command: ["/bin/bash"]
+        args: ["-c", "wget http://10.160.50.118:8889/fil.yml -O /pytest-automation/fil.yml;python3 -m pytest -s -m 'scale' --lab_config=/pytest-automation/fil.yml"]
+      volumes:
+        - name: x11-data
+          hostPath:
+           path: /tmp/.X11-unix/
+      dnsConfig:
+        nameservers:
+        - 10.160.41.30

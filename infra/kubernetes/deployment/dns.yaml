@@ -1,0 +1,106 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dns-server
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dns-server
+  namespace: dns-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dns-server
+  template:
+    metadata:
+      labels:
+        app: dns-server
+#      annotations:
+#        cni.projectcalico.org/ipAddrs: "[\"192.168.50.50\"]"
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: In
+                values:
+                - kubecluster-1-node3
+      containers:
+      - name: dns-server
+        image: 10.160.16.60/infra/dns
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 53
+          name: dns-server-udp
+          protocol: UDP
+        - containerPort: 53
+          name: dns-server-tcp
+          protocol: TCP
+        securityContext:
+          readOnlyRootFilesystem: false
+          runAsUser: 0
+#        volumeMounts:
+#          - mountPath: /var/lib/dns-db
+#            name: dns-db-storage
+#      volumes:
+#        - name: dns-db-storage
+#          hostPath:
+#            path: /home/fortinet/data/dns-db
+#            type: DirectoryOrCreate
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dns-server
+  namespace: dns-server
+spec:
+  selector:
+   app: dns-server
+  ports:
+  - name: dns-server-udp
+    port: 53
+    protocol: UDP
+  - name: dns-server-tcp
+    port: 53
+    protocol: TCP
+---
+apiVersion: k8s.nginx.org/v1alpha1
+kind: TransportServer
+metadata:
+ name: dns-udp
+ namespace: dns-server
+spec:
+ listener:
+   name: dns-udp
+   protocol: UDP
+ upstreams:
+ - name: dns-server-app
+   service: dns-server
+   port: 53
+ upstreamParameters:
+   udpRequests: 1
+   udpResponses: 1
+ action:
+   pass: dns-server-app
+---
+apiVersion: k8s.nginx.org/v1alpha1
+kind: TransportServer
+metadata:
+ name: dns-tcp
+ namespace: dns-server
+spec:
+ listener:
+   name: dns-tcp
+   protocol: TCP
+ upstreams:
+ - name: dns-server-app
+   service: dns-server
+   port: 53
+ action:
+   pass: dns-server-app
