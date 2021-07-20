@@ -11,13 +11,13 @@ import yaml
 
 from utils.logger import get_logger
 from utils.threads import thread, ThreadsManager
-import scale.constants as constants
-from .datastore import DataStoreClient, DataStoreCommon
-from .notifier import Notifier
-from .metrics.command import CommandMetrics
-from .metrics.perf import PerfMetrics
-from .metrics.session import SessionMetrics
-from .metrics.elasticsearch import ElasticSearchMetrics
+import scale.common.constants as constants
+from scale.common.datastore import DataStoreClient, DataStoreCommon
+from scale.common.notifier import Notifier
+from scale.metrics.command import CommandMetrics
+from scale.metrics.perf import PerfMetrics
+from scale.metrics.session import SessionMetrics
+from scale.metrics.elasticsearch import ElasticSearchMetrics
 
 
 logger = get_logger()
@@ -64,7 +64,6 @@ class Session:
         self.pods_adjust_momentum = data.get("pods_adjust_momentum", 1)
         self.session_id = data.get("session_id")
         self.config_download_server = data.get("config_download_server")
-
         self.redis_conn = redis.Redis(
             host=data.get("redis_server"),
             port=data.get("redis_port", 6379),
@@ -241,7 +240,10 @@ class Session:
 
     def _delete_runner_deployment(self):
         try:
-            os.system(f"kubectl delete -f kube_file_{self.session_id}.yaml")
+            kube_file = os.path.join(
+                KUBE_FILE_PATH, f"kube_file_{self.session_id}.yaml"
+            )
+            os.system(f"kubectl delete -f {kube_file}")
         except Exception as e:
             logger.exception(
                 "Error when delete kube deployment, please check on k8s",

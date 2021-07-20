@@ -1,12 +1,11 @@
+import threading
 import uuid
 from typing import List, Dict, Union
 
-import eventlet
 from singleton_decorator.decorator import singleton
 
 from utils.logger import get_logger
 
-eventlet.monkey_patch()
 logger = get_logger()
 
 
@@ -22,7 +21,7 @@ class ThreadsManager:
         """
         self._data: Dict[str, object] = {}
         self._status: Dict[str, Union[str, Exception]] = {}
-        self._threads: Dict[str, eventlet.greenthread.GreenThread] = {}
+        self._threads: Dict[str, threading.Thread] = {}
 
     def _func_wrapper(self, *args_func, **kwargs_func):
         caller_id = args_func[0]
@@ -32,62 +31,45 @@ class ThreadsManager:
             result = func(*args_func, **kwargs_func)
             self._status[caller_id] = "SUCCESS"
             self._data[caller_id] = result
-        except Exception as ex:
-            self._status[caller_id] = ex
+        except Exception as e:
+            logger.exception("Error when start run", exc_info=e)
 
     def start_thread(self, caller_id, target, *args, **kwargs):
         args = (caller_id, target) + args
 
-        task = eventlet.spawn(self._func_wrapper, *args, **kwargs)
+        task = threading.Thread(
+            target=self._func_wrapper, args=args, kwargs=kwargs, daemon=True
+        )
+        task.start()
         self._threads[caller_id] = task
         logger.info(f"started process for {caller_id}")
 
     def _remove_completed_threads(self, caller_id):
         threads = self._threads.get(caller_id)
         if threads is not None:
-            self._threads.pop(caller_id)
+            if not threads.is_alive():
+                self._threads.pop(caller_id)
 
     def wait_for_complete(
-            self,
-            caller_ids: List[str],
-            kill_immediately=False,
-            timeout=300
+            self, caller_ids: List[str], ignore_error=False
     ) -> Union[None, object]:
-        logger.info(f"waiting for process {caller_ids} complete")
+
+        logger.info(f"waiting for all process under {caller_ids} complete")
+
         for cid in caller_ids:
-            task = self._threads.pop(cid, None)
-            if task is not None:
-                if kill_immediately:
-                    try:
-                        logger.info(f"Killing {cid}")
-                        task.kill()
-                    except Exception as e:
-                        logger.exception(
-                            f"Error when kill thread {cid}", exc_info=e
-                        )
-                else:
-                    killed = False
-                    try:
-                        if timeout > 0:
-                            with eventlet.Timeout(timeout):
-                                task.wait()
-                        else:
-                            task.wait()
-                    except eventlet.Timeout:
-                        logger.warning(
-                            f"Thread {cid} fail to stop in 60 seconds, killing")
-                        task.kill()
-                        killed = True
-                    if not killed:
-                        status = self._status.get(cid)
-                        if status not in ["SUCCESS"]:
-                            logger.exception(
-                                f"Thread {cid} running Error", exc_info=status
-                            )
-            else:
-                logger.error(f"Thread {cid} Not Found!")
-            self._status.pop(cid, None)
-        return [self._data.pop(cid, None) for cid in caller_ids]
+            task = self._threads.get(cid)
+            if task is not None and task.is_alive():
+                try:
+                    task.join()
+                except Exception:
+                    pass
+            status = self._status.get(cid)
+            if status not in ["SUCCESS"] and not ignore_error:
+                if isinstance(status, Exception):
+                    raise status
+                raise RuntimeError("Thread running error!")
+            self._remove_completed_threads(cid)
+        return [self._data.get(cid) for cid in caller_ids]
 
 
 def thread_run(func, *args, **kwargs):

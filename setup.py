@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     author='cloud solutions QA team',
-    description='automation framework for use with the pytest framework',
+    description='Test As A Service',
     install_requires=[
         'Appium-Python-Client==1.0.2',
         'allure-pytest==2.8.17',
@@ -28,9 +28,9 @@ setup(
         'GitPython==3.1.3',
         'Pillow==7.1.1',
         'imagehash',
-        'zeep==4.0.0'
+        'zeep==4.0.0', 'redis'
     ],
     name='pytest_automation',
-    version='2.0',
+    version='0.9',
     zip_safe=False
 )

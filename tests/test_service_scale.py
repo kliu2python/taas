@@ -26,7 +26,7 @@ class TestUtilsThreads:
         cid = self._check_curr_time(target)
         sleep(5)
         self.running = False
-        ret = ThreadsManager().wait_for_complete([cid], kill_immediately=False)
+        ret = ThreadsManager().wait_for_complete([cid])
         assert ret[0][0] == target
         assert (datetime.datetime.now() - ret[0][1]).seconds < 5
 
@@ -36,5 +36,5 @@ class TestUtilsThreads:
         cid = self._check_curr_time(target)
         sleep(5)
         self.running = False
-        ret = ThreadsManager().wait_for_complete([cid], kill_immediately=True)
+        ret = ThreadsManager().wait_for_complete([cid])
         assert ret == [None]

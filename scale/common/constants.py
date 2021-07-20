@@ -96,10 +96,15 @@ CLIENT_KEYS_DEF = {
 SESS_CTRL_KEYS_DEF = {
     "active_session_ids": set,
     "completed_session_ids": set,
-    "session_queue": list,
-    "free_workers": set,
-    "using_workers": set,
-    "worker_data": str
+    "new_session_queue": set
+}
+
+WORKER_CTRL_KEYS_DEF = {
+    "worker_active": set,
+    "worker_inactive": set,
+    "worker_data": set,
+    "worker_heartbeat": float,
+    "worker_loads": int
 }
 
 COMMANDLOG_TEMPLATE = """
