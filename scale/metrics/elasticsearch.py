@@ -3,7 +3,7 @@ import datetime
 import re
 
 import requests
-from scale.constants import CONFIG_PATH
+from scale.common.constants import CONFIG_PATH
 from utils.metrics import Metrics
 
 ELASTICSEARCH_METRICS = {

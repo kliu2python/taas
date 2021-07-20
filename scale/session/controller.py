@@ -2,10 +2,10 @@ import copy
 import datetime
 import json
 
-import scale.constants as constants
+import scale.common.constants as constants
 from utils.dictionary import deep_update
 from utils.logger import get_logger
-from .variables import (
+from scale.common.variables import (
     ds_control, ds_client, ds_common, redis_conn, config
 )
 
@@ -21,17 +21,9 @@ def create_session(**data):
         date_time = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M.%f")
         sess_id = f"{sess_id}-{date_time}"
     data_with_config["session_id"] = sess_id
-    if ds_control.get("free_workers"):
-        worker_id = ds_control.spop("free_workers")[-1]
-        ds_control.set("using_workers", [worker_id])
-        data_with_config = json.dumps(data_with_config)
-        ds_control.set("worker_data", data_with_config, worker_id)
-        ds_control.set("active_session_ids", [sess_id])
-        ds_common.set(
-            "session_status", constants.SessionStatus.RUNNING, sess_id
-        )
-        return sess_id
-    return "Fail, no free worker to execute"
+    data_with_config = json.dumps(data_with_config)
+    ds_control.set("new_session_queue", [data_with_config])
+    return sess_id
 
 
 def read_session(session_id=None, keys: dict = None):

@@ -129,6 +129,10 @@ class DataStore:
         k_dst = self.craft_key(dst, identifier)
         return self.redis.smove(k_src, k_dst, value)
 
+    def srem(self, key, values, identifier=None):
+        k = self.craft_key(key, identifier)
+        return self.redis.srem(k, *values)
+
     def smembers(self, key, identifier=None):
         k = self.craft_key(key, identifier)
         return self.redis.smembers(k)

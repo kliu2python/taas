@@ -1,7 +1,7 @@
 # pylint: disable=too-many-arguments
 from scale.collector.fil import FilCollector
 from scale.collector.ftc import FtcCollector
-from scale.constants import CONFIG_PATH
+from scale.common.constants import CONFIG_PATH
 from utils.metrics import Metrics
 
 

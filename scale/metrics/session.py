@@ -1,4 +1,4 @@
-import scale.constants as constants
+import scale.common.constants as constants
 from utils.metrics import Metrics
 
 SESS_METRICS = {

@@ -1,7 +1,7 @@
 from concurrent.futures import ProcessPoolExecutor
 from time import sleep
 
-import scale.variables as variables
+import scale.common.variables as variables
 from scale.metrics.elasticsearch import ElasticSearchMonitor
 from utils.logger import get_logger
 

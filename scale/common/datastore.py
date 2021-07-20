@@ -1,4 +1,4 @@
-import scale.constants as constants
+import scale.common.constants as constants
 from utils.logger import get_logger
 from utils.redis import DataStore
 
@@ -28,4 +28,13 @@ class DataStoreSessionController(DataStore):
             constants.SESS_CTRL_KEYS_DEF,
             redis_conn,
             "SESS_CTRL"
+        )
+
+
+class DataStoreWorkerController(DataStore):
+    def __init__(self, redis_conn):
+        super().__init__(
+            constants.WORKER_CTRL_KEYS_DEF,
+            redis_conn,
+            "WORKER_CTRL"
         )

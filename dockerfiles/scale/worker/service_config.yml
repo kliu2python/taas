@@ -1,3 +1,0 @@
-service_config:
-    services:
-        - scale_controller

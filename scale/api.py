@@ -4,10 +4,10 @@ import json
 from flask import jsonify, make_response, render_template_string, send_file
 from flask_restful import Resource, request
 
-import scale.controller as controller
+import scale.session.controller as controller
 from args import parser
 from rest import RestApi
-from scale.constants import COMMANDLOG_TEMPLATE
+from scale.common.constants import COMMANDLOG_TEMPLATE
 
 rest = RestApi(base_route="/scalecontroller/")
 
@@ -177,10 +177,10 @@ class ShowSessionCommandLog(Resource):
                         cache_timeout=0
                     )
                     return response
-                else:
-                    for i in range(1, len(logs) + 1):
-                        item = logs[-i].replace("\n", "<br>")
-                        ret += f"<br>{item}<br><br>"
+
+                for i in range(1, len(logs) + 1):
+                    item = logs[-i].replace("\n", "<br>")
+                    ret += f"<br>{item}<br><br>"
             html = COMMANDLOG_TEMPLATE.format(category=category,
                                               command_logs=ret)
             headers = {'Content-Type': 'text/html'}

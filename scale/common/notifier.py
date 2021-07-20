@@ -4,7 +4,7 @@ from time import sleep
 
 from utils.logger import get_logger
 from utils.threads import thread, ThreadsManager
-from scale.constants import RunnerStatus
+from scale.common.constants import RunnerStatus
 
 logger = get_logger()
 
