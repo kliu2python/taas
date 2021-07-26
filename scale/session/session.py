@@ -14,6 +14,7 @@ from utils.threads import thread, ThreadsManager
 import scale.common.constants as constants
 from scale.common.datastore import DataStoreClient, DataStoreCommon
 from scale.common.notifier import Notifier
+from scale.metrics.command import CommandMetrics
 from scale.metrics.perf import PerfMetrics
 from scale.metrics.session import SessionMetrics
 from scale.metrics.elasticsearch import ElasticSearchMetrics
@@ -55,7 +56,10 @@ class Session:
         }
     }
     """
-    def __init__(self, data):
+    def __init__(
+            self,
+            **data
+    ):
         self.completed = False
         self.pods_adjust_momentum = data.get("pods_adjust_momentum", 1)
         self.session_id = data.get("session_id")
@@ -105,6 +109,11 @@ class Session:
         self.perf_metrics = None
         if data.get("servers"):
             self.perf_metrics = PerfMetrics(**data)
+        self.command_log_metrics = None
+        if data.get("command_log_targets"):
+            self.command_log_metrics = CommandMetrics(
+                self.data_store_common, data
+            )
         self.elastic_search = None
         if data.get("elastic_search"):
             self.elastic_search = ElasticSearchMetrics(
@@ -123,9 +132,6 @@ class Session:
             "deployment_config", "runner_deployment.yaml"
         )
         self._apply_runner_deployment(self.runner_count, redeploy=True)
-        self.data_store_common.set(
-            "session_status", constants.SessionStatus.RUNNING, self.session_id
-        )
 
     def _set_runner_count(self, runner_count):
         if isinstance(runner_count, list):
@@ -293,6 +299,11 @@ class Session:
         while self._pods_collector_running:
             try:
                 self._collect_pods_metics()
+                if (
+                        self.data_store_common.get("session_status")
+                        in [constants.SessionStatus.STOPPING]
+                ):
+                    self.stop()
                 sleep(4)
             except Exception as e:
                 logger.exception(
@@ -335,6 +346,8 @@ class Session:
         self.sess_metrics.stop()
         if self.perf_metrics:
             self.perf_metrics.stop()
+        if self.command_log_metrics:
+            self.command_log_metrics.stop()
         if self.elastic_search:
             self.elastic_search.stop()
         self._pods_collector_running = False

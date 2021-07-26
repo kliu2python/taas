@@ -116,7 +116,7 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: scale-cache
+  name: redis-master
   namespace: scale-controller
   labels:
     name: redis-master
@@ -265,10 +265,10 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: scale-session-worker
+  name: scale-worker
   namespace: scale-controller
 spec:
-  replicas: 2
+  replicas: 4
   selector:
    matchLabels:
      app: scale-worker
@@ -281,34 +281,12 @@ spec:
       - name: scale-worker
         image: 10.160.16.60/scaling-test-services/scale-worker
         env:
-        - name: WORKER_TYPE
-          value: "session"
-        securityContext:
-          readOnlyRootFilesystem: false
-      nodeName: kubecluster-1-node1
-
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: scale-metrics-worker
-  namespace: scale-controller
-spec:
-  replicas: 2
-  selector:
-   matchLabels:
-     app: scale-worker
-  template:
-    metadata:
-      labels:
-        app: scale-worker
-    spec:
-      containers:
-      - name: scale-worker
-        image: 10.160.16.60/scaling-test-services/scale-worker
-        env:
-        - name: WORKER_TYPE
-          value: "metrics"
+        - name: CONCURRENCY
+          value: "5"
+        ports:
+        - containerPort: 8000
+          name: scale-worker
+          protocol: TCP
         securityContext:
           readOnlyRootFilesystem: false
       nodeName: kubecluster-1-node1

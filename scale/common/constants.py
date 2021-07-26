@@ -96,26 +96,15 @@ CLIENT_KEYS_DEF = {
 SESS_CTRL_KEYS_DEF = {
     "active_session_ids": set,
     "completed_session_ids": set,
-    "new_session_queue": set,
-    "new_metrics_queue": set
+    "new_session_queue": set
 }
 
 WORKER_CTRL_KEYS_DEF = {
-    "worker_session_active": set,
-    "worker_metrics_active": set,
+    "worker_active": set,
     "worker_inactive": set,
     "worker_data": set,
     "worker_heartbeat": float,
     "worker_loads": int
-}
-
-COMMAND_TASK_MODULE = {
-    "task_module": "scale.metrics.command",
-    "task_class": "CommandMetrics"
-}
-SESSION_TASK_MODULE = {
-    "task_module": "scale.session.session",
-    "task_class": "Session"
 }
 
 COMMANDLOG_TEMPLATE = """
