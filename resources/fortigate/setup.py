@@ -1,7 +1,7 @@
 import os
 
 from utils.logger import get_logger
-from utils.ssh import SSHConnection
+from utils.ssh import SshInteractiveConnection
 
 logger = get_logger()
 
@@ -18,11 +18,11 @@ def read_cert(folder_path, file_name, fgt_ip=None):
 
 
 def send_commands(fgt_ip, cmd, fgt_config):
-    ssh_client = SSHConnection(
+    ssh_client = SshInteractiveConnection(
         fgt_ip, fgt_config.get("user"), fgt_config.get("password")
     )
     output = ssh_client.send_commands(cmd)
-    if SSHConnection.is_in_output("fail", output):
+    if SshInteractiveConnection.is_in_output("fail", output):
         logger.error("setup failed once")
         raise Exception("Setup is terminated by command fail. "
                         "Please check log Trackback")

@@ -28,6 +28,9 @@ class ThreadsManager:
         func = args_func[1]
         args_func = tuple(list(args_func)[2:])
         try:
+            logger.info(
+                f"cid: {caller_id}, func: {func.__module__}.{func.__name__}"
+            )
             result = func(*args_func, **kwargs_func)
             self._status[caller_id] = "SUCCESS"
             self._data[caller_id] = result
@@ -61,6 +64,7 @@ class ThreadsManager:
             if task is not None and task.is_alive():
                 try:
                     task.join()
+                    logger.info(f"{cid} stopped")
                 except Exception:
                     pass
             status = self._status.get(cid)
