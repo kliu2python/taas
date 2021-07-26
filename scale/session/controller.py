@@ -6,7 +6,7 @@ import scale.common.constants as constants
 from utils.dictionary import deep_update
 from utils.logger import get_logger
 from scale.common.variables import (
-    ds_control, ds_client, ds_common, redis_conn, config
+    ds_session, ds_client, ds_common, redis_conn, config
 )
 
 logger = get_logger()
@@ -14,15 +14,20 @@ logger = get_logger()
 
 def create_session(**data):
     sess_id = data.pop("session_id", None)
-
     data_with_config = copy.deepcopy(config)
     data_with_config = deep_update(data_with_config, data)
     if redis_conn.keys(f"{sess_id}*"):
         date_time = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M.%f")
         sess_id = f"{sess_id}-{date_time}"
     data_with_config["session_id"] = sess_id
-    data_with_config = json.dumps(data_with_config)
-    ds_control.set("new_session_queue", [data_with_config])
+    data_with_config.update(constants.SESSION_TASK_MODULE)
+    data_with_config_dump = json.dumps(data_with_config)
+    ds_session.set("new_session_queue", [data_with_config_dump])
+    ds_session.set("active_session_ids", [sess_id])
+    if data_with_config.get("command_log_targets"):
+        data_with_config.update(constants.COMMAND_TASK_MODULE)
+        data_with_config_dump = json.dumps(data_with_config)
+        ds_session.set("new_metrics_queue", [data_with_config_dump])
     return sess_id
 
 
@@ -124,24 +129,23 @@ def update_session(data_dict, common_dict=None, session_id=None):
 def list_session(session_type="all"):
     if session_type in ["active"]:
         return {
-            "active": list(ds_control.smembers("active_session_ids"))
+            "active": list(ds_session.smembers("active_session_ids"))
         }
     if session_type in ["completed"]:
         return {
-            "completed": list(ds_control.smembers("completed_session_ids"))
+            "completed": list(ds_session.smembers("completed_session_ids"))
         }
     if session_type in ["all"]:
         return {
-            "active": list(ds_control.smembers("active_session_ids")),
-            "completed": list(ds_control.smembers("completed_session_ids"))
+            "active": list(ds_session.smembers("active_session_ids")),
+            "completed": list(ds_session.smembers("completed_session_ids"))
         }
 
     raise TypeError(f"{session_type} is not supported")
 
 
 def _move_to_complete(session_id):
-    ds_control.smove("active_session_ids", "completed_session_ids", session_id)
-    _save_session()
+    ds_session.smove("active_session_ids", "completed_session_ids", session_id)
 
 
 def _save_session():
@@ -178,11 +182,11 @@ def quit_session(session_id=None):
 
 
 def list_worker():
-    free_workers = ds_control.get("free_workers", default=[])
-    using_workers = ds_control.get("using_workers", default=[])
+    free_workers = ds_session.get("free_workers", default=[])
+    using_workers = ds_session.get("using_workers", default=[])
     worker_data = {}
     for worker_id in using_workers:
-        worker_data[worker_id] = ds_control.get("worker_data", worker_id)
+        worker_data[worker_id] = ds_session.get("worker_data", worker_id)
 
     return {
         "free_workers": len(free_workers),
@@ -192,7 +196,7 @@ def list_worker():
 
 
 def _check_session_running(session_id):
-    all_active_session = list(ds_control.smembers("active_session_ids"))
+    all_active_session = list(ds_session.smembers("active_session_ids"))
     return session_id in all_active_session
 
 
