@@ -24,8 +24,7 @@ redis_conn = redis.Redis(
     port=config.get("redis_port", 6379),
     decode_responses=True
 )
-ds_control = DataStoreSessionController(redis_conn)
+ds_session = DataStoreSessionController(redis_conn)
 ds_worker = DataStoreWorkerController(redis_conn)
 ds_client = DataStoreClient(redis_conn)
 ds_common = DataStoreCommon("None", redis_conn)
-max_workers = int(os.environ.get("CONCURRENCY", os.cpu_count()))
