@@ -1,13 +1,13 @@
 # pylint: disable=too-many-arguments, unused-argument, unused-variable
 from time import sleep
 
-from utils.ssh import SSHConnection
+from utils.ssh import SshInteractiveConnection
 from utils.logger import get_logger
 
 logger = get_logger()
 
 
-class SshCollector(SSHConnection):
+class SshCollector(SshInteractiveConnection):
     def __init__(
             self,
             ssh_user=None,
@@ -31,7 +31,7 @@ class SshCollector(SSHConnection):
         else:
             self.prepare_commands = []
         try:
-            conn = SSHConnection.__init__(
+            SshInteractiveConnection.__init__(
                 self,
                 self.ssh_ip,
                 self.ssh_user,

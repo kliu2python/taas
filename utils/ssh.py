@@ -1,4 +1,5 @@
-# pylint: disable=too-many-arguments,too-many-instance-attributes,
+# pylint: disable=too-many-arguments,too-many-instance-attributes
+import socket
 from time import sleep
 
 import paramiko
@@ -10,7 +11,7 @@ from utils.threads import thread
 logger = get_logger()
 
 
-class SSHConnection:
+class SshInteractiveConnection:
     def __init__(self, hostname, username, password, timeout=30, display=True):
         self.hostname = hostname
         self.username = username
@@ -151,3 +152,61 @@ class SSHConnection:
             if value in line:
                 return True
         return False
+
+
+class SshNoneInteractiveConnection:
+    def __init__(self, host, username, password, timeout=2):
+        self.host = host
+        self.username = username
+        self.password = password
+        self.timeout = timeout
+
+        self.client = None
+        self.disconnected = True
+        self.connect()
+
+    def connect(self):
+        self.client = paramiko.SSHClient()
+        self.client.load_system_host_keys()
+        self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        self.client.connect(hostname=self.host, username=self.username,
+                            password=self.password)
+        self.disconnected = False
+
+    def _send_commands(self, cmds):
+        channel = self.client.invoke_shell()
+        channel.settimeout(self.timeout)
+        for cmd in cmds:
+            channel.send(f"{cmd}\n")
+
+        buffer = ""
+        run = True
+        while run:
+            try:
+                data = channel.recv(4096)
+                data = data.decode("utf-8")
+                if data:
+                    buffer += data
+            except socket.timeout:
+                run = False
+        channel.close()
+        return buffer
+
+    def send_command(self, cmd):
+        return self.send_commands([cmd])
+
+    def quit(self):
+        self.client.close()
+        self.disconnected = False
+
+    def send_commands(self, cmds):
+        retry = 5
+        while retry > 0:
+            try:
+                return self._send_commands(cmds)
+            except Exception as e:
+                retry -= 1
+                if retry <= 0:
+                    raise e
+                self.quit()
+                self.connect()

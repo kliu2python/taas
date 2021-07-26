@@ -3,7 +3,7 @@ import datetime
 import difflib
 import hashlib
 
-from scale.collector.ssh import SshCollector
+from utils.ssh import SshNoneInteractiveConnection
 
 CRASHLOG_CMD = [
     "config global",
@@ -11,14 +11,14 @@ CRASHLOG_CMD = [
 ]
 
 
-class FgtCollector(SshCollector):
+class FgtCollector(SshNoneInteractiveConnection):
     def __init__(self, crashlog_store, session_id, data):
         self.ssh_ip = data.get("ssh_ip")
-        SshCollector.__init__(
+        SshNoneInteractiveConnection.__init__(
             self,
+            self.ssh_ip,
             data.get("ssh_user"),
-            data.get("ssh_password"),
-            self.ssh_ip
+            data.get("ssh_password")
         )
         self._last_cmdout_hash = None
         self._log_store = crashlog_store
@@ -31,12 +31,12 @@ class FgtCollector(SshCollector):
         self.session_query = f"{session_id}_fgt_{data.get('category')}"
 
     def get_command_output(self):
-        output = self.send_commands(self.commands, display=False)
+        output = self.send_commands(self.commands)
         self.send_command("end")
         return output
 
     def refresh_command_output(self):
-        output = self.get_command_output()[-1]
+        output = self.get_command_output()
         if output:
             log_to_save = None
             if self.remove_dup:
