@@ -38,3 +38,6 @@ spec:
   - name: snmpexporter
     port: 9116
     protocol: TCP
+  - name: cqlsh
+    port: 9042
+    protocol: TCP

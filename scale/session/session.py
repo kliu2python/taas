@@ -12,7 +12,7 @@ import yaml
 from utils.logger import get_logger
 from utils.threads import thread, ThreadsManager
 import scale.common.constants as constants
-from scale.common.datastore import DataStoreClient, DataStoreCommon
+from scale.common.cache import DataStoreClient, DataStoreCommon
 from scale.common.notifier import Notifier
 from scale.metrics.perf import PerfMetrics
 from scale.metrics.session import SessionMetrics

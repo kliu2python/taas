@@ -5,7 +5,6 @@ setup(
     description='Test As A Service',
     install_requires=[
         'Appium-Python-Client==1.0.2',
-        'allure-pytest==2.8.17',
         'in_place==0.4.0',
         'PyMySql==0.10.0',
         'numpy==1.19.1',
@@ -28,9 +27,11 @@ setup(
         'GitPython==3.1.3',
         'Pillow==7.1.1',
         'imagehash',
-        'zeep==4.0.0', 'redis'
+        'zeep==4.0.0',
+        'redis',
+        'cassandra-driver'
     ],
-    name='pytest_automation',
+    name='taas',
     version='0.9',
     zip_safe=False
 )

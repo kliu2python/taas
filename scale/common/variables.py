@@ -2,9 +2,10 @@ import os
 
 import redis
 
+from utils.cassandra import register_connection
 from utils.config import Config
 from utils.logger import get_logger
-from scale.common.datastore import (
+from scale.common.cache import (
     DataStoreSessionController,
     DataStoreClient,
     DataStoreCommon,
@@ -28,3 +29,4 @@ ds_session = DataStoreSessionController(redis_conn)
 ds_worker = DataStoreWorkerController(redis_conn)
 ds_client = DataStoreClient(redis_conn)
 ds_common = DataStoreCommon("None", redis_conn)
+cass_session = register_connection(name="taas", **config.get("db"))
