@@ -1,0 +1,58 @@
+---
+apiVersion: cassandra.datastax.com/v1beta1
+kind: CassandraDatacenter
+metadata:
+  name: dc1
+  namespace: cassandra
+spec:
+  clusterName: cluster1
+  serverType: cassandra
+  serverVersion: "3.11.7"
+  managementApiAuth:
+    insecure: {}
+  size: 2
+  racks:
+    - name: r1
+      nodeAffinityLabels:
+        node-type: service
+#    - name: r2
+#      nodeAffinityLabels:
+#        node-type: service
+
+  storageConfig:
+    cassandraDataVolumeClaimSpec:
+      storageClassName: local-path
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 100Gi
+  config:    
+    cassandra-yaml:
+      authenticator: org.apache.cassandra.auth.PasswordAuthenticator
+      authorizer: org.apache.cassandra.auth.CassandraAuthorizer
+      role_manager: org.apache.cassandra.auth.CassandraRoleManager
+    jvm-options:
+      initial_heap_size: "800M"
+      max_heap_size: "800M"
+      max_direct_memory: "800M"
+      additional-jvm-opts:
+        # As the database comes up for the first time, set system keyspaces to RF=3
+        - "-Ddse.system_distributed_replication_dc_names=dc1"
+        - "-Ddse.system_distributed_replication_per_dc=3"
+---
+apiVersion: k8s.nginx.org/v1alpha1
+kind: TransportServer
+metadata:
+ name: cassandra-cqlsh
+ namespace: cassandra
+spec:
+ listener:
+   name: cqlsh
+   protocol: TCP
+ upstreams:
+ - name: cassandra-cqlsh
+   service: cluster1-dc1-all-pods-service
+   port: 9042
+ action:
+   pass: cassandra-cqlsh
