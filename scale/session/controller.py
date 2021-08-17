@@ -12,7 +12,7 @@ from scale.common.variables import (
 logger = get_logger()
 
 
-def create_session(**data):
+def create_session(data):
     sess_id = data.pop("session_id", None)
     data_with_config = copy.deepcopy(config)
     data_with_config = deep_update(data_with_config, data)
@@ -52,7 +52,7 @@ def read_session(session_id=None, keys: dict = None):
         return common_values
     except Exception as e:
         logger.exception("Error when try to get data", exc_info=e)
-        return "Fail"
+        return f"Fail, {e}"
 
 
 def update_session(data_dict, common_dict=None, session_id=None):
@@ -164,7 +164,7 @@ def _get_report_url(session_id):
                 f"&var-session_id={session_id}")
 
 
-def quit_session(session_id=None):
+def stop_session(session_id=None):
     try:
         session_status = ds_common.get("session_status", session_id)
         if session_status in [constants.SessionStatus.RUNNING]:

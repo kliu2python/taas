@@ -1,3 +1,4 @@
 redis==3.5.3
 PyYAML==5.3.1
 singleton_decorator==1.0.0
+cassandra-driver==3.25.0

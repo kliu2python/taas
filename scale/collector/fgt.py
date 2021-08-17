@@ -3,6 +3,7 @@ import datetime
 import difflib
 import hashlib
 
+from scale.db.logs import Command
 from utils.ssh import SshNoneInteractiveConnection
 
 CRASHLOG_CMD = [
@@ -12,7 +13,7 @@ CRASHLOG_CMD = [
 
 
 class FgtCollector(SshNoneInteractiveConnection):
-    def __init__(self, crashlog_store, session_id, data):
+    def __init__(self, session_id, data, crashlog_store=None):
         self.ssh_ip = data.get("ssh_ip")
         SshNoneInteractiveConnection.__init__(
             self,
@@ -22,13 +23,14 @@ class FgtCollector(SshNoneInteractiveConnection):
         )
         self._last_cmdout_hash = None
         self._log_store = crashlog_store
-
+        self.session_id = session_id
+        self.category = data.get("category")
         self.remove_dup = data.get("remove_dup", False)
-        if data.get("category") in ["crashlog"]:
+        if self.category in ["crashlog"]:
             self.commands = CRASHLOG_CMD
         else:
             self.commands = data.get("commands", [])
-        self.session_query = f"{session_id}_fgt_{data.get('category')}"
+        self.session_query = f"{session_id}_fgt_{self.category}"
 
     def get_command_output(self):
         output = self.send_commands(self.commands)
@@ -65,14 +67,15 @@ class FgtCollector(SshNoneInteractiveConnection):
             self._log_store.set(
                 "last_command_log", output, self.session_query
             )
-
             if log_to_save:
                 log_to_save = (
                     f"*****{datetime.datetime.now()}*****\n{log_to_save}"
                 )
-                self._log_store.set(
-                    "command_log", [log_to_save], self.session_query
-                )
+                Command.write(self.session_id, self.category, log_to_save)
+                if self._log_store:
+                    self._log_store.set(
+                        "command_log", [log_to_save], self.session_query
+                    )
 
     def get_total_commands(self):
         self.refresh_command_output()
