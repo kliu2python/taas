@@ -36,14 +36,62 @@ def handle_args():
         required=True,
         help="schema defination module"
     )
+    parser.add_argument(
+        "--grant",
+        dest="grant",
+        action="store_true",
+        required=False,
+        default=False,
+        help="specify if you want to add grants"
+    )
+    parser.add_argument(
+        "--role",
+        dest="role",
+        type=str,
+        required=False,
+        default="taas",
+        help="grant role name"
+    )
+    parser.add_argument(
+        "--role-password",
+        dest="role_password",
+        type=str,
+        required=False,
+        default="taas",
+        help="grant role password"
+    )
+    parser.add_argument(
+        "--group",
+        dest="group",
+        type=str,
+        required=False,
+        default="taas_app",
+        help="grant group name"
+    )
+    parser.add_argument(
+        "--permission",
+        dest="permission",
+        nargs="+",
+        required=False,
+        default=["SELECT", "MODIFY"]
+    )
 
     global args
     args = parser.parse_args()
 
 
 def update_db():
-    db.register_connection(args.cluster_ips, args.user, args.password)
-    db.update_schema(args.db_module)
+    session = db.register_connection(args.cluster_ips, args.user, args.password)
+    keyspaces = db.update_schema(args.db_module)
+    if args.grant:
+        db.grant_permissions(
+            session,
+            keyspaces,
+            args.role,
+            args.group,
+            args.role_password,
+            args.permission
+        )
 
 
 if __name__ == "__main__":

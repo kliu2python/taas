@@ -10,11 +10,11 @@ spec:
   serverVersion: "3.11.7"
   managementApiAuth:
     insecure: {}
-  size: 2
+  size: 3
   racks:
     - name: r1
       nodeAffinityLabels:
-        node-type: service
+        db: cass
 #    - name: r2
 #      nodeAffinityLabels:
 #        node-type: service
@@ -26,7 +26,7 @@ spec:
         - ReadWriteOnce
       resources:
         requests:
-          storage: 100Gi
+          storage: 1200Gi
   config:    
     cassandra-yaml:
       authenticator: org.apache.cassandra.auth.PasswordAuthenticator

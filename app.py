@@ -6,7 +6,7 @@ from flask_restful import Api
 from rest import load_api_resource
 
 
-app = Flask("Test Services")
+app = Flask("TAAS")
 api = Api(app)
 load_api_resource(api)
 

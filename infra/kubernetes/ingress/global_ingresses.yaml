@@ -6,7 +6,7 @@ metadata:
 spec:
   host: 10.160.13.11
   routes:
-  - path: /scalecontroller
+  - path: /scale
     route: scale-controller/scale-controller-route
   - path: /imageclassifier
     route: model-services/image-classifier-route

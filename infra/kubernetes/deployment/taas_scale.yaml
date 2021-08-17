@@ -19,26 +19,29 @@ spec:
       labels:
         app: scale-api
     spec:
-      affinity:
-        nodeAffinity:
-           preferredDuringSchedulingIgnoredDuringExecution:
-           - weight: 1
-             preference:
-               matchExpressions:
-               - key: kubernetes.io/hostname
-                 operator: In
-                 values:
-                 - kubecluster-1-master
-           - weight: 1
-             preference:
-               matchExpressions:
-               - key: kubernetes.io/hostname
-                 operator: In
-                 values:
-                 - kubecluster-1-node1
+      nodeSelector:
+        node-type: service
+#      affinity:
+#        nodeAffinity:
+#           preferredDuringSchedulingIgnoredDuringExecution:
+#           - weight: 1
+#             preference:
+#               matchExpressions:
+#               - key: kubernetes.io/hostname
+#                 operator: In
+#                 values:
+#                 - kubecluster-1-master
+#           - weight: 1
+#             preference:
+#               matchExpressions:
+#               - key: kubernetes.io/hostname
+#                 operator: In
+#                 values:
+#                 - kubecluster-1-node1
       containers:
       - name: scale-api
         image: 10.160.16.60/taas/scale-api
+        imagePullPolicy: Always
         env:
         - name: DEBUG
           value: "False"
@@ -86,7 +89,7 @@ spec:
 #    service: scale-ui
 #    port: 8000
   subroutes:
-  - path: /scalecontroller
+  - path: /scale
     action:
       pass: scale-api-svc
 #  - path: /scalecontroller/scaleui
@@ -130,7 +133,9 @@ spec:
       labels:
         name: redis-master
     spec:
-      nodeName: kubecluster-1-node1
+      nodeSelector:
+        node-type: service
+#      nodeName: kubecluster-1-node1
       containers:
       - name: redis-master
         image: redis:6.0.9-alpine
@@ -240,13 +245,16 @@ spec:
       containers:
       - name: scale-ui
         image: 10.160.16.60/scaling-test-services/scaling-ui
+        imagePullPolicy: Always
         ports:
         - containerPort: 8000
           name: scale-ui
           protocol: TCP
         securityContext:
           readOnlyRootFilesystem: false
-      nodeName: kubecluster-1-node1
+#      nodeName: kubecluster-1-node1
+      nodeSelector:
+        node-type: service
 ---
 apiVersion: v1
 kind: Service
@@ -280,13 +288,15 @@ spec:
       containers:
       - name: scale-worker
         image: 10.160.16.60/taas/scale-worker
+        imagePullPolicy: Always
         env:
         - name: WORKER_TYPE
           value: "session"
         securityContext:
           readOnlyRootFilesystem: false
-      nodeName: kubecluster-1-node1
-
+#      nodeName: kubecluster-1-node1
+      nodeSelector:
+        node-type: service
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -306,12 +316,15 @@ spec:
       containers:
       - name: scale-worker
         image: 10.160.16.60/taas/scale-worker
+        imagePullPolicy: Always
         env:
         - name: WORKER_TYPE
           value: "metrics"
         securityContext:
           readOnlyRootFilesystem: false
-      nodeName: kubecluster-1-node1
+#      nodeName: kubecluster-1-node1
+      nodeSelector:
+        node-type: service
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -331,6 +344,7 @@ spec:
       containers:
       - name: scale-controller
         image: 10.160.16.60/taas/scale-controller
+        imagePullPolicy: Always
         env:
         - name: CONCURRENCY
           value: "5"
@@ -340,7 +354,9 @@ spec:
           protocol: TCP
         securityContext:
           readOnlyRootFilesystem: false
-      nodeName: kubecluster-1-node1
+#      nodeName: kubecluster-1-node1
+      nodeSelector:
+        node-type: service
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -360,10 +376,13 @@ spec:
       containers:
       - name: scale-monitor
         image: 10.160.16.60/scaling-test-services/scale-monitor
+        imagePullPolicy: Always
         ports:
         - containerPort: 8000
           name: scale-monitor
           protocol: TCP
         securityContext:
           readOnlyRootFilesystem: false
-      nodeName: kubecluster-1-node1
+#      nodeName: kubecluster-1-node1
+      nodeSelector:
+        node-type: service
