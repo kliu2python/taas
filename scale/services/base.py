@@ -1,3 +1,4 @@
+import collections
 import datetime
 import json
 import uuid
@@ -127,7 +128,7 @@ class ApiBase:
         return ret_msg, ret_code
 
     @classmethod
-    def read(cls, **filters):
+    def read_to_json(cls, **filters):
         def default(x):
             if isinstance(x, datetime.datetime):
                 return f"{x}"
@@ -150,3 +151,25 @@ class ApiBase:
             default=default
         )
         return json.loads(ret_msg)
+
+    @classmethod
+    def read(
+            cls, columns, limit=None, order_by=None, **filters
+    ):
+        if order_by is None:
+            order_by = []
+        items = cls.__db_model__.objects(
+            **filters
+        ).all().allow_filtering().order_by(*order_by).limit(limit)
+        if isinstance(columns, str):
+            columns = [columns]
+        if len(items) == 1:
+            ret = {}
+            for column in columns:
+                ret[column] = items[0][column]
+        else:
+            ret = collections.defaultdict(list)
+            for item in items:
+                for column in columns:
+                    ret[column].append(item[column])
+        return ret

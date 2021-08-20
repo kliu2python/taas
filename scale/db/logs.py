@@ -1,5 +1,5 @@
 import datetime
-import uuid
+import random
 
 from cassandra.cqlengine import columns
 from cassandra.cqlengine.models import Model
@@ -8,22 +8,24 @@ __keyspace__ = "taas_logs"
 __replication_factor__ = 1
 
 
+def _random_log_index():
+    return random.randrange(1, 100)
+
+
 class Operation(Model):
     __keyspace__ = __keyspace__
     __table_name__ = "operation"
 
-    id = columns.UUID(
-        primary_key=True, partition_key=True, default=uuid.uuid4()
-    )
-    datetime = columns.DateTime(
-        primary_key=True, partition_key=True, default=datetime.datetime.utcnow()
-    )
     user = columns.Text()
     source = columns.Text(
         primary_key=True,
+        partition_key=True
+    )
+    datetime = columns.DateTime(
+        primary_key=True,
         partition_key=False,
         clustering_order="desc",
-        index=True
+        default=datetime.datetime.utcnow
     )
     log = columns.Text()
 
@@ -32,25 +34,60 @@ class Command(Model):
     __keyspace__ = __keyspace__
     __table_name__ = "command"
 
-    id = columns.UUID(
-        partition_key=True, default=uuid.uuid4()
-    )
     session_name = columns.Text(
-        primary_key=True, partition_key=True, index=True
+        primary_key=True, partition_key=True
     )
-    type = columns.Text(
+    type = columns.Text(primary_key=True, partition_key=True)
+    datetime = columns.DateTime(
         primary_key=True,
         partition_key=False,
         clustering_order="desc",
+        default=datetime.datetime.utcnow
+    )
+    log_index = columns.Integer(
+        primary_key=True,
+        partition_key=True,
+        default=_random_log_index
+    )
+    log = columns.Text()
+
+
+class CaseHistory(Model):
+    __keyspace__ = __keyspace__
+    __table_name__ = "casehistory"
+
+    session_name = columns.Text(
+        primary_key=True, partition_key=True, index=True
+    )
+    runner_name = columns.Text(primary_key=True, partition_key=True)
+    case_name = columns.Text()
+    datetime = columns.DateTime(
+        primary_key=True,
+        partition_key=False,
+        clustering_order="desc",
+        default=datetime.datetime.utcnow
+    )
+    log_index = columns.Integer(
+        primary_key=True,
+        partition_key=True,
+        default=_random_log_index
+    )
+    result = columns.Text()
+    log = columns.Text()
+    failure_id = columns.UUID()
+
+
+class FailureLog(Model):
+    __keyspace__ = __keyspace__
+    __table_name__ = "failurelog"
+
+    id = columns.UUID(
+        primary_key=True, partition_key=True
     )
     datetime = columns.DateTime(
         primary_key=True,
         partition_key=False,
         clustering_order="desc",
-        default=datetime.datetime.utcnow()
+        default=datetime.datetime.utcnow
     )
-    log = columns.Text()
-
-    @classmethod
-    def write(cls, session_name, log_type, log):
-        cls.create(session_name=session_name, type=log_type, log=log)
+    log = columns.List(columns.Text)

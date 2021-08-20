@@ -32,6 +32,9 @@ class Template(ApiBase):
 
 class Session(ApiBase):
     __db_model__ = user_db.Session
+    __column_udt_map__ = {
+        "logging": user_db.user_defined_types.Command
+    }
 
     @classmethod
     def start(cls, user, plan_name):
@@ -46,10 +49,18 @@ class Session(ApiBase):
                 for device_info in devices:
                     owner, name = device_info.split(",")
                     device = user_db.Device.objects(user=owner, name=name)[0]
+                    credential = device.credential
+                    command_cred = {
+                        "ssh_user": credential.get("username"),
+                        "ssh_password": credential.get("password"),
+                        "ssh_ip": device.ip
+                    }
                     if device.logging:
                         for log_def in device.logging:
                             logging_obj.append(log_def)
-                            loggings.append(log_def.serialize())
+                            cmd_info = log_def.serialize()
+                            cmd_info.update(command_cred)
+                            loggings.append(cmd_info)
                 version = ",".join(versions)
 
                 session_data = {
@@ -93,11 +104,14 @@ class Session(ApiBase):
         try:
             session_id = data.pop("session_id")
             results = controller.update_session(
-                data, session_id=session_id
+                data.get("data_dict"),
+                data.get("common_dict"),
+                session_id=session_id
             )
             ret_msg = results
             if results != "SUCCESS":
                 return ret_msg, 400
+            return ret_msg, 200
         except Exception as e:
             return f"Error when update session {e}", 500
 
@@ -117,27 +131,33 @@ class Session(ApiBase):
             return f"Error when update session {e}", 500
 
     @classmethod
-    def stop(cls, session_id):
+    def stop(cls, user, session_name):
         try:
-            results = controller.stop_session(session_id)
-            if "Fail" in results:
-                return results, 403
-            if results is not None and results.startswith("http"):
+            ret_code = 500
+            ret_msg = controller.stop_session(session_name)
+            if "Fail" in ret_msg:
+                ret_code = 403
+            elif ret_msg is not None and ret_msg.startswith("http"):
                 cls.update_one(
                     {"status": 2, "stopped_at": datetime.datetime.utcnow()},
-                    id=session_id
+                    user=user,
+                    name=session_name
                 )
+                ret_code = 200
+            else:
+                ret_msg = "Error when stop Run"
+            return ret_msg, ret_code
         except Exception as e:
             return f"Error when stop {e}", 500
 
     @classmethod
-    def read(cls, session_id):
+    def get(cls, user, session_name):
         def default(x):
             if isinstance(x, datetime.datetime):
                 return f"{x}"
             return type(x).__qualname__
 
-        results = controller.read_session(session_id)
+        results = cls.read_to_json(user=user, name=session_name)
         if results == "Fail":
             return results, 404
         json_dumps = json.dumps(

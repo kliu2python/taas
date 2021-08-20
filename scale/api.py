@@ -3,6 +3,7 @@ from flask_restful import Resource, request
 
 import scale.session.controller as controller
 import scale.services.user as user_api
+import scale.services.log as log_api
 from args import parser
 from rest import RestApi
 from scale.common.constants import COMMANDLOG_TEMPLATE
@@ -14,14 +15,14 @@ rest = RestApi(base_route="/scale/v1/")
 class Plan(Resource):
     def get(self, user=None, name=None):
         if user is None:
-            msg = user_api.Plan.read()
+            msg = user_api.Plan.read_to_json()
         else:
             param = {}
             if user:
                 param["user"] = user
             if name:
                 param["name"] = name
-            msg = user_api.Plan.read(**param)
+            msg = user_api.Plan.read_to_json(**param)
         return msg
 
     def post(self):
@@ -65,14 +66,14 @@ class Device(Resource):
                                      under user: <user name>
         """
         if user is None:
-            msg = user_api.Device.read()
+            msg = user_api.Device.read_to_json()
         else:
             param = {}
             if user:
                 param["user"] = user
             if name:
                 param["name"] = name
-            msg = user_api.Device.read(**param)
+            msg = user_api.Device.read_to_json(**param)
         return jsonify(msg)
 
     def post(self):
@@ -140,9 +141,9 @@ class User(Resource):
              scale/v1/user/<name>: get user info for <name>
         """
         if name is None:
-            msg = user_api.User.read()
+            msg = user_api.User.read_to_json()
         else:
-            msg = user_api.User.read(name=name)
+            msg = user_api.User.read_to_json(name=name)
         return jsonify(msg)
 
     def post(self):
@@ -178,10 +179,13 @@ class User(Resource):
         return msg, code
 
 
-@rest.route("session/<string:user>/<string:session_id>")
+@rest.route("session/<string:user>/<string:session_name>")
 class Session(Resource):
-    def get(self, session_id):
-        ret_msg, ret_code = user_api.Session.read(session_id)
+    def get(self, user, session_name):
+        ret_msg, ret_code = user_api.Session.get(
+            user=user,
+            session_name=session_name
+        )
         return ret_msg, ret_code
 
     def post(self):
@@ -265,8 +269,8 @@ class Session(Resource):
         ret_msg, ret_code = user_api.Session.patch(data)
         return ret_msg, ret_code
 
-    def delete(self, session_id):
-        ret_msg, ret_code = user_api.Session.stop(session_id)
+    def delete(self, user, session_name):
+        ret_msg, ret_code = user_api.Session.stop(user, session_name)
         return ret_msg, ret_code
 
 
@@ -284,26 +288,21 @@ class LogsHtml(Resource):
         n: last n number
         """
         session_query = f"{session_id}_{device_type}_{category}"
-        results = controller.read_session(
-            session_query,
-            keys={"common": ["command_log"]}
-        ).get("command_log", [])
+        if count == 0:
+            count = None
+        logs = log_api.CommandLog.get_logs(
+            session_name=session_id, log_type=category, limit=count
+        )
         ret = ""
-        if results:
+        if logs:
             args = parser.parse_args()
             ops = args.get("ops")
             download_request = ops in ["download"]
-            if count == 0 or download_request:
-                logs = results
-            elif count > 0:
-                logs = results[-count:]
-            else:
-                return "Error: count must be >= 0"
             if logs:
                 if download_request:
                     tmp_file = f"{session_query}.log"
                     with open(tmp_file, "w") as FILE:
-                        FILE.writelines(logs[len(logs):0:-1])
+                        FILE.writelines(logs)
                     response = send_file(
                         filename_or_fp=tmp_file,
                         mimetype="application/octet-stream",

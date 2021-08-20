@@ -1,6 +1,7 @@
 # pylint: disable=too-many-arguments
 from scale.collector.fgt import FgtCollector
 from scale.common.constants import CONFIG_PATH
+from scale.common.variables import ds_common
 from utils.metrics import Metrics
 
 CLASS_MAPPING = {
@@ -84,7 +85,7 @@ class CommandMetrics:
                 }
             else:
                 raise ValueError("category value should be crashlog or general")
-            conn = CLASS_MAPPING.get(device_type)(session_id, target)
+            conn = CLASS_MAPPING.get(device_type)(ds_common, session_id, target)
             metrics = Metrics(
                 metrics,
                 f"{device_type}_{target.get('category')}-{session_id}",
