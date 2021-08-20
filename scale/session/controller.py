@@ -1,8 +1,11 @@
 import copy
 import datetime
 import json
+import uuid
 
 import scale.common.constants as constants
+from scale.db.logs import CaseHistory
+from scale.db.logs import FailureLog
 from utils.dictionary import deep_update
 from utils.logger import get_logger
 from scale.common.variables import (
@@ -14,15 +17,17 @@ logger = get_logger()
 
 def create_session(data):
     sess_id = data.pop("session_id", None)
-    data_with_config = copy.deepcopy(config)
-    data_with_config = deep_update(data_with_config, data)
     if redis_conn.keys(f"{sess_id}*"):
         date_time = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M.%f")
         sess_id = f"{sess_id}-{date_time}"
+    sess_type = data.pop("session_type", "test")
+    data_with_config = copy.deepcopy(config)
+    data_with_config = deep_update(data_with_config, data)
     data_with_config["session_id"] = sess_id
     data_with_config.update(constants.SESSION_TASK_MODULE)
     data_with_config_dump = json.dumps(data_with_config)
-    ds_session.set("new_session_queue", [data_with_config_dump])
+    if sess_type in ["test"]:
+        ds_session.set("new_session_queue", [data_with_config_dump])
     ds_session.set("active_session_ids", [sess_id])
     if data_with_config.get("command_log_targets"):
         data_with_config.update(constants.COMMAND_TASK_MODULE)
@@ -61,7 +66,10 @@ def update_session(data_dict, common_dict=None, session_id=None):
     common_dict: update shared session data item.
     data_dict: update session data for each runner
     """
+    failure_id = None
+
     def _update_session_data(ds, data, identifier=None):
+        nonlocal failure_id
         for k, v in data.items():
             if v:
                 if k in ["case_history"]:
@@ -72,10 +80,14 @@ def update_session(data_dict, common_dict=None, session_id=None):
                                 f"total_{result}", case_numbers, session_id
                             )
                             ds_client.incr(result, case_numbers, identifier)
-                            case_list = [f"{c},{result}" for c in cases]
-                            ds_client.set(
-                                k, case_list, identifier
-                            )
+                            for c in cases:
+                                CaseHistory.create(
+                                    session_name=session_id,
+                                    case_name=c,
+                                    runner_name=identifier,
+                                    result=result,
+                                    failure_id=failure_id
+                                )
                             last_case = data.get("current_case")
                             if last_case in [
                                 ds_common.get("_latest_case", session_id)
@@ -98,6 +110,11 @@ def update_session(data_dict, common_dict=None, session_id=None):
                     ds_common.set(
                         "clients", [identifier], session_id
                     )
+                if k in ["fail_log"]:
+                    if v:
+                        failure_id = uuid.uuid4()
+                        FailureLog.create(id=failure_id, log=v)
+                        continue
                 ds.set(k, v, identifier)
 
     session_status = ds_common.get("session_status", session_id)

@@ -13,7 +13,7 @@ CRASHLOG_CMD = [
 
 
 class FgtCollector(SshNoneInteractiveConnection):
-    def __init__(self, session_id, data, crashlog_store=None):
+    def __init__(self, crashlog_store, session_id, data):
         self.ssh_ip = data.get("ssh_ip")
         SshNoneInteractiveConnection.__init__(
             self,
@@ -71,11 +71,11 @@ class FgtCollector(SshNoneInteractiveConnection):
                 log_to_save = (
                     f"*****{datetime.datetime.now()}*****\n{log_to_save}"
                 )
-                Command.write(self.session_id, self.category, log_to_save)
-                if self._log_store:
-                    self._log_store.set(
-                        "command_log", [log_to_save], self.session_query
-                    )
+                Command.create(
+                    session_name=self.session_id,
+                    type=self.category,
+                    log=log_to_save
+                )
 
     def get_total_commands(self):
         self.refresh_command_output()

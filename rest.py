@@ -16,6 +16,7 @@ class RestApi:
     def route(self, route_path):
         def wrap(func):
             route = f"{self.base_route}{route_path}"
+            routes = [route]
             if "<" in route:
                 route_list = route.split("<")
                 routes = [route_list[0].rstrip("/")]
@@ -23,8 +24,8 @@ class RestApi:
                 for route_item in route_list[1:]:
                     last_route = f"{last_route}<{route_item}"
                     routes.append(last_route.rstrip("/"))
-                _api.add_resource(func, *routes)
-                return func
+            _api.add_resource(func, *routes)
+            return func
         return wrap
 
 

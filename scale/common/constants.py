@@ -88,7 +88,6 @@ CLIENT_KEYS_DEF = {
     "create_time": str,
     "status": str,
     "current_case": str,
-    "case_history": list,
     "passed": int,
     "failed": int
 }

@@ -28,7 +28,7 @@ class Plan(Model):
     target_platform = columns.Text(
         primary_key=True,
         partition_key=False,
-        clustering_order="desc"
+        clustering_order="asc"
     )
     status = columns.Integer(default=1)
     runner_count = columns.List(columns.Integer, default=[1, 1])
@@ -43,7 +43,7 @@ class Plan(Model):
         primary_key=True,
         partition_key=False,
         clustering_order="desc",
-        default=datetime.datetime.utcnow()
+        default=datetime.datetime.utcnow
     )
     updated_at = columns.DateTime()
     duration = columns.Integer(default=24)
@@ -70,7 +70,7 @@ class Device(Model):
     type = columns.Text(
         primary_key=True,
         partition_key=False,
-        clustering_order="desc",
+        clustering_order="asc",
         default="fgt"
     )
     credential = columns.Map(columns.Text, columns.Text)
@@ -82,7 +82,7 @@ class Device(Model):
         primary_key=True,
         partition_key=False,
         clustering_order="desc",
-        default=datetime.datetime.utcnow()
+        default=datetime.datetime.utcnow
     )
     updated_at = columns.DateTime()
 
@@ -94,7 +94,7 @@ class Templates(Model):
     name = columns.Text(primary_key=True, partition_key=True, required=True)
     type = columns.Text(index=True)
     config_data = columns.Text()
-    created_at = columns.DateTime(default=datetime.datetime.utcnow())
+    created_at = columns.DateTime(default=datetime.datetime.utcnow)
     updated_at = columns.DateTime(
         primary_key=True,
         partition_key=False,
@@ -115,7 +115,7 @@ class User(Model):
         primary_key=True,
         partition_key=False,
         clustering_order="desc",
-        default=datetime.datetime.utcnow()
+        default=datetime.datetime.utcnow
     )
     updated_at = columns.DateTime()
 
@@ -157,6 +157,6 @@ class Session(Model):
         primary_key=True,
         partition_key=False,
         clustering_order="desc",
-        default=datetime.datetime.utcnow()
+        default=datetime.datetime.utcnow
     )
     stopped_at = columns.DateTime()
