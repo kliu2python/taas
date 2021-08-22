@@ -4,13 +4,13 @@ import json
 import uuid
 
 import scale.common.constants as constants
+from scale.common.variables import (
+    ds_session, ds_client, ds_common, redis_conn, config
+)
 from scale.db.logs import CaseHistory
 from scale.db.logs import FailureLog
 from utils.dictionary import deep_update
 from utils.logger import get_logger
-from scale.common.variables import (
-    ds_session, ds_client, ds_common, redis_conn, config
-)
 
 logger = get_logger()
 

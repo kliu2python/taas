@@ -168,9 +168,6 @@ class User(Resource):
         }
         """
         data = request.json
-        """
-        url: scale/user/<name>
-        """
         msg, code = user_api.User.update_one(data, name=name)
         return msg, code
 
@@ -289,7 +286,7 @@ class LogsHtml(Resource):
         """
         session_query = f"{session_id}_{device_type}_{category}"
         if count == 0:
-            count = None
+            count = 1000
         logs = log_api.CommandLog.get_logs(
             session_name=session_id, log_type=category, limit=count
         )

@@ -133,12 +133,12 @@ class Session(Model):
     __keyspace__ = __keyspace__
     __table_name__ = "session"
 
-    name = columns.Text(primary_key=True, partition_key=True)
     user = columns.Text(
         primary_key=True,
         partition_key=True,
         index=True
     )
+    name = columns.Text(primary_key=True, partition_key=True)
     version = columns.Text()
     status = columns.Integer(default=1)
     target_platform = columns.Text()
