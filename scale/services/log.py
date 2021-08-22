@@ -10,7 +10,6 @@ class CommandLog(ApiBase):
         logs = cls.read(
             "log",
             limit=limit,
-            order_by=["datetime"],
             session_name=session_name,
             type=log_type
         )

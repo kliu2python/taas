@@ -72,7 +72,7 @@ class ApiBase:
             ret_msg = f"key or Type error in custom type: {e}"
             ret_code = 400
         except ItemExistsError:
-            ret_msg = f"Item already exists"
+            ret_msg = "Item already exists"
             ret_code = 403
         except Exception as e:
             ret_msg = f"{e}"

@@ -23,4 +23,5 @@ disable=
     no-self-use,
     duplicate-code,
     too-many-nested-blocks,
-    fixme
+    fixme,
+    too-many-instance-attributes
