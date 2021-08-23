@@ -12,15 +12,11 @@ class Operation(Model):
     __keyspace__ = __keyspace__
     __table_name__ = "operation"
 
-    source = columns.Text(
-        primary_key=True,
-        partition_key=True
-    )
-    id = columns.UUID(partition_key=True, default=uuid.uuid4)
+    id = columns.UUID(primary_key=True, default=uuid.uuid4)
+    source = columns.Text()
     user = columns.Text()
     datetime = columns.DateTime(
         primary_key=True,
-        partition_key=False,
         clustering_order="desc",
         default=datetime.datetime.utcnow
     )
@@ -31,14 +27,11 @@ class Command(Model):
     __keyspace__ = __keyspace__
     __table_name__ = "command"
 
-    session_name = columns.Text(
-        primary_key=True, partition_key=True
-    )
-    id = columns.UUID(partition_key=True, default=uuid.uuid4)
+    id = columns.UUID(primary_key=True, default=uuid.uuid4)
+    session_name = columns.Text()
     type = columns.Text()
     datetime = columns.DateTime(
         primary_key=True,
-        partition_key=False,
         clustering_order="desc",
         default=datetime.datetime.utcnow
     )
@@ -49,15 +42,12 @@ class CaseHistory(Model):
     __keyspace__ = __keyspace__
     __table_name__ = "casehistory"
 
-    session_name = columns.Text(
-        primary_key=True, partition_key=True, index=True
-    )
     id = columns.UUID(partition_key=True, default=uuid.uuid4)
+    session_name = columns.Text(index=True)
     runner_name = columns.Text()
     case_name = columns.Text()
     datetime = columns.DateTime(
         primary_key=True,
-        partition_key=False,
         clustering_order="desc",
         default=datetime.datetime.utcnow
     )
@@ -70,12 +60,9 @@ class FailureLog(Model):
     __keyspace__ = __keyspace__
     __table_name__ = "failurelog"
 
-    id = columns.UUID(
-        primary_key=True, partition_key=True
-    )
+    id = columns.UUID(primary_key=True)
     datetime = columns.DateTime(
         primary_key=True,
-        partition_key=False,
         clustering_order="desc",
         default=datetime.datetime.utcnow
     )

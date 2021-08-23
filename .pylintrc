@@ -24,4 +24,5 @@ disable=
     duplicate-code,
     too-many-nested-blocks,
     fixme,
-    too-many-instance-attributes
+    too-many-instance-attributes,
+    too-many-arguments

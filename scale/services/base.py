@@ -173,3 +173,15 @@ class ApiBase:
                 for column in columns:
                     ret[column].append(item[column])
         return ret
+
+    @classmethod
+    def read_all(cls, limit=None, order_by=None, **filters):
+        if order_by is None:
+            order_by = []
+        items = cls.__db_model__.objects(
+            **filters
+        ).all().allow_filtering().order_by(*order_by).limit(limit)
+        ret = []
+        for item in items:
+            ret.append(dict(zip(item.keys(), item.values())))
+        return ret

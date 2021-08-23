@@ -1,4 +1,4 @@
-FROM python:3.6.12-alpine3.12
+FROM python:3.6.12-slim-buster
 
 COPY . /test_assistant_rest_api
 

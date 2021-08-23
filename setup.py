@@ -29,7 +29,7 @@ setup(
         'imagehash',
         'zeep==4.0.0',
         'redis',
-        'cassandra-driver'
+        'cassandra-driver', 'pandas'
     ],
     name='taas',
     version='0.9',
