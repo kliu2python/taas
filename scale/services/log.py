@@ -16,7 +16,7 @@ class CommandLog(ApiBase):
             type=log_type,
             **filters
         )
-        if sort:
+        if sort and logs:
             df = pd.DataFrame(logs)
             df["datetime"] = pd.to_datetime(df["datetime"])
             df.sort_values(by=["datetime"], inplace=True, ascending=False)
