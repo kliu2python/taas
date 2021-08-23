@@ -1,3 +1,5 @@
+import datetime
+
 from flask import jsonify, make_response, render_template_string, send_file
 from flask_restful import Resource, request
 
@@ -273,10 +275,10 @@ class Session(Resource):
 
 @rest.route(
     "logs/html/<string:session_id>/<string:device_type>/"
-    "<string:category>/<int:count>"
+    "<string:category>/<int:miniutes>"
 )
 class LogsHtml(Resource):
-    def get(self, session_id, device_type, category, count=0):
+    def get(self, session_id, device_type, category, miniutes=0):
         """
         Get crash log in text
         session_id: session id for the crashlog
@@ -285,33 +287,37 @@ class LogsHtml(Resource):
         n: last n number
         """
         session_query = f"{session_id}_{device_type}_{category}"
-        if count == 0:
-            count = 1000
+        extra_opt = {}
+        if miniutes > 0:
+            dt = datetime.datetime.utcnow()
+            dt += datetime.timedelta(minutes=-miniutes)
+            extra_opt["datetime__gte"] = dt
+        args = parser.parse_args()
+        ops = args.get("ops")
+        download_request = ops in ["download"]
         logs = log_api.CommandLog.get_logs(
-            session_name=session_id, log_type=category, limit=count
+            session_name=session_id,
+            log_type=category,
+            **extra_opt
         )
-        ret = ""
-        if logs:
-            args = parser.parse_args()
-            ops = args.get("ops")
-            download_request = ops in ["download"]
-            if logs:
-                if download_request:
-                    tmp_file = f"{session_query}.log"
-                    with open(tmp_file, "w") as FILE:
-                        FILE.writelines(logs)
-                    response = send_file(
-                        filename_or_fp=tmp_file,
-                        mimetype="application/octet-stream",
-                        as_attachment=True,
-                        attachment_filename=tmp_file,
-                        cache_timeout=0
-                    )
-                    return response
+        if len(logs) > 0:
+            if download_request:
+                tmp_file = f"{session_query}.log"
+                with open(tmp_file, "w") as FILE:
+                    FILE.writelines(logs["log"])
+                response = send_file(
+                    filename_or_fp=tmp_file,
+                    mimetype="application/octet-stream",
+                    as_attachment=True,
+                    attachment_filename=tmp_file,
+                    cache_timeout=0
+                )
+                return response
 
-                for i in range(1, len(logs) + 1):
-                    item = logs[-i].replace("\n", "<br>")
-                    ret += f"<br>{item}<br><br>"
+            ret = ""
+            for log in logs["log"]:
+                item = log.replace("\n", "<br>")
+                ret += f"<br>{item}<br><br>"
             html = COMMANDLOG_TEMPLATE.format(category=category,
                                               command_logs=ret)
             headers = {'Content-Type': 'text/html'}
