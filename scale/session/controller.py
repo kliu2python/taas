@@ -112,7 +112,11 @@ def update_session(data_dict, common_dict=None, session_id=None):
                 if k in ["fail_log"]:
                     if v:
                         failure_id = uuid.uuid4()
-                        FailureLog.create(id=failure_id, log=v)
+                        FailureLog.create(
+                            id=failure_id,
+                            session_name=session_id,
+                            log=v
+                        )
                         continue
                 ds.set(k, v, identifier)
 

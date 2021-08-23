@@ -28,7 +28,7 @@ class Command(Model):
     __table_name__ = "command"
 
     id = columns.UUID(primary_key=True, default=uuid.uuid4)
-    session_name = columns.Text()
+    session_name = columns.Text(index=True)
     type = columns.Text()
     datetime = columns.DateTime(
         primary_key=True,
@@ -61,6 +61,7 @@ class FailureLog(Model):
     __table_name__ = "failurelog"
 
     id = columns.UUID(primary_key=True)
+    session_name = columns.Text(index=True)
     datetime = columns.DateTime(
         primary_key=True,
         clustering_order="desc",
