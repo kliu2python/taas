@@ -29,5 +29,7 @@ ds_session = DataStoreSessionController(redis_conn)
 ds_worker = DataStoreWorkerController(redis_conn)
 ds_client = DataStoreClient(redis_conn)
 ds_common = DataStoreCommon("None", redis_conn)
-if "db" in config:
-    cass_session = register_connection(name="taas", **config.get("db"))
+db = config.get("db", {})
+datacenter = db.pop("dc", "dc1")
+if db:
+    cass_session = register_connection(name="taas", **db)
