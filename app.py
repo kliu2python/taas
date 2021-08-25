@@ -6,15 +6,18 @@ from flask import Flask
 from flask_restful import Api
 
 from rest import load_api_resource
+from utils.logger import get_logger
+
+logger = get_logger()
 
 
 app = Flask("TAAS")
 api = Api(app)
 load_api_resource(api)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     enable_debug = os.environ.get("DEBUG", "False") == "True"
     if enable_debug:
-        app.run(debug=True, port=8000, host='0.0.0.0')
+        app.run(debug=True, port=8000, host="0.0.0.0")
     else:
-        wsgi.server(eventlet.listen(('0.0.0.0', 8000)), app)
+        wsgi.server(eventlet.listen(("0.0.0.0", 8000)), app, log=logger)
