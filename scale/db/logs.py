@@ -3,9 +3,10 @@ import uuid
 
 from cassandra.cqlengine import columns
 from cassandra.cqlengine.models import Model
+from scale.common.variables import datacenter
 
 __keyspace__ = "taas_logs"
-__replication_factor__ = 1
+__dc_replication_map__ = {datacenter: 1}
 
 
 class Operation(Model):

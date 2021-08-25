@@ -4,10 +4,11 @@ from cassandra.cqlengine import columns
 from cassandra.cqlengine.models import Model
 
 import scale.db.udt as user_defined_types
+from scale.common.variables import datacenter
 
 
 __keyspace__ = "taas_user"
-__replication_factor__ = 3
+__dc_replication_map__ = {datacenter: 3}
 
 
 class Plan(Model):
