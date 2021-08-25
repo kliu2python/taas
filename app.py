@@ -1,5 +1,7 @@
 import os
 
+import eventlet
+from eventlet import wsgi
 from flask import Flask
 from flask_restful import Api
 
@@ -12,4 +14,7 @@ load_api_resource(api)
 
 if __name__ == '__main__':
     enable_debug = os.environ.get("DEBUG", "False") == "True"
-    app.run(debug=enable_debug, port=8000, host='0.0.0.0')
+    if enable_debug:
+        app.run(debug=True, port=8000, host='0.0.0.0')
+    else:
+        wsgi.server(eventlet.listen(('0.0.0.0', 8000)), app)
