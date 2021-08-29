@@ -3,6 +3,7 @@ service_config:
 #        - platform_operator
 #        - resource_manager
 #        - image_classifier
-        - scale_controller
+#        - scale_controller
+        - benchmark
 #        - monitor
 #        - qr_display

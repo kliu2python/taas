@@ -14,3 +14,5 @@ spec:
     route: resource-manager/resource-manager-route
   - path: /monitor
     route: monitor-service/monitor-service-route
+  - path: /benchmark
+    route: benchmark/benchmark-api-route
