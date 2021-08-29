@@ -4,5 +4,6 @@ RESOURCE_MAPPING = {
     "image_classifier": "model.api",
     "scale_controller": "scale.api",
     "monitor": "monitor.api",
-    "qr_display": "qrdisplay.api"
+    "qr_display": "qrdisplay.api",
+    "benchmark": "benchmark.api"
 }

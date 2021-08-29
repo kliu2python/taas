@@ -43,7 +43,11 @@ class ApiBase:
     def create(cls, data, unique=None, pk=None):
         ret_code = 201
         ret_msg = None
-        unique_value = cls.__unique_values__
+        unique_value = getattr(
+            cls.__db_model__,
+            "__unique_values__",
+            cls.__unique_values__
+        )
         if unique is not None:
             unique_value = unique
         try:

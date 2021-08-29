@@ -2,9 +2,8 @@ import datetime
 import json
 
 import scale.db.user as user_db
-from scale.services.base import ApiBase
-
 import scale.session.controller as controller
+from utils.apibase import ApiBase
 
 
 class User(ApiBase):

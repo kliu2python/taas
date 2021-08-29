@@ -1,7 +1,7 @@
 import pandas as pd
 
 import scale.db.logs as user_logs
-from scale.services.base import ApiBase
+from utils.apibase import ApiBase
 
 
 class CommandLog(ApiBase):
