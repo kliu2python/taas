@@ -8,7 +8,7 @@ from scale.common.variables import datacenter
 
 
 __keyspace__ = "taas_user"
-__dc_replication_map__ = {datacenter: 3}
+__dc_replication_map__ = {datacenter: 1}
 
 
 class Plan(Model):
