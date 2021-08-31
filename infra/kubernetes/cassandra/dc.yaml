@@ -10,7 +10,7 @@ spec:
   serverVersion: "3.11.7"
   managementApiAuth:
     insecure: {}
-  size: 3
+  size: 1
   racks:
     - name: r1
       nodeAffinityLabels:

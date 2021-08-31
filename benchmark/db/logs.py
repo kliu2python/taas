@@ -5,7 +5,7 @@ from cassandra.cqlengine.models import Model
 from benchmark.common.variables import datacenter
 
 __keyspace__ = "benchmark"
-__dc_replication_map__ = {datacenter: 2}
+__dc_replication_map__ = {datacenter: 1}
 
 
 class Result(Model):
