@@ -7,6 +7,120 @@ metadata:
 data:
   snmp.yml: |
     # WARNING: This file was auto-generated using snmp_exporter generator, manual changes will be lost.
+    fgtbenchmark:
+      walk:
+      - 1.3.6.1.4.1.12356.101.4.4.2.1.10
+      - 1.3.6.1.4.1.12356.101.4.4.2.1.3
+      - 1.3.6.1.4.1.12356.101.4.4.2.1.6
+      - 1.3.6.1.4.1.12356.101.4.4.2.1.7
+      - 1.3.6.1.4.1.12356.101.4.4.2.1.8
+      - 1.3.6.1.4.1.12356.101.4.4.2.1.9
+      - 1.3.6.1.4.1.12356.101.4.5.3.1.3
+      - 1.3.6.1.4.1.12356.101.4.5.3.1.7
+      - 1.3.6.1.4.1.12356.101.4.5.3.1.8
+      get:
+      - 1.3.6.1.4.1.12356.101.4.1.11.0
+      - 1.3.6.1.4.1.12356.101.4.1.3.0
+      - 1.3.6.1.4.1.12356.101.4.1.4.0
+      - 1.3.6.1.4.1.12356.101.4.1.8.0
+      - 1.3.6.1.4.1.12356.101.4.4.1.0
+      metrics:
+      - name: fgSysSesRate1
+        oid: 1.3.6.1.4.1.12356.101.4.1.11
+        type: gauge
+        help: The average session setup rate over the past minute. - 1.3.6.1.4.1.12356.101.4.1.11
+      - name: fgSysCpuUsage
+        oid: 1.3.6.1.4.1.12356.101.4.1.3
+        type: gauge
+        help: Current CPU usage (percentage) - 1.3.6.1.4.1.12356.101.4.1.3
+      - name: fgSysMemUsage
+        oid: 1.3.6.1.4.1.12356.101.4.1.4
+        type: gauge
+        help: Current memory utilization (percentage) - 1.3.6.1.4.1.12356.101.4.1.4
+      - name: fgSysSesCount
+        oid: 1.3.6.1.4.1.12356.101.4.1.8
+        type: gauge
+        help: Number of active sessions on the device - 1.3.6.1.4.1.12356.101.4.1.8
+      - name: fgProcessorCount
+        oid: 1.3.6.1.4.1.12356.101.4.4.1
+        type: gauge
+        help: The number of entries in fgProcessorTable - 1.3.6.1.4.1.12356.101.4.4.1
+      - name: fgProcessorSysUsage
+        oid: 1.3.6.1.4.1.12356.101.4.4.2.1.10
+        type: gauge
+        help: The processor's CPU system space usage, which is an average calculated over
+          the last minute - 1.3.6.1.4.1.12356.101.4.4.2.1.10
+        indexes:
+        - labelname: fgProcessorEntIndex
+          type: gauge
+      - name: fgProcessorUsage5sec
+        oid: 1.3.6.1.4.1.12356.101.4.4.2.1.3
+        type: gauge
+        help: The processor's CPU usage (percentage), which is an average calculated over
+          the last 5 sec - 1.3.6.1.4.1.12356.101.4.4.2.1.3
+        indexes:
+        - labelname: fgProcessorEntIndex
+          type: gauge
+      - name: fgProcessorPktRxCount
+        oid: 1.3.6.1.4.1.12356.101.4.4.2.1.6
+        type: counter
+        help: The total number of packets received by this processor (only valid for processors
+          types that support this statistic). - 1.3.6.1.4.1.12356.101.4.4.2.1.6
+        indexes:
+        - labelname: fgProcessorEntIndex
+          type: gauge
+      - name: fgProcessorPktTxCount
+        oid: 1.3.6.1.4.1.12356.101.4.4.2.1.7
+        type: counter
+        help: The total number of packets transmitted by this processor (only valid for
+          processors types that support this statistic). - 1.3.6.1.4.1.12356.101.4.4.2.1.7
+        indexes:
+        - labelname: fgProcessorEntIndex
+          type: gauge
+      - name: fgProcessorPktDroppedCount
+        oid: 1.3.6.1.4.1.12356.101.4.4.2.1.8
+        type: counter
+        help: The total number of packets dropped by this processor (only valid for processors
+          types that support this statistic). - 1.3.6.1.4.1.12356.101.4.4.2.1.8
+        indexes:
+        - labelname: fgProcessorEntIndex
+          type: gauge
+      - name: fgProcessorUserUsage
+        oid: 1.3.6.1.4.1.12356.101.4.4.2.1.9
+        type: gauge
+        help: The processor's CPU user space usage, which is an average calculated over
+          the last minute - 1.3.6.1.4.1.12356.101.4.4.2.1.9
+        indexes:
+        - labelname: fgProcessorEntIndex
+          type: gauge
+      - name: fgProcModName
+        oid: 1.3.6.1.4.1.12356.101.4.5.3.1.3
+        type: DisplayString
+        help: A textual name of this processor module. - 1.3.6.1.4.1.12356.101.4.5.3.1.3
+        indexes:
+        - labelname: fgProcModIndex
+          type: gauge
+      - name: fgProcModMemUsage
+        oid: 1.3.6.1.4.1.12356.101.4.5.3.1.7
+        type: gauge
+        help: Current memory utilization (percentage) on this processor module. - 1.3.6.1.4.1.12356.101.4.5.3.1.7
+        indexes:
+        - labelname: fgProcModIndex
+          type: gauge
+      - name: fgProcModSessionCount
+        oid: 1.3.6.1.4.1.12356.101.4.5.3.1.8
+        type: gauge
+        help: Number of active sessions on this processor module (only valid for processors
+          types that support this statistic). - 1.3.6.1.4.1.12356.101.4.5.3.1.8
+        indexes:
+        - labelname: fgProcModIndex
+          type: gauge
+      version: 2
+      max_repetitions: 25
+      retries: 3
+      timeout: 10s
+      auth:
+        community: public
     fortigate:
       walk:
       - 1.3.6.1.2.1.2.2.1.10
@@ -18,19 +132,19 @@ data:
       - 1.3.6.1.4.1.12356.101.4.1.4.0
       - 1.3.6.1.4.1.12356.101.4.1.8.0
       metrics:
-      - name: ifInOctets37
-        oid: 1.3.6.1.2.1.2.2.1.10.37
+      - name: ifInOctets
+        oid: 1.3.6.1.2.1.2.2.1.10
         type: counter
         help: The total number of octets received on the interface, including framing
-          characters - 1.3.6.1.2.1.2.2.1.10.37
+          characters - 1.3.6.1.2.1.2.2.1.10
         indexes:
         - labelname: ifIndex
           type: gauge
-      - name: ifOutOctets37
-        oid: 1.3.6.1.2.1.2.2.1.16.37
+      - name: ifOutOctets
+        oid: 1.3.6.1.2.1.2.2.1.16
         type: counter
         help: The total number of octets transmitted out of the interface, including framing
-          characters - 1.3.6.1.2.1.2.2.1.16.37
+          characters - 1.3.6.1.2.1.2.2.1.16
         indexes:
         - labelname: ifIndex
           type: gauge
