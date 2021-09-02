@@ -77,13 +77,17 @@ class Counter(Resource):
 
     def post(self):
         """
-        {
-            "job_name": "BLSM-FGT7040E",         # Jenkins job name
-            "build_id": "1234",                  # Jenkins build number
-            "device": "FGT113",                  # device / platform info
-            "counter": "cpu",  "memory", "bw"    # Perf counter
-            "timestamp": "xxxx",(optional)       # FOS Version on DUT
-            "value": "TEXT VALUE",               # Trigger / Test Owner
+        {"data":
+            [
+                {
+                    "job_name": "BLSM-FGT7040E",         # Jenkins job name
+                    "build_id": "1234",                  # Jenkins build number
+                    "idx": "FGT113",                     # device/platform/indx
+                    "counter": "cpu",  "memory", "bw"    # Perf counter
+                    "timestamp": "xxxx"                  # FOS Version on DUT
+                    "value": "TEXT VALUE",               # Trigger / Test Owner
+                }
+            ]
         }
 
         **Schema validation skipped**
@@ -92,8 +96,9 @@ class Counter(Resource):
 
         """
         data = request.json
-        msg, code = service.CounterApi.create(data)
-        return msg, code
+        for d in data["data"]:
+            msg, code = service.CounterApi.create(d)
+            return msg, code
 
     def delete(self, job_name, build_id):
         msg, code = service.CounterApi.delete(

@@ -25,6 +25,22 @@ class Result(Model):
     result = columns.Text()
 
 
+class CaseInfo(Model):
+    __keyspace__ = __keyspace__
+    __table_name = "caselog"
+    __unique_values__ = False
+
+    job_name = columns.Text(primary_key=True, partition_key=True)
+    build_id = columns.Text(primary_key=True, partition_key=True)
+    case_name = columns.Text(primary_key=True, partition_key=True)
+    start_time = columns.DateTime(
+        primary_key=True,
+        clustering_order="desc",
+        default=datetime.datetime.now
+    )
+    end_time = columns.DateTime()
+
+
 class Counter(Model):
     __keyspace__ = __keyspace__
     __table_name__ = "counters"
@@ -32,12 +48,12 @@ class Counter(Model):
 
     job_name = columns.Text(primary_key=True, partition_key=True)
     build_id = columns.Text(primary_key=True, partition_key=True)
-    device = columns.Text()
-    counter = columns.Text(primary_key=True, partition_key=True)
-    datetime = columns.DateTime(
+    case_name = columns.Text(primary_key=True, partition_key=True)
+    counter = columns.Text()
+    idx = columns.Text()
+    datetime = columns.Integer(
         primary_key=True,
-        clustering_order="desc",
-        default=datetime.datetime.now
+        clustering_order="desc"
     )
     value = columns.Text()
 
