@@ -84,7 +84,7 @@ class Counter(Resource):
                     "build_id": "1234",                  # Jenkins build number
                     "idx": "FGT113",                     # device/platform/indx
                     "counter": "cpu",  "memory", "bw"    # Perf counter
-                    "timestamp": "xxxx"                  # FOS Version on DUT
+                    "datetime": "xxxx"                  # FOS Version on DUT
                     "value": "TEXT VALUE",               # Trigger / Test Owner
                 }
             ]
@@ -96,9 +96,14 @@ class Counter(Resource):
 
         """
         data = request.json
+        status_code = 201
+        resp_msg = None
         for d in data["data"]:
             msg, code = service.CounterApi.create(d)
-            return msg, code
+            if code > status_code:
+                status_code = code
+                resp_msg = msg
+        return resp_msg, status_code
 
     def delete(self, job_name, build_id):
         msg, code = service.CounterApi.delete(
