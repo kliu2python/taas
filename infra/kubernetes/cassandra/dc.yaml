@@ -26,7 +26,7 @@ spec:
         - ReadWriteOnce
       resources:
         requests:
-          storage: 1200Gi
+          storage: 1600Gi
   config:    
     cassandra-yaml:
       authenticator: org.apache.cassandra.auth.PasswordAuthenticator

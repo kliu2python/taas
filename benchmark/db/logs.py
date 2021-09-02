@@ -15,7 +15,7 @@ class Result(Model):
 
     job_name = columns.Text(primary_key=True, partition_key=True)
     build_id = columns.Text(primary_key=True, partition_key=True)
-    test = columns.Text(primary_key=True, partition_key=True)
+    test = columns.Text()
     platform = columns.Text()
     version = columns.Text()
     user = columns.Text(index=True)
@@ -32,7 +32,7 @@ class CaseInfo(Model):
 
     job_name = columns.Text(primary_key=True, partition_key=True)
     build_id = columns.Text(primary_key=True, partition_key=True)
-    case_name = columns.Text(primary_key=True, partition_key=True)
+    case_name = columns.Text()
     start_time = columns.DateTime(
         primary_key=True,
         clustering_order="desc",
@@ -48,7 +48,7 @@ class Counter(Model):
 
     job_name = columns.Text(primary_key=True, partition_key=True)
     build_id = columns.Text(primary_key=True, partition_key=True)
-    case_name = columns.Text(primary_key=True, partition_key=True)
+    case_name = columns.Text()
     counter = columns.Text()
     idx = columns.Text()
     datetime = columns.Integer(
@@ -64,7 +64,7 @@ class CrashLog(Model):
     __unique_values__ = False
 
     job_name = columns.Text(primary_key=True, partition_key=True)
-    build_id = columns.Text()
+    build_id = columns.Text(primary_key=True, partition_key=True)
     datetime = columns.DateTime(
         primary_key=True,
         partition_key=True,
@@ -82,7 +82,7 @@ class CommandLog(Model):
     __unique_values__ = False
 
     job_name = columns.Text(primary_key=True, partition_key=True)
-    build_id = columns.Text()
+    build_id = columns.Text(primary_key=True, partition_key=True)
     datetime = columns.DateTime(
         primary_key=True,
         partition_key=True,
