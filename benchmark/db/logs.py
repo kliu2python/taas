@@ -18,7 +18,7 @@ class Result(Model):
     test = columns.Text()
     platform = columns.Text()
     version = columns.Text()
-    user = columns.Text(index=True)
+    user = columns.Text()
     settings = columns.Text()
     start_time = columns.DateTime()
     end_time = columns.DateTime()
@@ -32,7 +32,7 @@ class CaseInfo(Model):
 
     job_name = columns.Text(primary_key=True, partition_key=True)
     build_id = columns.Text(primary_key=True, partition_key=True)
-    case_name = columns.Text()
+    case_name = columns.Text(primary_key=True, partition_key=True)
     start_time = columns.DateTime(
         primary_key=True,
         clustering_order="desc",
@@ -48,8 +48,8 @@ class Counter(Model):
 
     job_name = columns.Text(primary_key=True, partition_key=True)
     build_id = columns.Text(primary_key=True, partition_key=True)
-    case_name = columns.Text()
-    counter = columns.Text()
+    case_name = columns.Text(primary_key=True, partition_key=True)
+    counter = columns.Text(primary_key=True, partition_key=True)
     idx = columns.Text()
     datetime = columns.Integer(
         primary_key=True,
