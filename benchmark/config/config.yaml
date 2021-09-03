@@ -1,8 +1,6 @@
 ---
 db:
   cluster_ips:
-    - 10.160.13.11
-    - 10.160.13.12
     - 10.160.13.13
   username: taas
   password: taas
