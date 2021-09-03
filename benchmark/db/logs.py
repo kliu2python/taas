@@ -71,9 +71,8 @@ class CrashLog(Model):
         partition_key=True,
         default=datetime.datetime.now
     )
-    platform = columns.Text()
-    version = columns.Text()
-    test = columns.Text(required=False)
+    case_name = columns.Text()
+    exec_time = columns.Integer()
     log = columns.Text()
 
 
@@ -89,5 +88,7 @@ class CommandLog(Model):
         partition_key=True,
         default=datetime.datetime.now
     )
+    case_name = columns.Text()
+    exec_time = columns.Integer(primary_key=True,clustering_order="desc")
     command = columns.List(columns.Text)
     log = columns.Text()
