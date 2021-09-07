@@ -89,6 +89,6 @@ class CommandLog(Model):
         default=datetime.datetime.now
     )
     case_name = columns.Text()
-    exec_time = columns.Integer(primary_key=True,clustering_order="desc")
+    exec_time = columns.Integer(primary_key=True, clustering_order="desc")
     command = columns.List(columns.Text)
     log = columns.Text()
