@@ -14,7 +14,7 @@ spec:
   racks:
     - name: r1
       nodeAffinityLabels:
-        db: cass
+        node-type: service
 #    - name: r2
 #      nodeAffinityLabels:
 #        node-type: service
@@ -26,7 +26,7 @@ spec:
         - ReadWriteOnce
       resources:
         requests:
-          storage: 1600Gi
+          storage: 1000Gi
   config:    
     cassandra-yaml:
       authenticator: org.apache.cassandra.auth.PasswordAuthenticator
