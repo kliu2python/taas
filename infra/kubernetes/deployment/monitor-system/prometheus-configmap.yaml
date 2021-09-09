@@ -70,13 +70,20 @@ data:
         static_configs:
           - targets:
               - esxi-expr-41-24:9512
-              - esxi-expr-50-117:9512
-              - prometheus_exsi-exporter-1.55:9512
-              - prometheus_exsi-exporter-1.59:9512
-              - prometheus_exsi-exporter-16.5:9512
-              - prometheus_exsi-exporter-1.70:9512
-              - prometheus_exsi-exporter-1.69:9512
-              - prometheus_exsi-exporter-13.4:9512
+              - esxi-expr-1-60:9512
+              - esxi-expr-1-52:9512
+              - esxi-expr-1-53:9512
+              - esxi-expr-1-58:9512
+              - esxi-expr-1-59:9512
+              - esxi-expr-1-57:9512
+              - esxi-expr-1-56:9512
+              - esxi-expr-1-70:9512
+              - esxi-expr-1-69:9512
+              - esxi-expr-1-68:9512
+              - esxi-expr-1-67:9512
+              - esxi-expr-1-66:9512
+              - esxi-expr-13-3:9512
+              - esxi-expr-13-5:9512
 
       - job_name: 'ftc_check_40.31'
         metrics_path: /probe

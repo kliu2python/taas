@@ -60,7 +60,8 @@ spec:
         app: local-path-provisioner
     spec:
       serviceAccountName: local-path-provisioner-service-account
-      nodeName: kubecluster-1-master
+      nodeSelector:
+        node-type: service
       containers:
         - name: local-path-provisioner
           image: rancher/local-path-provisioner:v0.0.20
@@ -105,7 +106,7 @@ data:
             "nodePathMap":[
             {
                     "node":"DEFAULT_PATH_FOR_NON_LISTED_NODES",
-                    "paths":["/opt/local-path-provisioner"]
+                    "paths":["/opt/data"]
             }
             ]
     }

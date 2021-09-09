@@ -20,14 +20,8 @@ spec:
         app: image-classifier
     spec:
       affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: kubernetes.io/hostname
-                operator: In
-                values:
-                - kubecluster-1-master
+      nodeSelector:
+        node-type: service
       containers:
       - name: image-classifier
         image: 10.160.16.60/ai_services/image_classifier

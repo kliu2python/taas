@@ -19,15 +19,8 @@ spec:
       labels:
         app: pki-ca
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: kubernetes.io/hostname
-                operator: In
-                values:
-                - kubecluster-1-master
+      nodeSelector:
+        node-type: service
       containers:
       - name: pki-ca
         image: 10.160.16.60/ca-services/pki-ca
@@ -43,7 +36,7 @@ spec:
       volumes:
         - name: ca-service-data
           hostPath:
-            path: /home/fortinet/data/ca-services
+            path: /opt/data/ca-services
             type: DirectoryOrCreate
 ---
 apiVersion: v1
