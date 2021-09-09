@@ -19,15 +19,8 @@ spec:
       labels:
         app: openldap
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: kubernetes.io/hostname
-                operator: In
-                values:
-                - kubecluster-1-master
+      nodeSelector:
+        node-type: service
       containers:
       - name: openldap
         image: 10.160.16.60/tools/openldap:latest
@@ -43,7 +36,7 @@ spec:
       volumes:
         - name: openldap-volume
           hostPath:
-            path: /home/fortinet/data/openldap
+            path: /opt/data/openldap
             type: DirectoryOrCreate
 
 ---
