@@ -11,6 +11,7 @@ DATASTORE_POOL_KEYS = {
     "pool_capacity": int,
     "pool_res_avaliable": set,
     "pool_res_assigned": set,
+    "pool_res_share": int
 }
 
 DATASTORE_RESOURCE_KEYS = {

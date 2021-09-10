@@ -71,6 +71,7 @@ def do_create_pool(data):
     capacity = data.get("capacity")
     pool_data["capacity"] = capacity
     pool_life = data.get("life")
+    pool_res_share = 1 if data.get("share", False) else 0
     if pool_life > 0:
         pool_expireation = (
                 datetime.datetime.utcnow()
@@ -87,7 +88,8 @@ def do_create_pool(data):
         "pool_expiration": pool_expireation,
         "pool_life": data.get("life"),
         "pool_res_life": data.get("res_life"),
-        "pool_capacity": capacity
+        "pool_capacity": capacity,
+        "pool_res_share": pool_res_share
     }
     datastore.mset(pool_dict, pool_id)
     res_ids = []
@@ -161,9 +163,14 @@ def do_delete_pool(pool_id):
 def request_resource(pool_id):
     global_lock.acquire()
     try:
-        res = datastore.spop("pool_res_avaliable", 1, pool_id)
+        share_pool = datastore.get("pool_res_share", pool_id, 0)
+        if share_pool:
+            res = datastore.srandmember("pool_res_avaliable", 1, pool_id)
+        else:
+            res = datastore.spop("pool_res_avaliable", 1, pool_id)
         if res:
-            datastore.set("pool_res_assigned", res, pool_id)
+            if not share_pool:
+                datastore.set("pool_res_assigned", res, pool_id)
             data = datastore.get("res_data", f"{pool_id}-{res[-1]}")
             data["id"] = res.pop()
         else:
@@ -178,20 +185,24 @@ def list_pool():
 
 
 def recycle_resource(pool_id, resource_id):
-    if resource_id.lower() in ["all"]:
-        count = datastore.scard("pool_res_assigned", pool_id)
-        if count > 0:
-            assigned = list(datastore.spop("pool_res_assigned", count, pool_id))
-            datastore.set("pool_res_avaliable", assigned, pool_id)
-        ret = count
-    else:
-        ret = datastore.smove(
-            "pool_res_assigned", "pool_res_avaliable", resource_id, pool_id
-        )
-    if ret:
-        return "SUCCESS"
-    return ("FAIL, no resource recycled, "
-            "this resource might be already recycled")
+    if not datastore.get("pool_res_share", pool_id, 0):
+        if resource_id.lower() in ["all"]:
+            count = datastore.scard("pool_res_assigned", pool_id)
+            if count > 0:
+                assigned = list(
+                    datastore.spop("pool_res_assigned", count, pool_id)
+                )
+                datastore.set("pool_res_avaliable", assigned, pool_id)
+            ret = count
+        else:
+            ret = datastore.smove(
+                "pool_res_assigned", "pool_res_avaliable", resource_id, pool_id
+            )
+        if ret:
+            return "SUCCESS"
+        return ("FAIL, no resource recycled, "
+                "this resource might be already recycled")
+    return "SUCCESS"
 
 
 def get_pool_statics(pool_id):

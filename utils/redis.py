@@ -141,6 +141,10 @@ class DataStore:
         k = self.craft_key(key, identifier)
         return self.redis.spop(k, count)
 
+    def srandmember(self, key, count=1, identifier=None):
+        k = self.craft_key(key, identifier)
+        return self.redis.srandmember(k, count)
+
     def scard(self, key, identifier=None):
         k = self.craft_key(key, identifier)
         return self.redis.scard(k)
