@@ -54,6 +54,9 @@ spec:
           protocol: TCP
         securityContext:
           readOnlyRootFilesystem: false
+        resources:
+          requests:
+            cpu: 1000m
 #      nodeName: kubecluster-1-master
       volumes:
         - name: scale-api-data
@@ -115,6 +118,21 @@ spec:
    port: 8000
  action:
    pass: scale-ui
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: scale-api-hpa
+  namespace: scale-controller
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: scale-api
+  minReplicas: 1
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 90
+
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -276,7 +294,7 @@ metadata:
   name: scale-session-worker
   namespace: scale-controller
 spec:
-  replicas: 2
+  replicas: 1
   selector:
    matchLabels:
      app: scale-worker
@@ -294,9 +312,28 @@ spec:
           value: "session"
         securityContext:
           readOnlyRootFilesystem: false
+        resources:
+          requests:
+            cpu: 1000m
 #      nodeName: kubecluster-1-node1
       nodeSelector:
         node-type: service
+
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: scale-session-worker-hpa
+  namespace: scale-controller
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: scale-session-worker
+  minReplicas: 1
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 90
+
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -304,7 +341,7 @@ metadata:
   name: scale-metrics-worker
   namespace: scale-controller
 spec:
-  replicas: 2
+  replicas: 1
   selector:
    matchLabels:
      app: scale-worker
@@ -322,9 +359,28 @@ spec:
           value: "metrics"
         securityContext:
           readOnlyRootFilesystem: false
+        resources:
+          requests:
+            cpu: 1000m
 #      nodeName: kubecluster-1-node1
       nodeSelector:
         node-type: service
+
+---
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: scale-metrics-worker-hpa
+  namespace: scale-controller
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: scale-metrics-worker
+  minReplicas: 1
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 90
+
 ---
 apiVersion: apps/v1
 kind: Deployment
