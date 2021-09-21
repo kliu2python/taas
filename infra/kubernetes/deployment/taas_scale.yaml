@@ -130,7 +130,7 @@ spec:
     kind: Deployment
     name: scale-api
   minReplicas: 1
-  maxReplicas: 6
+  maxReplicas: 1
   targetCPUUtilizationPercentage: 90
 
 ---
@@ -170,7 +170,7 @@ spec:
       volumes:
         - name: redis-data-master
           hostPath:
-            path: /home/fortinet/data/redis-master
+            path: /opt/data/scale-cache/redis-master
             type: DirectoryOrCreate
 #---
 #apiVersion: apps/v1
@@ -331,7 +331,7 @@ spec:
     kind: Deployment
     name: scale-session-worker
   minReplicas: 1
-  maxReplicas: 6
+  maxReplicas: 1
   targetCPUUtilizationPercentage: 90
 
 ---
@@ -378,7 +378,7 @@ spec:
     kind: Deployment
     name: scale-metrics-worker
   minReplicas: 1
-  maxReplicas: 6
+  maxReplicas: 1
   targetCPUUtilizationPercentage: 90
 
 ---

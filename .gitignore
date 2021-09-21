@@ -1,7 +1,7 @@
 .idea
 ftc/integration_tests/__pycache__
 __pycache__
-playground.py
+playground*
 .pytest_cache
 mailing_list.py
 test_playground.py

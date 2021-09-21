@@ -15,14 +15,8 @@ spec:
         app: grafana
     spec:
       affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: kubernetes.io/hostname
-                operator: In
-                values:
-                - kubecluster-1-node1
+      nodeSelector:
+        node-type: service
       containers:
       - name: grafana
         image: grafana/grafana
@@ -52,7 +46,7 @@ spec:
       volumes:
         - name: grafana-storage
           hostPath:
-            path: /home/fortinet/data/grafana
+            path: /opt/data/grafana
             type: DirectoryOrCreate
 
 ---

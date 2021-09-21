@@ -122,10 +122,10 @@ class Session:
         self.deployment_config = data.get(
             "deployment_config", "runner_deployment.yaml"
         )
-        self._apply_runner_deployment(self.runner_count, redeploy=True)
         self.data_store_common.set(
             "session_status", constants.SessionStatus.RUNNING, self.session_id
         )
+        self._apply_runner_deployment(self.runner_count, redeploy=True)
 
     def _set_runner_count(self, runner_count):
         if isinstance(runner_count, list):
@@ -231,6 +231,47 @@ class Session:
         os.system(f"kubectl apply -f {kube_file}")
         if wait:
             os.system(f"kubectl apply -f {kube_file} --wait")
+
+    def _create_runners(self, runners, redeploy=False, wait=False):
+        total_runners = runners
+        expected_runners = 0
+        if redeploy:
+            self._delete_runner_deployment()
+            redeploy = False
+        while total_runners > 0:
+            changed_runners = 50
+            if total_runners <= changed_runners:
+                changed_runners = total_runners
+
+            expected_runners += changed_runners
+            self._apply_runner_deployment(expected_runners, redeploy, wait)
+            timeout = 1200
+            while timeout > 0:
+                if self.data_store_common.get(
+                        "session_status",
+                        default=constants.SessionStatus.RUNNING
+                ) in [
+                    constants.SessionStatus.RUNNING
+                ]:
+                    curr_runners = self.data_store_common.get(
+                        "pods_created", default=0
+                    )
+                    logger.info(
+                        f"Curr runner: {curr_runners}, "
+                        f"Exp runner :{expected_runners}")
+                    if curr_runners == expected_runners:
+                        logger.info(f"Created {changed_runners} runners")
+                        total_runners -= changed_runners
+                        break
+                    sleep(10)
+                    timeout -= 10
+                else:
+                    logger.info("User abort run, stop creating runner")
+                    return
+            if timeout <= 0:
+                logger.error("Can not deploy Runners, now clearning deployed")
+                self._delete_runner_deployment()
+                return
 
     def _delete_runner_deployment(self):
         try:

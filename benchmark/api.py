@@ -67,11 +67,17 @@ class Result(Resource):
         return msg, code
 
 
-@rest.route("/log/counter/<string:job_name>/<string:build_id>/<string:counter>")
+@rest.route(
+    "/log/counter/<string:job_name>/<string:build_id>/<string:case_name>"
+    "/<string:counter>"
+)
 class Counter(Resource):
-    def get(self, job_name, build_id, counter):
+    def get(self, job_name, build_id, counter, case_name):
         msg = service.CounterApi.read_all(
-            job_name=job_name, build_id=build_id, counter=counter
+            job_name=job_name,
+            build_id=build_id,
+            counter=counter,
+            case_name=case_name
         )
         return jsonify(msg)
 
@@ -147,11 +153,13 @@ class CrashLog(Resource):
         return msg, code
 
 
-@rest.route("log/command/<string:job_name>/<string:build_id>")
+@rest.route(
+    "log/command/<string:job_name>/<string:build_id>/<string:case_name>"
+)
 class CommandLog(Resource):
     def get(self, job_name, build_id):
         msg = service.CommandLogApi.read_all(
-            job_name=job_name, build_id=build_id
+            job_name=job_name, build_id=build_id, case_name=case_name
         )
         return jsonify(msg)
 

@@ -280,7 +280,7 @@ spec:
         args:
           - '-host=10.160.1.59'
           - '-username=root'
-          - '-password=fortinet'
+          - '-password=Fortinet_123'
         ports:
         - containerPort: 9512
           name: esxi-exporter
@@ -348,49 +348,6 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: esxi-expr-1-67
-  namespace: monitor-system
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: esxi-expr-1-67
-  template:
-    metadata:
-      labels:
-        app: esxi-expr-1-67
-    spec:
-      containers:
-      - name: esxi-exporter
-        image: 10.160.16.60/tools/prometheus-vmware-exporter
-        args:
-          - '-host=10.160.1.67'
-          - '-username=root'
-          - '-password=fortinet'
-        ports:
-        - containerPort: 9512
-          name: esxi-exporter
-          protocol: TCP
-      nodeSelector:
-        node-type: service
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: esxi-expr-1-67
-  namespace: monitor-system
-spec:
-  selector:
-   app: esxi-expr-1-67
-  ports:
-  - name: esxi-exporter
-    port: 9512
-    protocol: TCP
-
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
   name: esxi-expr-1-66
   namespace: monitor-system
 spec:
@@ -425,6 +382,49 @@ metadata:
 spec:
   selector:
    app: esxi-expr-1-66
+  ports:
+  - name: esxi-exporter
+    port: 9512
+    protocol: TCP
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: esxi-expr-1-65
+  namespace: monitor-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: esxi-expr-1-65
+  template:
+    metadata:
+      labels:
+        app: esxi-expr-1-65
+    spec:
+      containers:
+      - name: esxi-exporter
+        image: 10.160.16.60/tools/prometheus-vmware-exporter
+        args:
+          - '-host=10.160.1.65'
+          - '-username=root'
+          - '-password=fortinet'
+        ports:
+        - containerPort: 9512
+          name: esxi-exporter
+          protocol: TCP
+      nodeSelector:
+        node-type: service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: esxi-expr-1-65
+  namespace: monitor-system
+spec:
+  selector:
+   app: esxi-expr-1-65
   ports:
   - name: esxi-exporter
     port: 9512
