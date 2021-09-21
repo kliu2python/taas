@@ -34,6 +34,13 @@ spec:
           protocol: TCP
         securityContext:
           readOnlyRootFilesystem: false
+        volumeMounts:
+          - mountPath: /taas/benchmark/config
+            name: taas-config
+      volumes:
+        - name: taas-config
+          configMap:
+            name: taas-config
 ---
 apiVersion: v1
 kind: Service
@@ -63,3 +70,18 @@ spec:
   - path: /benchmark
     action:
       pass: benchmark-api-svc
+
+---
+apiVersion: v1
+kind: ConfigMaps
+metadata:
+  name: taas-config
+  namespace: benchmark
+data:
+  config.yaml: |
+    db:
+      cluster_ips:
+        - cluster1-dc1-all-pods-service.cassandra
+      username: taas
+      password: taas
+      dc: dc1

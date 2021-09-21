@@ -19,10 +19,13 @@ worker_id = f"{host_name}_{worker_type}_{appendex}"
 
 
 def register_worker():
-    ds_worker.set(f"worker_{worker_type}_active", [worker_id])
+    if not ds_worker.sismember(f"worker_{worker_type}_active", worker_id):
+        ds_worker.set(f"worker_{worker_type}_active", [worker_id])
+        ds_worker.set("worker_loads", len(tasks), worker_id)
 
 
 def update_worker():
+    register_worker()
     timestamp = datetime.now().timestamp()
     ds_worker.set("worker_heartbeat", timestamp, worker_id)
 
@@ -65,7 +68,6 @@ def stop_task():
 
 def start_worker():
     logger.info(f"Starting {worker_type} Worker, id: {worker_id}")
-    ds_worker.set("worker_loads", 0, worker_id)
     stop_task()
     while True:
         try:
@@ -84,5 +86,4 @@ def start_worker():
 
 
 if __name__ == "__main__":
-    register_worker()
     start_worker()

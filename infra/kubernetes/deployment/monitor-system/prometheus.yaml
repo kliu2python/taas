@@ -14,15 +14,17 @@ spec:
       labels:
         app: prometheus
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: kubernetes.io/hostname
-                operator: In
-                values:
-                - kubecluster-1-node1
+#      affinity:
+#        nodeAffinity:
+#          requiredDuringSchedulingIgnoredDuringExecution:
+#            nodeSelectorTerms:
+#            - matchExpressions:
+#              - key: kubernetes.io/hostname
+#                operator: In
+#                values:
+#                - kubecluster-1-node1
+      nodeSelector:
+        node-type: service
       containers:
       - name: prometheus
         image: prom/prometheus
@@ -52,7 +54,7 @@ spec:
           name: prometheus-config
       - name: prometheus-data
         hostPath:
-          path: /home/fortinet/data/prometheus
+          path: /opt/data/prometheus
           type: DirectoryOrCreate
 ---
 apiVersion: apps/v1
@@ -70,15 +72,8 @@ spec:
       labels:
         app: pushgateway
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: kubernetes.io/hostname
-                operator: In
-                values:
-                - kubecluster-1-node1
+      nodeSelector:
+        node-type: service
       containers:
       - name: pushgateway
         image: prom/pushgateway
@@ -105,15 +100,8 @@ spec:
       labels:
         app: blackboxexporter
     spec:
-      affinity:
-        nodeAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-            nodeSelectorTerms:
-            - matchExpressions:
-              - key: kubernetes.io/hostname
-                operator: In
-                values:
-                - kubecluster-1-node1
+      nodeSelector:
+        node-type: service
       containers:
       - name: pushgateway
         image: prom/blackbox-exporter

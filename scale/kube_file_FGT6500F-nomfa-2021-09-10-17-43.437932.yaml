@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: scale-test-runner-ftc-sslvpn-nomfa
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-runner
+  namespace: scale-test-runner-ftc-sslvpn-nomfa
+spec:
+  replicas: 50
+  selector:
+    matchLabels:
+      app: test-runner
+  template:
+    metadata:
+      labels:
+        app: test-runner
+    spec:
+      containers:
+      - args:
+        - -c
+        - wget http://10.160.50.118:8889/ftc_launch_sslvpn_no_mfa.sh -O /pytest-automation/ftc_launch.sh;/bin/bash
+          ftc_launch.sh
+        command:
+        - /bin/bash
+        env:
+        - name: SESSION_ID
+          value: FGT6500F-nomfa-2021-09-10-17-43.437932
+        image: 10.160.16.60/pytest-automation/pytest_automation:taas
+        imagePullPolicy: IfNotPresent
+        name: test-runner
+      nodeSelector:
+        node-type: runner

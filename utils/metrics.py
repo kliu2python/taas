@@ -41,12 +41,6 @@ class Metrics:
                 logger.exception("Error when collect metrics:", exc_info=e)
             sleep(self.interval)
 
-        prometheus_client.delete_from_gateway(
-            self.config.pushgateway_ip,
-            job=self.job,
-            grouping_key=self.grouping_key
-        )
-
     def start_async(self):
         self.cid = thread_run(self._start)
 
@@ -57,6 +51,11 @@ class Metrics:
         logger.info(f"Stopping metrics {self.__class__.__name__}")
         self._running = False
         try:
+            prometheus_client.delete_from_gateway(
+                self.config.pushgateway_ip,
+                job=self.job,
+                grouping_key=self.grouping_key
+            )
             self.collecting_class.quit()
         except Exception:
             pass

@@ -1,3 +1,4 @@
+# pylint: disable=too-many-public-methods
 import json
 
 import redis
@@ -144,6 +145,10 @@ class DataStore:
     def srandmember(self, key, count=1, identifier=None):
         k = self.craft_key(key, identifier)
         return self.redis.srandmember(k, count)
+
+    def sismember(self, key, value, identifier=None):
+        k = self.craft_key(key, identifier)
+        return self.redis.sismember(k, value)
 
     def scard(self, key, identifier=None):
         k = self.craft_key(key, identifier)
