@@ -33,6 +33,8 @@ spec:
           value: "flant-statusmap-panel,grafana-polystat-panel,redis-datasource,grafana-piechart-panel"
         - name: "GF_PANELS_DISABLE_SANITIZE_HTML"
           value: "true"
+        - name: "GF_SECURITY_ALLOW_EMBEDDING"
+          value: "true"
         ports:
         - containerPort: 3000
           name: monitor-mgr-api
