@@ -1,19 +1,15 @@
-import os
 from kubernetes import client, config
-from kubernetes.stream import stream
 
-# Configs can be set in Configuration class directly or using helper utility
 config.load_kube_config()
-
 namespace = "scale-controller"
-
 v1 = client.CoreV1Api()
 ret = v1.list_namespaced_pod(namespace)
 pods_to_kill = [
     "scale-api",
-    # "scale-session-worker",
-    # "scale-metrics-worker",
-    # "scale-controller"
+    "scale-session-worker",
+    "scale-metrics-worker",
+    "scale-controller",
+    "scale-cache"
 ]
 target = []
 

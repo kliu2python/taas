@@ -61,7 +61,7 @@ spec:
     spec:
       serviceAccountName: local-path-provisioner-service-account
       nodeSelector:
-        node-type: service
+        service: cassandra
       containers:
         - name: local-path-provisioner
           image: rancher/local-path-provisioner:v0.0.20
@@ -106,7 +106,7 @@ data:
             "nodePathMap":[
             {
                     "node":"DEFAULT_PATH_FOR_NON_LISTED_NODES",
-                    "paths":["/opt/data"]
+                    "paths":["/opt/data/pvcs"]
             }
             ]
     }

@@ -10,11 +10,11 @@ spec:
   serverVersion: "3.11.7"
   managementApiAuth:
     insecure: {}
-  size: 1
+  size: 3
   racks:
     - name: r1
       nodeAffinityLabels:
-        node-type: service
+        service: cassandra
 #    - name: r2
 #      nodeAffinityLabels:
 #        node-type: service

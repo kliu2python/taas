@@ -73,7 +73,7 @@ spec:
 
 ---
 apiVersion: v1
-kind: ConfigMaps
+kind: ConfigMap
 metadata:
   name: taas-config
   namespace: benchmark
@@ -81,7 +81,7 @@ data:
   config.yaml: |
     db:
       cluster_ips:
-        - cluster1-dc1-all-pods-service.cassandra
+        - cluster1-dc1-service.cassandra
       username: taas
       password: taas
       dc: dc1
