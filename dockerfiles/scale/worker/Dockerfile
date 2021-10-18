@@ -1,6 +1,7 @@
 FROM python:3.6.12-slim-buster
 
 COPY . /test_assistant_rest_api
+COPY kubeconfig /root/.kube/config
 
 WORKDIR /test_assistant_rest_api
 
