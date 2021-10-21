@@ -138,7 +138,11 @@ class Session(ApiBase):
                 ret_code = 403
             elif ret_msg is not None and ret_msg.startswith("http"):
                 cls.update_one(
-                    {"status": 2, "stopped_at": datetime.datetime.utcnow()},
+                    {
+                        "status": 2,
+                        "dashboard_url": ret_msg,
+                        "stopped_at": datetime.datetime.utcnow()
+                    },
                     user=user,
                     name=session_name
                 )
