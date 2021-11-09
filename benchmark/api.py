@@ -157,7 +157,7 @@ class CrashLog(Resource):
     "log/command/<string:job_name>/<string:build_id>/<string:case_name>"
 )
 class CommandLog(Resource):
-    def get(self, job_name, build_id):
+    def get(self, job_name, build_id, case_name):
         msg = service.CommandLogApi.read_all(
             job_name=job_name, build_id=build_id, case_name=case_name
         )

@@ -62,7 +62,13 @@ class User(ResourcePoolMixin):
                 commands += [
                     f"set two-factor {mfa_provider}"
                 ]
-            commands += ["end"]
+            commands += [
+                "end",
+                "config user group",
+                f"edit {group}",
+                f"append member {user_name}",
+                "end"
+            ]
             out = ssh_client.send_commands(commands)
             no_error = True
             for line in out:
@@ -72,8 +78,6 @@ class User(ResourcePoolMixin):
                     break
             if no_error:
                 created_user.append(user_name)
-        logger.info(f"Adding members to group: {group}")
-        cls._add_membership_api(created_user, data)
         ssh_client.quit()
         return created_user, failed_user
 
@@ -84,7 +88,7 @@ class User(ResourcePoolMixin):
         command = [
             "config user group",
             f"edit {group}",
-            f"set member {users}",
+            f"append member {users}",
             "end"
         ]
         ssh_client.send_commands(command, timeout=300)
