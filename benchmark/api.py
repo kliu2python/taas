@@ -122,7 +122,10 @@ class Counter(Resource):
 class CrashLog(Resource):
     def get(self, job_name, build_id, case_name):
         msg = service.CrashLogApi.read_all(
-            job_name=job_name, build_id=build_id, case_name=case_name
+            order_by="exec_time",
+            job_name=job_name,
+            build_id=build_id,
+            case_name=case_name
         )
         return jsonify(msg)
 
@@ -159,7 +162,10 @@ class CrashLog(Resource):
 class CommandLog(Resource):
     def get(self, job_name, build_id, case_name):
         msg = service.CommandLogApi.read_all(
-            job_name=job_name, build_id=build_id, case_name=case_name
+            order_by="exec_time",
+            job_name=job_name,
+            build_id=build_id,
+            case_name=case_name
         )
         return jsonify(msg)
 
