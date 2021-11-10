@@ -100,7 +100,22 @@ spec:
 #      proxy:
 #        upstream: scale-ui-svc
 #        rewritePath: /
-
+---
+apiVersion: k8s.nginx.org/v1alpha1
+kind: TransportServer
+metadata:
+ name: scale-api-ts
+ namespace: scale-controller
+spec:
+ listener:
+   name: scale-api
+   protocol: TCP
+ upstreams:
+ - name: scale-api
+   service: scale-api
+   port: 8000
+ action:
+   pass: scale-api
 
 ---
 apiVersion: k8s.nginx.org/v1alpha1
@@ -129,8 +144,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: scale-api
-  minReplicas: 1
-  maxReplicas: 1
+  minReplicas: 2
+  maxReplicas: 4
   targetCPUUtilizationPercentage: 90
 
 ---
@@ -330,8 +345,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: scale-session-worker
-  minReplicas: 1
-  maxReplicas: 1
+  minReplicas: 2
+  maxReplicas: 4
   targetCPUUtilizationPercentage: 90
 
 ---
@@ -377,8 +392,8 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: scale-metrics-worker
-  minReplicas: 1
-  maxReplicas: 1
+  minReplicas: 2
+  maxReplicas: 4
   targetCPUUtilizationPercentage: 90
 
 ---

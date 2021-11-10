@@ -11,11 +11,11 @@ spec:
   - name: pulsar-grafana
     port: 3001
     protocol: TCP
-  - name: scale-ui
-    port: 8000
+  - name: resource-manager
+    port: 8001
     protocol: TCP
   - name: scale-api
-    port: 8002
+    port: 8000
     protocol: TCP
   - name: redius
     port: 6379

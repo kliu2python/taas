@@ -24,12 +24,14 @@ spec:
       containers:
       - name: resource-manager-api
         image: 10.160.16.60/resource-manager/resource-manager-api
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         env:
         - name: DEBUG
           value: "False"
+        - name: LISTEN_PORT
+          value: "8001"
         ports:
-        - containerPort: 8000
+        - containerPort: 8001
           name: res-mgr-api
           protocol: TCP
         securityContext:
@@ -48,25 +50,25 @@ spec:
    app: resource-manager-api
   ports:
   - name: res-mgr-api
-    port: 8000
+    port: 8001
     protocol: TCP
 
-# ---
-# apiVersion: k8s.nginx.org/v1alpha1
-# kind: TransportServer
-# metadata:
-#   name: test-assistant
-#   namespace: model-services
-# spec:
-#   listener:
-#     name: test-assistant
-#     protocol: TCP
-#   upstreams:
-#   - name: test-assistant
-#     service: model-service
-#     port: 8000
-#   action:
-#     pass: test-assistant
+---
+apiVersion: k8s.nginx.org/v1alpha1
+kind: TransportServer
+metadata:
+ name: test-assistant
+ namespace: model-services
+spec:
+ listener:
+   name: resource-manager
+   protocol: TCP
+ upstreams:
+ - name: resource-manager
+   service: resource-manager-api
+   port: 8001
+ action:
+   pass: resource-manager
 
 ---
 apiVersion: k8s.nginx.org/v1
@@ -79,7 +81,7 @@ spec:
   upstreams:
   - name: resource-manager-svc
     service: resource-manager-api
-    port: 8000
+    port: 8001
   subroutes:
   - path: /resourcesmanager
     action:
