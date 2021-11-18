@@ -1,0 +1,518 @@
+#!/usr/bin/env python
+import argparse
+import json
+import os
+from time import sleep
+
+import requests
+import yaml
+
+args = None
+
+
+def dict_print(msg_dit):
+    return yaml.dump(msg_dit)
+
+
+class PrintInColor:
+    RED = '\033[91m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    LIGHT_PURPLE = '\033[94m'
+    PURPLE = '\033[95m'
+    END = '\033[0m'
+
+    @classmethod
+    def red(cls, s, **kwargs):
+        msg = f"{cls.RED}{s}{cls.END}"
+        print(msg, **kwargs)
+        return msg
+
+    @classmethod
+    def green(cls, s, **kwargs):
+        print(cls.GREEN + s + cls.END, **kwargs)
+
+    @classmethod
+    def yellow(cls, s, **kwargs):
+        print(cls.YELLOW + s + cls.END, **kwargs)
+
+    @classmethod
+    def lightpurple(cls, s, **kwargs):
+        print(cls.LIGHT_PURPLE + s + cls.END, **kwargs)
+
+    @classmethod
+    def purple(cls, s, **kwargs):
+        print(cls.PURPLE + s + cls.END, **kwargs)
+
+
+def get_api_url(api_path, port=None):
+    if port:
+        url_port = port
+    else:
+        url_port = 8000
+    return f"http://{args.server_ip}:{url_port}/{api_path}"
+
+
+def show_pool(pool_name=None):
+    if pool_name is None:
+        pool_name = args.pool_name
+    resp = requests.get(
+        get_api_url(f"resourcesmanager/pool/show/{pool_name}", 8001),
+        verify=False
+    )
+    return resp.json()
+
+
+def delete_pool(pool_name=None):
+    if pool_name is None:
+        pool_name = args.pool_name
+    resp = requests.delete(
+        get_api_url(
+            f"resourcesmanager/pool/delete/{pool_name}", 8001
+        ),
+        verify=False
+    )
+    assert resp.status_code == 200, "Failed to Delete Resource Pool"
+    PrintInColor.green(f"Deleting pool {pool_name}")
+    retry = 360
+    while retry > 0:
+        resp = show_pool(pool_name)
+        if not resp:
+            print("Resouce pool deleted")
+            break
+        if retry // 6 == 0:
+            print("Waiting for pool delete")
+        sleep(10)
+        if retry == 1:
+            raise Exception(f"Failed to Delete Resource Pool {pool_name}")
+        retry -= 1
+
+
+def _create_resource(pool_data):
+    resp = requests.post(
+        get_api_url(f"resourcesmanager/pool/create", 8001),
+        json=pool_data,
+        verify=False
+    )
+    pool_name = pool_data.get("id")
+    assert resp.status_code == 200, (
+        f"Failed to call resource create api, {resp.content}, "
+        f"pooldata={pool_data}"
+    )
+    retry = 360
+    while retry > 0:
+        pool_info = show_pool(pool_name)
+        if pool_info and pool_info.get("pool_status") == "Ready":
+            break
+        if retry // 6 == 0:
+            print("Waiting for resource creation")
+        sleep(10)
+        if retry == 1:
+            raise Exception(f"Failed to create Pool with pool data {pool_data}")
+        retry -= 1
+
+
+def _load_file():
+    file = args.file
+    if file:
+        if os.path.exists(file):
+            extension = os.path.splitext(file)[1]
+            with open(file) as F:
+                if extension in [".json"]:
+                    data = json.load(F)
+                elif extension in [".yaml", ".yml"]:
+                    data = yaml.safe_load(F)
+                else:
+                    raise TypeError("Only .json, .yaml, .yml file supported")
+        else:
+            raise FileExistsError(f"file {args.file} does not exists")
+    return data
+
+
+def create_resource():
+    """
+    pool_data format:
+
+    {
+        "id": "ftc-1500D",
+        "type": "fortigate.user",
+        "life": 0,
+        "res_life": 3,
+        "prepare": true,
+        "capacity": 5,
+        "share": true,
+        "data": {
+            "ip": "10.65.13.140",
+            "fgt_user": "admin",
+            "fgt_password": "fortinet",
+            "vdom": "root",
+            "user_password": "fortinet",
+            "email": "ftc.automation.perf@cloudsolutionsqa.com",
+            "user_prefix": "ftc-ftm",
+            "group": "ftc-ftm",
+            "phone": "+16509655818",
+            "mfa_provider": "fortitoken-cloud",
+            "ftc": {
+                "ftc_server": "10.160.11.130:8686",
+                "db_ip": "10.160.11.39",
+                "db_user": "fas",
+                "db_pw": "fas",
+                "db_name": "fas",
+                "mfa_type": "ftm",
+                "mfa_device": "android"
+            },
+            "custom_data": {
+                "fgt_ip": "10.65.13.140",
+                "fgt_sn": "FG1K5D3I17800995",
+                "sslvpn_port": 10443,
+                "vdom": "root"
+            }
+        },
+        "resource": []
+    }
+
+    """
+    pool_data = _load_file()
+    if not pool_data:
+        pool_data = args.get("pool_data")
+        pool_data = json.loads(pool_data)
+    if pool_data:
+        pool_name = pool_data.get("id")
+        if not pool_name:
+            raise Exception("pool id is required")
+        PrintInColor.green(f"Checking if resource Pool {pool_name} Exists")
+        pool_info = show_pool(pool_name)
+        if pool_info:
+            PrintInColor.yellow("Resource pool exists, now removing")
+            delete_pool(pool_name)
+        PrintInColor.green("Creating Resource pool, this might take a while")
+        print(f"pool_data = {pool_data}")
+        _create_resource(pool_data)
+        print(show_pool(pool_name))
+    else:
+        raise ValueError(
+            "--pool-data or -f / --file is required "
+            "is required for create resource"
+        )
+
+
+def create_user():
+    """
+    {
+        "name": "znie",
+        "email": null
+    }
+    taas user create --user=znie
+    """
+    user = args.user
+    email = args.email
+    PrintInColor.green(f"Creating User {user}")
+    resp = requests.post(
+        get_api_url("scale/v1/user"),
+        json={
+            "name": user,
+            "email": email
+        },
+        verify=False
+    )
+    if resp.status_code == 403:
+        PrintInColor.yellow(f"User {user} already exists")
+        return
+    assert resp.status_code == 201, f"Failed to Create User {user}"
+    PrintInColor.green(f"User {user} Created")
+
+
+def create_plan():
+    """
+    pland_data format:
+    {
+        "user": "znie",
+        "name": "FTC-FGT1500D",
+        "target_platform": "ftc",
+        "runner_count": [350, 350],
+        "loop": "true",
+        "wait_seconds_after_notify": 20,
+        "deployment_config": "runner_deployment_ftc_sslvpn.yaml",
+        "pods_adjust_momentum": 50,
+        "force_new_session": false,
+        "devices": ["znie,FGT1500D"],
+        "namespace": "debug-namespace",
+        "runner_image": "10.160.16.60/pytest-automation/pytest_automation:taas",
+        "launch_command": ["/bin/bash"],
+        "launch_args": ["-c", "xxxxx"]
+    }
+    """
+    plan_data = _load_file()
+    if not plan_data:
+        plan_data = args.plan_data
+        plan_data = json.loads(plan_data)
+    if not plan_data:
+        raise ValueError("--plan-data or file is required for create plan")
+    plan_name = plan_data.get("name")
+    plan_user = plan_data.get("user")
+    PrintInColor.green("Creating Test Plan")
+    resp = requests.post(
+        get_api_url("scale/v1/plan"),
+        json=plan_data,
+        verify=False
+    )
+    if resp.status_code == 403:
+        PrintInColor.yellow("Test plan already exists, updating")
+        resp = requests.put(
+            get_api_url(f"scale/v1/plan/{plan_user}/{plan_name}"),
+            json=plan_data,
+            verify=False
+        )
+        assert resp.status_code == 200, "Failed to update Test plan"
+    if resp.status_code > 403:
+        raise Exception(f"Failed to create Test plan, {resp.text}")
+    PrintInColor.green("Plan Create Successful")
+    return {
+        "user": plan_user,
+        "plan_name": plan_name
+    }
+
+
+def show_plan():
+    PrintInColor.green("Showing Plan:")
+    api = f"scale/v1/plan"
+    if args.user:
+        api += f"/{args.user}"
+        if args.plan_name:
+            api += f"/{args.plan_name}"
+
+    resp = requests.get(get_api_url(api))
+    plan = resp.json()
+    print(dict_print(plan))
+    return f"plan={plan}"
+
+
+def create_device():
+    """
+    {
+        "user": "znie",
+        "name": "FGT1500D",
+        "version": "V7.0.1GA",
+        "status": 1,
+        "protocol": "ssh",
+        "type": "fgt",
+        "credential": {
+            "username": "admin",
+            "password": "fortinet"
+        },
+        "ip": "10.65.13.140",
+        "logging": [
+            {
+                "type": "fgt",
+                "category": "general",
+                "commands": [
+                    "config global",
+                    "diag sys top-mem 200 | grep fas"
+                ]
+            },
+            {
+                "type": "fgt",
+                "category": "crashlog"
+            }
+        ]
+    }
+    """
+    device_info = _load_file()
+    PrintInColor.green("Creating Device.")
+    if not device_info:
+        device_info = args.device_info
+        device_info = json.loads(device_info)
+    if not device_info:
+        raise ValueError(
+            "--device-info or -f / --file is required for creating device"
+        )
+    user = device_info.get("user")
+    name = device_info.get("name")
+    resp = requests.post(
+        get_api_url("scale/v1/device"),
+        json=device_info,
+        verify=False
+    )
+    if resp.status_code == 403:
+        PrintInColor.yellow("Device already exists, updating device")
+        resp = requests.put(
+            get_api_url(f"scale/v1/device/{user}/{name}"),
+            json=device_info,
+            verify=False
+        )
+        assert resp.status_code == 200, f"Failed to create device {device_info}"
+        PrintInColor.green("Device Updated")
+    if resp.status_code > 403:
+        raise Exception(f"Failed to create Test plan, {resp.text}")
+    return f"user={user}\nname={name}"
+
+
+def show_device():
+    PrintInColor.green("Showing Device:")
+    api = f"scale/v1/device"
+    if args.user:
+        api += f"/{args.user}"
+        if args.device_name:
+            api += f"/{args.device_name}"
+    resp = requests.get(get_api_url(api))
+    devices = resp.json()
+    print(dict_print(devices))
+    return devices
+
+
+def create_session(info=None):
+    PrintInColor.green("Start Session")
+    if info is None:
+        info = {
+            "user": args.user,
+            "plan_name": args.plan_name
+        }
+    resp = requests.post(
+        get_api_url("scale/v1/session"),
+        json=info,
+        verify=False
+    )
+    assert resp.status_code == 202, "Failed to start Test Session"
+    dashboard = resp.json().get("dashboard")
+    sess_id = resp.json().get("id")
+    PrintInColor.green(f"Run Started, dashboard link: {dashboard}")
+    os.makedirs(args.result_path, exist_ok=True)
+    results = os.path.join(args.result_path, "dashboard_link")
+    with open(results, "w") as F:
+        F.write(f"dashlink={dashboard}")
+    PrintInColor.green(f"Session Id: {sess_id}")
+    return f"session_id={sess_id}\ndashboard={dashboard}"
+
+
+def show_session():
+    session_type = args.session_type if args.session_type else "all"
+    PrintInColor.green(f"Showing Session for {session_type}")
+    resp = requests.get(get_api_url(f"scale/v1/sessions/{session_type}"))
+    result = resp.json()
+    if result:
+        for sess_type, sess_list in result.items():
+            print("-----------------")
+            print(sess_type)
+            print("-----------------")
+            for sess in sess_list:
+                print(f"{sess}")
+            print("\n")
+
+
+def delete_session(user=None, sess_id=None):
+    if user is None:
+        user = args.user
+    if sess_id is None:
+        sess_id = args.session_id
+    PrintInColor.green(f"Stopping session: {user}, {sess_id}")
+    resp = requests.delete(
+        get_api_url(f"scale/v1/session/{user}/{sess_id}")
+    )
+    assert resp.status_code == 200, "Failed to stop session"
+    PrintInColor.green("Session Stopped")
+    dashboard = resp.json()
+    PrintInColor.yellow(f"Session Dashboard: {dashboard}")
+    return f"dashboard={dashboard}"
+
+
+def wait_session():
+    duration = args.duration
+    sleep(duration)
+
+
+def run_all():
+    create_resource()
+    create_user()
+    create_device()
+    info = create_plan()
+    sess_id = create_session(info)
+    wait_session()
+    user = info.get("user")
+    delete_session(user, sess_id)
+
+
+def init_server():
+    if args.server_ip:
+        path = os.path.expanduser("~")
+        path = os.path.join(path, ".taas")
+        os.makedirs(path, exist_ok=True)
+        path = os.path.join(path, "taas.conf")
+        with open(path, "w") as F:
+            yaml.safe_dump(
+                {
+                    "server_ip": args.server_ip,
+                    "result_path": args.result_path
+                }, F
+            )
+    else:
+        PrintInColor.red("--server-ip must be specify for init taas cli")
+
+
+def load_server():
+    path = os.path.expanduser("~")
+    path = os.path.join(path, ".taas")
+    path = os.path.join(path, "taas.conf")
+    if os.path.exists(path):
+        with open(path) as F:
+            server = yaml.safe_load(F)
+            for arg, val in server.items():
+                setattr(args, arg, val)
+    else:
+        PrintInColor.red(
+            "taas cli is not initlized, "
+            "please run taas server init --server-ip=xxx --result-path=xxx"
+        )
+
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("target", type=str)
+    parser.add_argument("operation", type=str)
+    parser.add_argument("--pool-data", type=str, default=None)
+    parser.add_argument("--user", type=str, required=False)
+    parser.add_argument("--email", type=str, required=False)
+    parser.add_argument("--plan-data", type=str, required=False)
+    parser.add_argument("--duration", type=int, default=6 * 3600)
+    parser.add_argument("--server-ip", type=str, required=False)
+    parser.add_argument("--session-id", type=str, required=False)
+    parser.add_argument("--plan-name", type=str, required=False)
+    parser.add_argument("--pool-name", type=str, required=False)
+    parser.add_argument("--device-info", type=str, required=False)
+    parser.add_argument("--device-name", type=str)
+    parser.add_argument(
+        "--config-path", type=str, default="/home/jenkins/configs"
+    )
+    path = os.path.join(os.path.expanduser("~"), "results")
+    parser.add_argument("--result-path", type=str, default=path)
+    parser.add_argument("-f", "--file", dest="file", type=str, default=None)
+    parser.add_argument(
+        "-A", "--all", action="store_const", const="all", dest="session_type"
+    )
+    parser.add_argument(
+        "--active", action="store_const", const="active", dest="session_type"
+    )
+    parser.add_argument(
+        "--completed",
+        action="store_const",
+        const="completed",
+        dest="session_type"
+    )
+
+    global args
+    args = parser.parse_args()
+
+
+def run():
+    parse_args()
+    if args.target not in ["server"]:
+        load_server()
+    func = globals().get(f"{args.operation}_{args.target}")
+    result = func()
+    os.makedirs(args.result_path, exist_ok=True)
+    result_file = os.path.join(args.result_path, "results")
+    with open(result_file, "w") as F:
+        F.write(f"{result}")
+
+
+if __name__ == "__main__":
+    run()

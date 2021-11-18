@@ -10,7 +10,7 @@ CLASS_MAPPING = {
 
 
 class CommandMetrics:
-    def __init__(self, data):
+    def __init__(self, data, async_run=False):
         """
         command_log_targets format:
         [
@@ -93,8 +93,10 @@ class CommandMetrics:
                 config_path=CONFIG_PATH,
                 interval_seconds=target.get("interval_seconds")
             )
-            metrics.start_async()
-            self.command_metrics.append(metrics)
+            metrics.start()
+            if async_run:
+                metrics.start_async()
+                self.command_metrics.append(metrics)
 
     def stop(self):
         return list(map(lambda x: x.stop(), self.command_metrics))

@@ -5,10 +5,10 @@ namespace = "scale-controller"
 v1 = client.CoreV1Api()
 ret = v1.list_namespaced_pod(namespace)
 pods_to_kill = [
+    "scale-controller",
     "scale-api",
     "scale-session-worker",
     "scale-metrics-worker",
-    "scale-controller",
     "scale-cache"
 ]
 target = []

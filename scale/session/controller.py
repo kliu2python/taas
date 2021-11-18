@@ -172,12 +172,17 @@ def _save_session():
     redis_conn.save()
 
 
-def _get_report_url(session_id):
-    start_time = round(
-        ds_common.get("create_timestamp_utc", session_id), 3
-    ) * 1000
-    end_time = round(datetime.datetime.now().timestamp(), 3) * 1000
-    platform = ds_common.get("target_platform", session_id)
+def get_report_url(session_id, running=False, platform=None):
+    if running:
+        start_time = round(datetime.datetime.now().timestamp(), 3) * 1000
+        end_time = "now"
+    else:
+        start_time = round(
+            ds_common.get("create_timestamp_utc", session_id), 3
+        ) * 1000
+        end_time = round(datetime.datetime.now().timestamp(), 3) * 1000
+    if not platform:
+        platform = ds_common.get("target_platform", session_id)
     url = config.get("grafana_dash_board", {}).get(platform)
     if url:
         return (f"{url}&from={start_time}&to={end_time}"
@@ -192,7 +197,7 @@ def stop_session(session_id=None):
                 "session_status", constants.SessionStatus.STOPPING, session_id
             )
             _move_to_complete(session_id)
-            msg = _get_report_url(session_id)
+            msg = get_report_url(session_id)
             ds_common.set("result_url", "msg", session_id)
         else:
             msg = f"Fail, session '{session_id}' is {session_status}"

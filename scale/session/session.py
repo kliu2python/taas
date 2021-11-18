@@ -9,11 +9,12 @@ import requests
 import redis
 import yaml
 
+import scale.common.constants as constants
 from utils.logger import get_logger
 from utils.threads import thread, ThreadsManager
-import scale.common.constants as constants
 from scale.common.cache import DataStoreClient, DataStoreCommon
 from scale.common.notifier import Notifier
+from scale.common.variables import config
 from scale.metrics.perf import PerfMetrics
 from scale.metrics.session import SessionMetrics
 from scale.metrics.elasticsearch import ElasticSearchMetrics
@@ -59,7 +60,13 @@ class Session:
         self.completed = False
         self.pods_adjust_momentum = data.get("pods_adjust_momentum", 1)
         self.session_id = data.get("session_id")
-        self.config_download_server = data.get("config_download_server")
+        self.config_download_server = config.get(
+            "config_download_server", "10.160.50.118:8889"
+        )
+        self.runner_image = data.get("runner_image")
+        self.launch_command = data.get("launch_command")
+        self.launch_args = data.get("launch_args")
+        self.namespace = data.get("namespace", self.session_id)
         self.redis_conn = redis.Redis(
             host=data.get("redis_server"),
             port=data.get("redis_port", 6379),
@@ -125,7 +132,7 @@ class Session:
         self.data_store_common.set(
             "session_status", constants.SessionStatus.RUNNING, self.session_id
         )
-        self._apply_runner_deployment(self.runner_count, redeploy=True)
+        self._create_runners(self.runner_count, redeploy=True)
 
     def _set_runner_count(self, runner_count):
         if isinstance(runner_count, list):
@@ -206,14 +213,20 @@ class Session:
             os.remove(kube_file)
 
         data = requests.get(
-            f"http://10.160.50.118:8889/{self.deployment_config}"
+            f"http://{self.config_download_server}/"
+            f"{self.deployment_config}"
         )
         with open(kube_file, "w") as FILE:
             kube_content = list(
                 yaml.safe_load_all(data.content.decode("utf-8"))
             )
             for content in kube_content:
+                if content.get("kind") in ["Namespace"]:
+                    if self.namespace:
+                        content["metadata"]["name"] = self.namespace
                 if content.get("kind") in ["Deployment"]:
+                    if self.namespace:
+                        content["metadata"]["namespace"] = self.namespace
                     content["spec"]["replicas"] = runners
                     containers = content["spec"]["template"]["spec"][
                         "containers"]
@@ -223,6 +236,12 @@ class Session:
                             {"name": "SESSION_ID", "value": self.session_id}
                         )
                         c["env"] = env
+                        if self.runner_image:
+                            c["image"] = self.runner_image
+                        if self.launch_command:
+                            c["command"] = self.launch_command
+                        if self.launch_args:
+                            c["args"] = self.launch_args
                     break
             yaml.dump_all(kube_content, FILE)
 
@@ -254,7 +273,7 @@ class Session:
                     constants.SessionStatus.RUNNING
                 ]:
                     curr_runners = self.data_store_common.get(
-                        "pods_created", default=0
+                        "pods_waiting", default=0
                     )
                     logger.info(
                         f"Curr runner: {curr_runners}, "
@@ -278,7 +297,7 @@ class Session:
             kube_file = os.path.join(
                 KUBE_FILE_PATH, f"kube_file_{self.session_id}.yaml"
             )
-            os.system(f"kubectl delete -f {kube_file}")
+            os.system(f"kubectl delete -f {kube_file} --wait=false")
         except Exception as e:
             logger.exception(
                 "Error when delete kube deployment, please check on k8s",
@@ -321,7 +340,7 @@ class Session:
                     logger.info(
                         f"Adjusting Running pods to {self.runner_count}"
                     )
-                    self._apply_runner_deployment(self.runner_count, wait=True)
+                    self._create_runners(self.runner_count, wait=True)
                 else:
                     logger.info(
                         "Reached target runners number,"

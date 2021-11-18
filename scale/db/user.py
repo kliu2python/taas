@@ -38,7 +38,7 @@ class Plan(Model):
     deployment_config = columns.Text()
     pods_adjust_momentum = columns.Integer(default=1)
     force_new_session = columns.Boolean(default=False)
-    devices = columns.List(columns.Text(), default=[])
+    devices = columns.List(columns.Text, default=[])
     description = columns.Text()
     created_at = columns.DateTime(
         primary_key=True,
@@ -48,6 +48,10 @@ class Plan(Model):
     )
     updated_at = columns.DateTime()
     duration = columns.Integer(default=24)
+    runner_image = columns.Text()
+    launch_command = columns.List(columns.Text, default=[])
+    launch_args = columns.List(columns.Text, default=[])
+    namespace = columns.Text()
 
 
 class Device(Model):
@@ -152,7 +156,7 @@ class Session(Model):
     command_log_targets = columns.List(
         columns.UserDefinedType(user_defined_types.Command)
     )
-    test_cases = columns.List(columns.Text())
+    test_cases = columns.List(columns.Text)
     dashboard_url = columns.Text()
     started_at = columns.DateTime(
         primary_key=True,
@@ -161,3 +165,7 @@ class Session(Model):
         default=datetime.datetime.utcnow
     )
     stopped_at = columns.DateTime()
+    runner_image = columns.Text()
+    launch_command = columns.List(columns.Text, default=[])
+    launch_args = columns.List(columns.Text, default=[])
+    namespace = columns.Text()

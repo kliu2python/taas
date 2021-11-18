@@ -19,8 +19,6 @@ spec:
       labels:
         app: scale-api
     spec:
-      nodeSelector:
-        node-type: service
 #      affinity:
 #        nodeAffinity:
 #           preferredDuringSchedulingIgnoredDuringExecution:
@@ -53,8 +51,7 @@ spec:
           readOnlyRootFilesystem: false
         resources:
           requests:
-            cpu: 1000m
-#      nodeName: kubecluster-1-master
+            cpu: 900m
         volumeMounts:
           - mountPath: /test_assistant_rest_api/scale/config/
             name: taas-config
@@ -62,6 +59,7 @@ spec:
         - name: taas-config
           configMap:
             name: taas-config
+
 ---
 apiVersion: v1
 kind: Service
@@ -82,7 +80,7 @@ metadata:
   name: scale-controller-route
   namespace: scale-controller
 spec:
-  host: 10.160.13.11
+  host: 10.0.2.128
   upstreams:
   - name: scale-api-svc
     service: scale-api
@@ -156,7 +154,7 @@ metadata:
   labels:
     name: redis-master
 spec:
-  replicas: 1 
+  replicas: 1
   selector:
     matchLabels:
       name: redis-master
@@ -165,8 +163,6 @@ spec:
       labels:
         name: redis-master
     spec:
-      nodeSelector:
-        node-type: service
 #      nodeName: kubecluster-1-node1
       containers:
       - name: redis-master
@@ -333,19 +329,22 @@ spec:
           value: "session"
         securityContext:
           readOnlyRootFilesystem: false
+        resources:
+          requests:
+            cpu: 900m
         volumeMounts:
           - mountPath: /test_assistant_rest_api/scale/config/
             name: taas-config
-        resources:
-          requests:
-            cpu: 1000m
+          - mountPath: /root/.kube/
+            name: kube-config
       volumes:
         - name: taas-config
           configMap:
             name: taas-config
+        - name: kube-config
+          configMap:
+            name: runner-kube-config
 #      nodeName: kubecluster-1-node1
-      nodeSelector:
-        node-type: service
 
 ---
 apiVersion: autoscaling/v1
@@ -398,8 +397,6 @@ spec:
           configMap:
             name: taas-config
 #      nodeName: kubecluster-1-node1
-      nodeSelector:
-        node-type: service
 
 ---
 apiVersion: autoscaling/v1
@@ -453,8 +450,6 @@ spec:
           configMap:
             name: taas-config
 #      nodeName: kubecluster-1-node1
-      nodeSelector:
-        node-type: service
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -489,8 +484,6 @@ spec:
           configMap:
             name: taas-config
 #      nodeName: kubecluster-1-node1
-      nodeSelector:
-        node-type: service
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -510,11 +503,13 @@ data:
     redis_port: 6379
     elastic_search_engine: 10.160.77.150:8086
     elastic_search_credential: "customer:elastic"
+    config_download_server: scale-httpd.scale-controller.svc.cluster.local
     grafana_dash_board:
-      ftc: "http://10.160.13.14:3000/d/O9k5qKpGz/ftc-scaling-perf-test?orgId=1"
-      fis: "http://10.160.13.14:3000/d/1V34bd5Gk/fortiisolator-scaling-test?orgId=1"
+      ftc: "http://10.160.83.213:3000/d/O9k5qKpGz/ftc-perf-test?orgId=1"
+      fis: "http://10.160.83.213:3000/d/1V34bd5Gk/fortiisolator-scaling-test?orgId=1"
+      fgt: "http://10.160.83.213:3000/d/zPTpG4k7k/fgt-sslvpn-perf-test?orgId=1"
     db:
-      cluster_ips: [10.160.13.15]
+      cluster_ips: [10.0.2.128]
       username: "taas"
       password: "taas"
 
@@ -574,7 +569,7 @@ spec:
 apiVersion: k8s.nginx.org/v1alpha1
 kind: TransportServer
 metadata:
- name: scale-conf-ts
+ name: scale-conf-mgr
  namespace: scale-controller
 spec:
  listener:
@@ -617,16 +612,11 @@ spec:
         volumeMounts:
           - name: scale-httpd
             mountPath: /usr/local/apache2/htdocs/
-#          - mountPath: /usr/local/apache2/conf/
-#            name: httpd-config
       volumes:
         - name: scale-httpd
           hostPath:
             path: /opt/data/pvcs/scale-configs
             type: DirectoryOrCreate
-#        - name: httpd-config
-#          configMap:
-#            name: httpd-config
 #      nodeName: kubecluster-1-node1
 #      nodeSelector:
 #        node-type: service
@@ -646,30 +636,13 @@ spec:
     protocol: TCP
 
 ---
-apiVersion: k8s.nginx.org/v1alpha1
-kind: TransportServer
-metadata:
- name: scale-httpd
- namespace: scale-controller
-spec:
- listener:
-   name: scale-httpd
-   protocol: TCP
- upstreams:
- - name: scale-httpd
-   service: scale-httpd
-   port: 8889
- action:
-   pass: scale-httpd
-
----
 apiVersion: k8s.nginx.org/v1
 kind: VirtualServerRoute
 metadata:
   name: scale-httpd-route
   namespace: scale-controller
 spec:
-  host: 10.160.13.11
+  host: 10.0.2.128
   upstreams:
   - name: scale-httpd
     service: scale-httpd
@@ -681,3 +654,32 @@ spec:
   - path: /
     action:
       pass: scale-httpd
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: runner-kube-config
+  namespace: scale-controller
+data:
+  config: |
+   apiVersion: v1
+   clusters:
+   - cluster:
+      certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUM1ekNDQWMrZ0F3SUJBZ0lCQURBTkJna3Foa2lHOXcwQkFRc0ZBREFWTVJNd0VRWURWUVFERXdwcmRXSmwKY201bGRHVnpNQjRYRFRJeE1URXhNekE1TlRnek0xb1hEVE14TVRFeE1UQTVOVGd6TTFvd0ZURVRNQkVHQTFVRQpBeE1LYTNWaVpYSnVaWFJsY3pDQ0FTSXdEUVlKS29aSWh2Y05BUUVCQlFBRGdnRVBBRENDQVFvQ2dnRUJBTDJGCkFZNk5lM2hTRTRDaTFNSUIwbm1pMDBpR25ORmh5RVdyOS9vQ2cyNmhlNTBGOHBMdng4Kzg1YTJQaVZicks4dmMKQ0VZeTFIYmZ4dzdGdExkSGdkalJqTUkxMHppTE1lOUxWTUhaUWljdlVuaGJvTVhSNDExUm1yYnJUQ2lGM2FrNwpkYkpJZ0NXdVYvM3dYZ2FTTTUyWFYyUXBQdDRUVVBTbU5Rd3dJWEhNNDRNZVIxUW02RGJnM0hFSU5OOGFtcnpXCmlQaTBZQ0tLd0xuQk5lQUNVQlNvNXA1QXNyWUxPa2piSDlUUEFEMmhNWnBOaVRyOGRzTStWbEFoL1BOVnM3WjUKVzlueHdjMUh4emZGNnM2VXM3bzl5WHAxeDNjdUdTTmxsTHN0Yko5UkNhRmxGbENibXBMaHd3TG5td1ZQKy9uSApIaWU0bDFsWTcwNzVsekd6Y0NrQ0F3RUFBYU5DTUVBd0RnWURWUjBQQVFIL0JBUURBZ0trTUE4R0ExVWRFd0VCCi93UUZNQU1CQWY4d0hRWURWUjBPQkJZRUZOQkQwc3FoczhjSU9MV0dpNVBOMURJYXpOS2ZNQTBHQ1NxR1NJYjMKRFFFQkN3VUFBNElCQVFBMStqOG5KRnRQL2lraDdLcmRhNDdHSlF5ZEk5blJHNmVGd2NYbndCd1hNL0lYc3FjQQo3MmpWR0ppZHFyUUMyc1o3UGhaSFIwaHlJSTBvUG5STnZ0REZSbmNtSXFXcHpBekRYcEh2NTk5VzhYMXZkbE56ClJNd1ZLeUJ6Q2tucmZMUE80eFU0MnRicWlJYkhRZytHblIxbzl5M2o2Y1BCZkQzdURLTFozSGluSWdBcEJWcVkKK25IVDdOdTZxZ2xpNlJKdzNJc1JrNCtSNklaa3VIRlVXWmFRTk5rV2RsYjh6dlBWVWhZQTVKaHluZXZaVThoUgp5U25hRkZjeVFlRUtFaWhXUTdPa1U2WFJhaHZmVERWN0Z6SHV6U0pmK3Bab2JROCtCV1hJWll0cTB6OHA4eEd5CjEzdmNkcXNNSVl5eENWaXowNUF6Rlp3Mzd1NndsTFk1bFNtUwotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+      server: https://10.0.2.144:6443
+     name: kubernetes
+   contexts:
+   - context:
+      cluster: kubernetes
+      user: kubernetes-admin
+     name: kubernetes-admin@kubernetes
+   current-context: kubernetes-admin@kubernetes
+   kind: Config
+   preferences: {}
+   users:
+   - name: kubernetes-admin
+     user:
+      client-certificate-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURFekNDQWZ1Z0F3SUJBZ0lJRDBseXdtNDJETHd3RFFZSktvWklodmNOQVFFTEJRQXdGVEVUTUJFR0ExVUUKQXhNS2EzVmlaWEp1WlhSbGN6QWVGdzB5TVRFeE1UTXdPVFU0TXpOYUZ3MHlNakV4TVRNd09UVTRNemhhTURReApGekFWQmdOVkJBb1REbk41YzNSbGJUcHRZWE4wWlhKek1Sa3dGd1lEVlFRREV4QnJkV0psY201bGRHVnpMV0ZrCmJXbHVNSUlCSWpBTkJna3Foa2lHOXcwQkFRRUZBQU9DQVE4QU1JSUJDZ0tDQVFFQXJScDFkUDZNdGRhR1IwelYKMFRrMGNHZHJmbmtRSWdDMjJSNWJvRmUrMmVZQ0FmbElvUkhuVVV0Wm54aW5Db2ZhZmE3YWJzeDE4N3RWUGo5WQpLT0xxNkFaN2grUkw5SGlQWjVTMFV5bnVuSFYxWHp1Y3hQczN5c0lpNEMyUENrakxFQkQrYldBNHVtMlgwOUVuCnRQR1c0Y1BhWTNaeHZUeEZtMHcrR2p3WWVCUUdxMnNZcUdVMEpkZ0tYbm5SaFEvWTZqakJjeWpKb3VqaE91MjYKSWl2U0dOZHBJcEV1dWEwWmJLYjArNEhKUFpJYmx5VHk5blFxQktBTThtNFN0cDdIcTVIN1FVM3NTZkdxMFdxYgpYa3VteUlWbTM4bkVMWnFxdGhDN1hDcUZnT1F1c3dPb2tBalI1NDRoWmJpak5rQ2xLRWU0TTQ4bmZpekp3NkxqCk8zUDhmUUlEQVFBQm8wZ3dSakFPQmdOVkhROEJBZjhFQkFNQ0JhQXdFd1lEVlIwbEJBd3dDZ1lJS3dZQkJRVUgKQXdJd0h3WURWUjBqQkJnd0ZvQVUwRVBTeXFHenh3ZzR0WWFMazgzVU1ock0wcDh3RFFZSktvWklodmNOQVFFTApCUUFEZ2dFQkFDckRZWEtZZWxCbnkyTXZycHgzYWpuWTA2SGxwT0lTVEFjOUJlNDk5NzN6SzZ4eVI2eVFNUTExCmk5WUprcXo3MjdCSkJHQldhZ0RRS2ZQb2pyak1ob1I3bkJHekxXYUZIYTI4NGNoK0x5cEZwR29CdDljU2RNMEUKZ2pLc3ZNTVRDTWc2RGJmNmJIUUlCc0xpejhmV1JhVFMwUHlKQkdiYkk3R0l3YkxlOHhaeEZRK2ZNVkJ6WmZxUwp3dSsyaXJwVDF0R0V1OVdmMGhBU0xqNEtDeHpIblkraVdBMmhGUE5OTzFRb1dpNXUwR1B6R0pTcnA1eExlWnQxCkdHZE9VNzAzL0R1VUJCcHpONks1SFNOUEl2NlFSN2NNQkw2WU83UjdadWIwaXFhQnF2N2pQVm1CT1c0c29rUHkKMDQ5TTNaNnpXSk9MeG1ReXZpTFZYcmhBekU2WDA2QT0KLS0tLS1FTkQgQ0VSVElGSUNBVEUtLS0tLQo=
+      client-key-data: LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFb3dJQkFBS0NBUUVBclJwMWRQNk10ZGFHUjB6VjBUazBjR2RyZm5rUUlnQzIyUjVib0ZlKzJlWUNBZmxJCm9SSG5VVXRabnhpbkNvZmFmYTdhYnN4MTg3dFZQajlZS09McTZBWjdoK1JMOUhpUFo1UzBVeW51bkhWMVh6dWMKeFBzM3lzSWk0QzJQQ2tqTEVCRCtiV0E0dW0yWDA5RW50UEdXNGNQYVkzWnh2VHhGbTB3K0dqd1llQlFHcTJzWQpxR1UwSmRnS1hublJoUS9ZNmpqQmN5akpvdWpoT3UyNklpdlNHTmRwSXBFdXVhMFpiS2IwKzRISlBaSWJseVR5CjluUXFCS0FNOG00U3RwN0hxNUg3UVUzc1NmR3EwV3FiWGt1bXlJVm0zOG5FTFpxcXRoQzdYQ3FGZ09RdXN3T28Ka0FqUjU0NGhaYmlqTmtDbEtFZTRNNDhuZml6Snc2TGpPM1A4ZlFJREFRQUJBb0lCQUFZWFFqN0ZuaW5meklYQgp2RnhLU1FBVGc0TEZ1NzJXak5pQzZ2SnZZL1hDMUJ0QnJENk9wTGNGa2JlNVpGZEloSFdicTIvdW5jL2ZyWll0CklHci80UWdkQWtlN3pyaGhiWnBWYnlybDlORm9pS0s3TkQ3eUgvcHdiazI1REtsdCtrY3NjZWRqVlZ1cDg0ZXUKZWxreGp2K09wcWFOU2w5QU9hckhPZ0F1VVNZWWIzV2VoWnZ1Y1lLYkEvV2VOL2tLNnNYeU50ZS9xVnBEVjVvVQpyNHY3eTZNdTdJYUt3d0VlbFJRcTdVQ2d5TkJYSjVhQTFMbDJNSGZNR1NLTk5oM3hUNDd5cGl2RWVnMEdZakRGCnNKTXljYkFlWklPRmR4OUJPS1Y4THJDWGtlYmo3bUlsK3RtNTQzd3V0RmlGZ0duM1B3bHJhOE1CcEd1cGF5RisKV3RTK3hQa0NnWUVBeDJ1c3VtTWlxaUw2YTFmYUczUHdHaUJaRmx0dnJjN1lrUU1TaS84Z2tIZk5HYUEyM3NhNgpGNXkwc0Q2MitnaEV4ZHpQdHFSMmZrUVN2T2IzWWhqbldtRFFVWUJNNnV2amMya3diVTVpS1VPbDhMTXBoOHczCjNoTU1XT0RYanlsVnpwcVBsNnBMenhNMExvUVZINzZ6MzdNMStUZjVodUUxNDY2UlJReU1WZU1DZ1lFQTNqZE8KL3I5ZXpJRHJpOXhySXJpb1VGZ1Z3WVdTV25MMXIwK1UxcFU5ZWlOUExBc3p1c0ltRFVaSmx5anFueC85b2wyegpQV1hmUXJ2VGw3QXJ5cS84aUpLcng2NkE2aHdRaGhscml2NTdDeHlDbFVTYmdIYXBvMExKVGpEcVZPQWZjUFgvCm5KWXJjb0NnRFNxMEQ5bEgxTFFUSzBramtWN1FabEJvWlRpMzhoOENnWUVBbnAvMWV5VVVFOFZTOEVPblNDTUcKbjZHUGU0c3I0Rk1pVE9ibXY5a21iQVAvYnh6VHlJekd4YlZ1dktxR0hZaXFPOEVTc0ROTjFjNE1JWnFPdU1jYQpiL2VHZk8zVFFTSjFmLzN4K1dCYUVIeXc2Qzk3SDN2QURMT1dKTFJrZ29uY3FVU2taMzJjWTVEZzl3YzFUbFVBCit6V3YveGNaTXNLOWZPZ0V3YW5qandVQ2dZQlhqRHJYS3RaU2c4aEpSZ0gvbi9qUURxUWpwbGhPd2xRQlNiMDkKL1haSEZIb3d4QWtSWDBSV25vYUh3MXNNYmpJak1mOVlCVGE4dC90Wkc5TmsrNGptMWNKUDNYUjB4N0hLNDJEMwpWZU5zTVVOUlE4SndEbEF2UGpUSlZZUTlCRC9lNVV4YmlONTlNaWZjaUNLQXkvMzgweVZxUEZxQy8zUGptM0pGCnp0N0p5UUtCZ0JzeTVhREVmODNpVU1oMXNrTjA2UUJYV3ZjWTFXQ0ZZR24wQjlvZFN1RENQNXFzZmFGZjRJSGoKWHBoY3dCbTl4dXVxSXlUM1c0SlN2V0FSR1Y0cEZjd3FzUHpSV05BYVVRam93YXVPVytBbTdzQUp4U25mQU5ycAorOTJqZTVpUHVCa2VTeDlXSlU2eVo1TkEvVTYvK09zTFZEak4zdmJ2L0tCSFRCb2pTV0VICi0tLS0tRU5EIFJTQSBQUklWQVRFIEtFWS0tLS0tCg==
+

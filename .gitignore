@@ -13,3 +13,5 @@ logs
 .ipynb_checkpoints
 pylint-report
 oriole_report.json
+dist
+*.egg-info
