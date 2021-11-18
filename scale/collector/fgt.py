@@ -4,6 +4,8 @@ import difflib
 import hashlib
 
 from scale.db.logs import Command
+from scale.common.variables import config
+from utils.cassandra import register_connection
 from utils.ssh import SshNoneInteractiveConnection
 
 CRASHLOG_CMD = [
@@ -31,6 +33,7 @@ class FgtCollector(SshNoneInteractiveConnection):
         else:
             self.commands = data.get("commands", [])
         self.session_query = f"{session_id}_fgt_{self.category}"
+        register_connection(name="fgt_collector", **config.get("db", {}))
 
     def get_command_output(self):
         output = self.send_commands(self.commands)

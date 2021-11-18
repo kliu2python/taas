@@ -17,6 +17,10 @@ kubectl apply -f common/gc-definition.yaml
 kubectl apply -f common/global-configuration.yaml
 
 #kubectl apply -f deployment/nginx-ingress.yaml
+
+## Make sure add following to DaemonSet config:
+# - -global-configuration=$(POD_NAMESPACE)/nginx-configuration
+
 kubectl apply -f daemon-set/nginx-ingress.yaml
 
 #kubectl create -f service/nodeport.yaml

@@ -73,7 +73,11 @@ class Session(ApiBase):
                     "deployment_config": plan.deployment_config,
                     "pods_adjust_momentum": plan.pods_adjust_momentum,
                     "force_new_session": plan.force_new_session,
-                    "command_log_targets": loggings
+                    "command_log_targets": loggings,
+                    "runner_image": plan.runner_image,
+                    "launch_command": plan.launch_command,
+                    "launch_args": plan.launch_args,
+                    "namespace": plan.namespace
                 }
                 try:
                     session_name = controller.create_session(session_data)
@@ -91,7 +95,12 @@ class Session(ApiBase):
                 if code != 201:
                     controller.stop_session(session_name)
                     return f"Can not save session info to DB {msg}", 500
-                ret_msg = session_name
+                ret_msg = {
+                    "id": session_name,
+                    "dashboard": controller.get_report_url(
+                        session_name, True, plan.target_platform
+                    )
+                }
             else:
                 return f"Plan {plan.name} is disabled", 403
             return ret_msg, ret_code
