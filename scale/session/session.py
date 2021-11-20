@@ -132,7 +132,9 @@ class Session:
         self.data_store_common.set(
             "session_status", constants.SessionStatus.RUNNING, self.session_id
         )
-        self._create_runners(self.runner_count, redeploy=True)
+        self._apply_runner_deployment(self.runner_count, redeploy=True)
+        # TODO: Investigate dynamic runner
+        # self._create_runners(self.runner_count, redeploy=True)
 
     def _set_runner_count(self, runner_count):
         if isinstance(runner_count, list):
@@ -297,7 +299,7 @@ class Session:
             kube_file = os.path.join(
                 KUBE_FILE_PATH, f"kube_file_{self.session_id}.yaml"
             )
-            os.system(f"kubectl delete -f {kube_file} --wait=false")
+            os.system(f"kubectl delete -f {kube_file}")
         except Exception as e:
             logger.exception(
                 "Error when delete kube deployment, please check on k8s",
@@ -340,7 +342,9 @@ class Session:
                     logger.info(
                         f"Adjusting Running pods to {self.runner_count}"
                     )
-                    self._create_runners(self.runner_count, wait=True)
+                    self._apply_runner_deployment(self.runner_count, wait=True)
+                    # TODO: Move back later
+                    # self._create_runners(self.runner_count, wait=True)
                 else:
                     logger.info(
                         "Reached target runners number,"

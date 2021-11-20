@@ -2,6 +2,7 @@
 data_save_path: /data
 pulling_interval: 10
 pushgateway_ip: 10.160.83.213:9091
+snmp_exporter_ip: 10.160.83.213:9116
 wait_seconds_after_notify: 120
 notifier_check_interval_seconds: 10
 pulsar_ip: pulsar://pulsar-proxy.pulsar.svc.cluster.local:6650

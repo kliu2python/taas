@@ -164,9 +164,7 @@ data:
 
       - job_name: 'snmp'
         static_configs:
-          - targets:
-            - 10.65.13.140  # SNMP device.
-            - 10.160.16.190
+          - targets: []
         metrics_path: /snmp
         params:
           module: [fortigate]
