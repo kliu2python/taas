@@ -32,6 +32,9 @@ def create_session(data):
         data_with_config.update(constants.COMMAND_TASK_MODULE)
         data_with_config_dump = json.dumps(data_with_config)
         ds_session.set("new_metrics_queue", [data_with_config_dump])
+        data_with_config.update(constants.SNMP_TASK_MODULE)
+        data_with_config_dump = json.dumps(data_with_config)
+        ds_session.set("new_metrics_queue", [data_with_config_dump])
     return sess_id
 
 

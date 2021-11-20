@@ -116,6 +116,10 @@ SESSION_TASK_MODULE = {
     "task_module": "scale.session.session",
     "task_class": "Session"
 }
+SNMP_TASK_MODULE = {
+    "task_module": "scale.metrics.snmp",
+    "task_class": "SnmpMetrics"
+}
 
 COMMANDLOG_TEMPLATE = """
 <!DOCTYPE html>
