@@ -196,6 +196,10 @@ def create_resource():
         )
 
 
+def delete_resource():
+    delete_pool(args.pool_name)
+
+
 def create_user():
     """
     {
@@ -344,7 +348,7 @@ def create_device():
         PrintInColor.green("Device Updated")
     if resp.status_code > 403:
         raise Exception(f"Failed to create Test plan, {resp.text}")
-    return f"user={user}\nname={name}"
+    return f"user=\"{user}\"\nname=\"{name}\""
 
 
 def show_device():
@@ -365,7 +369,8 @@ def create_session(info=None):
     if info is None:
         info = {
             "user": args.user,
-            "plan_name": args.plan_name
+            "plan_name": args.plan_name,
+            "session_id_override": args.keep
         }
     resp = requests.post(
         get_api_url("scale/v1/session"),
@@ -381,7 +386,7 @@ def create_session(info=None):
     with open(results, "w") as F:
         F.write(f"dashlink={dashboard}")
     PrintInColor.green(f"Session Id: {sess_id}")
-    return f"session_id={sess_id}\ndashboard={dashboard}"
+    return f"session_id=\"{sess_id}\"\ndashboard=\"{dashboard}\""
 
 
 def show_session():
@@ -412,7 +417,7 @@ def delete_session(user=None, sess_id=None):
     PrintInColor.green("Session Stopped")
     dashboard = resp.json()
     PrintInColor.yellow(f"Session Dashboard: {dashboard}")
-    return f"dashboard={dashboard}"
+    return dashboard
 
 
 def wait_session():
@@ -497,6 +502,7 @@ def parse_args():
         const="completed",
         dest="session_type"
     )
+    parser.add_argument("--keep", action="store_false")
 
     global args
     args = parser.parse_args()
