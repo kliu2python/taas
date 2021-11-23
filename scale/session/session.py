@@ -66,7 +66,7 @@ class Session:
         self.runner_image = data.get("runner_image")
         self.launch_command = data.get("launch_command")
         self.launch_args = data.get("launch_args")
-        self.namespace = data.get("namespace", self.session_id)
+        self.namespace = data.get("namespace", self.session_id).lower()
         self.redis_conn = redis.Redis(
             host=data.get("redis_server"),
             port=data.get("redis_port", 6379),

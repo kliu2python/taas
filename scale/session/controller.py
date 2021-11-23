@@ -17,8 +17,9 @@ logger = get_logger()
 
 def create_session(data):
     sess_id = data.pop("session_id", None)
-    date_time = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M.%f")
-    sess_id = f"{sess_id}-{date_time}"
+    if data.pop("session_id_override", True):
+        date_time = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M.%f")
+        sess_id = f"{sess_id}-{date_time}"
     sess_type = data.pop("session_type", "test")
     data_with_config = copy.deepcopy(config)
     data_with_config = deep_update(data_with_config, data)

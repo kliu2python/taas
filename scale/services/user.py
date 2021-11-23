@@ -36,7 +36,7 @@ class Session(ApiBase):
     }
 
     @classmethod
-    def start(cls, user, plan_name):
+    def start(cls, user, plan_name, session_id_override=True):
         ret_code = 202
         try:
             plan = user_db.Plan.objects(user=user, name=plan_name)[0]
@@ -64,6 +64,7 @@ class Session(ApiBase):
 
                 session_data = {
                     "session_id": plan.name,
+                    "session_id_override": session_id_override,
                     "version": version,
                     "servers": [],
                     "target_platform": plan.target_platform,

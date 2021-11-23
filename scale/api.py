@@ -252,7 +252,7 @@ class Session(Resource):
         """
         data = request.json
         ret_msg, ret_code = user_api.Session.update(data)
-        return ret_msg, ret_code
+        return {"results": ret_msg}, ret_code
 
     def patch(self):
         """
