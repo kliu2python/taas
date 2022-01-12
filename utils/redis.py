@@ -52,6 +52,18 @@ class DataStore:
 
         raise TypeError(f"unsupported data type {dt}")
 
+    def lindex(self, key, idx, identifier=None):
+        k = self.craft_key(key, identifier)
+        return self.redis.lindex(k, idx)
+
+    def llen(self, key, identifier=None):
+        k = self.craft_key(key, identifier)
+        return self.redis.llen(k)
+
+    def lrem(self, key, value, identifier=None, count=0):
+        k = self.craft_key(key, identifier)
+        return self.redis.lrem(k, count, value)
+
     def mget(self, keys, identifier=None):
         result = {}
         for key in keys:

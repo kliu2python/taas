@@ -62,6 +62,7 @@ def get_pool_status(pool_id):
 
 def do_create_pool(data):
     pool_id = data.get("id")
+    pool_group = data.get("group")
     if _is_pool_exist(pool_id):
         return "FAIL"
     pool_data = deepcopy(config.get("spec", {}))
@@ -89,7 +90,8 @@ def do_create_pool(data):
         "pool_life": data.get("life"),
         "pool_res_life": data.get("res_life"),
         "pool_capacity": capacity,
-        "pool_res_share": pool_res_share
+        "pool_res_share": pool_res_share,
+        "pool_member_of": pool_group
     }
     datastore.mset(pool_dict, pool_id)
     res_ids = []
@@ -125,23 +127,37 @@ def do_create_pool(data):
         pool_status = f"Error, failures: {failures}"
     _update_pool_status(pool_status, pool_id)
     update_pool_list(pool_id)
+    if pool_group:
+        datastore.set("pool_group", [pool_id], pool_group)
     logger.info(f"Complete Create pool: {pool_id}")
 
 
 def _clear_pool_data(pool_id):
-    keys = datastore.redis.keys(f"{pool_id}*")
+    keys = datastore.redis.keys(f"*{pool_id}*")
     if keys:
         datastore.redis.delete(*keys)
 
 
 def delete_pool(pool_id):
-    if _is_pool_exist(pool_id):
-        datastore.set(
-            "pool_expiration", datetime.datetime.utcnow().timestamp(), pool_id
-        )
-        return "SCHEDULED"
-    _clear_pool_data(pool_id)
-    return f"POOL {pool_id} NOT EXISTS"
+    pool_ids = datastore.get("pool_group", pool_id)
+    if not pool_ids:
+        group = datastore.get("pool_member_of", pool_id)
+        datastore.lrem("pool_group", pool_id, group)
+        pool_ids = [pool_id]
+    ret = {}
+    ret_code = 200
+    for pool in pool_ids:
+        if _is_pool_exist(pool):
+            datastore.set(
+                "pool_expiration", datetime.datetime.utcnow().timestamp(), pool
+            )
+            ret[pool] = "SCHEDULED"
+        else:
+            ret[pool] = "POOL {pool_id} NOT EXISTS"
+            _clear_pool_data(pool_id)
+            ret_code = 400
+    if ret:
+        return ret, ret_code
 
 
 def do_delete_pool(pool_id):
@@ -156,74 +172,138 @@ def do_delete_pool(pool_id):
                 class_name)().clean(pool_data)
             _clear_pool_data(pool_id)
             update_pool_list(pool_id, remove=True)
+            pool_group = datastore.get("pool_member_of", pool_id)
+            if pool_group:
+                datastore.srem("pool_group", [pool_id], pool_group)
             logger.info(f"Completed delete pool: {pool_id}")
             return ret
 
 
 def request_resource(pool_id):
     global_lock.acquire()
+    retry = 0
+    group_size = datastore.llen("pool_group", pool_id)
+    if group_size > 0:
+        retry_max = group_size
+    else:
+        retry_max = 1
     try:
-        share_pool = datastore.get("pool_res_share", pool_id, 0)
-        if share_pool:
-            res = datastore.srandmember("pool_res_avaliable", 1, pool_id)
+        while retry <= retry_max:
+            retry += 1
+            if group_size:
+                group_idx = datastore.get(
+                    "pool_group_next_idx", identifier=pool_id, default=0
+                )
+                id_from_group = datastore.lindex(
+                    "pool_group", group_idx, pool_id
+                )
+                next_idx = group_idx + 1
+                if next_idx >= group_size:
+                    next_idx = 0
+                datastore.set("pool_group_next_idx", next_idx, pool_id)
+                if id_from_group:
+                    pool_id = id_from_group
+            share_pool = datastore.get("pool_res_share", pool_id, 0)
+            if share_pool:
+                res = datastore.srandmember("pool_res_avaliable", 1, pool_id)
+            else:
+                res = datastore.spop("pool_res_avaliable", 1, pool_id)
+            if res:
+                if not share_pool:
+                    datastore.set("pool_res_assigned", res, pool_id)
+                data = datastore.get("res_data", f"{pool_id}-{res[-1]}")
+                data["id"] = res.pop()
+                data["pool_id"] = pool_id
+                break
+            continue
         else:
-            res = datastore.spop("pool_res_avaliable", 1, pool_id)
-        if res:
-            if not share_pool:
-                datastore.set("pool_res_assigned", res, pool_id)
-            data = datastore.get("res_data", f"{pool_id}-{res[-1]}")
-            data["id"] = res.pop()
-        else:
-            data = "FAIL, no resource avaliable"
+            data = None
     finally:
         global_lock.release()
-    return data
+    if data:
+        return data, 200
+    return "FAIL, no resource avaliable", 400
 
 
 def list_pool():
-    return datastore.get("active_pool")
-
-
-def recycle_resource(pool_id, resource_id):
-    if not datastore.get("pool_res_share", pool_id, 0):
-        if resource_id.lower() in ["all"]:
-            count = datastore.scard("pool_res_assigned", pool_id)
-            if count > 0:
-                assigned = list(
-                    datastore.spop("pool_res_assigned", count, pool_id)
-                )
-                datastore.set("pool_res_avaliable", assigned, pool_id)
-            ret = count
-        else:
-            ret = datastore.smove(
-                "pool_res_assigned", "pool_res_avaliable", resource_id, pool_id
+    ret = []
+    pools = datastore.get("active_pool")
+    if pools:
+        for pool in pools:
+            ret.append(
+                {
+                    "pool_id": pool,
+                    "pool_group": datastore.get("pool_member_of", pool)
+                }
             )
-        if ret:
-            return "SUCCESS"
-        return ("FAIL, no resource recycled, "
-                "this resource might be already recycled")
-    return "SUCCESS"
+    return ret
+
+
+def recycle_resource(pool, resource_id):
+    pool_group = datastore.get("pool_group", pool, [pool])
+    ret_data = {}
+    ret_code = 200
+    for pool_id in pool_group:
+        if not datastore.get("pool_res_share", pool_id, 0):
+            if resource_id.lower() in ["all"]:
+                count = datastore.scard("pool_res_assigned", pool_id)
+                if count > 0:
+                    assigned = list(
+                        datastore.spop("pool_res_assigned", count, pool_id)
+                    )
+                    datastore.set("pool_res_avaliable", assigned, pool_id)
+                ret = count
+            else:
+                ret = datastore.smove(
+                    "pool_res_assigned",
+                    "pool_res_avaliable",
+                    resource_id,
+                    pool_id
+                )
+            if ret:
+                ret_data[pool_id] = "SUCCESS"
+                continue
+            ret_data[pool_id] = ("FAIL, no resource recycled, "
+                                 "this resource might be already recycled")
+            ret_code = 400
+            continue
+        ret_data[pool_id] = "SUCCESS"
+    return ret_data, ret_code
 
 
 def get_pool_statics(pool_id):
-    avaliable = datastore.scard("pool_res_avaliable", pool_id)
-    used = datastore.scard("pool_res_assigned", pool_id)
-    return {"avaliable": avaliable, "used": used}
+    ret = {}
+    pool_ids = datastore.get("pool_group", pool_id)
+    if not pool_ids:
+        pool_ids = [pool_id]
+    for pool in pool_ids:
+        avaliable = datastore.scard("pool_res_avaliable", pool)
+        used = datastore.scard("pool_res_assigned", pool)
+        ret[pool] = {"avaliable": avaliable, "used": used}
+    return ret
 
 
 def show_pool(pool_id):
     ret = {}
-    keys = datastore.keys("*", pool_id)
-    for key in keys:
-        key = datastore.decraft_key(key, pool_id)
-        data = datastore.get(key, pool_id)
-        ret[key] = data
+    pool_ids = datastore.get("pool_group", pool_id)
+    if not pool_ids:
+        pool_ids = [pool_id]
+    for pool in pool_ids:
+        pool_data = {}
+        keys = datastore.keys("*", pool)
+        for key in keys:
+            key = datastore.decraft_key(key, pool)
+            data = datastore.get(key, pool)
+            pool_data[key] = data
+        ret[pool] = pool_data
     return ret
 
 
 def generate_otp(pool_id, resource_id):
     data = datastore.get("res_data", f"{pool_id}-{resource_id}")
-    return otp.OneTimePassword().generate(data.get("seed"))
+    if data:
+        return otp.OneTimePassword().generate(data.get("seed")), 200
+    return f"No pool data found for {pool_id}, {resource_id}", 404
 
 
 def fgt_setup(fgt_ip, radius_ip, hostname):

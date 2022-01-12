@@ -1,0 +1,25 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: idplogin
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-runner
+  namespace: idplogin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-runner
+  template:
+    metadata:
+      labels:
+        app: test-runner
+    spec:
+      containers:
+      - name: test-runner
+        image: 10.160.16.60/faccloud/idp-runner
+        imagePullPolicy: Always
