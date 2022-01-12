@@ -57,9 +57,9 @@ func (sd *SamlClient) IdpLogin(User, Password string) (int, error) {
 	req, _ := http.NewRequest("Post", sd.Url, idpLoginBody)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Cookie", sd.Cookie)
-	resp, error := sd.HttpClient.Do(req)
-	if error != nil {
-		return resp.StatusCode, error
+	resp, err := sd.HttpClient.Do(req)
+	if err != nil {
+		return resp.StatusCode, err
 	}
 	defer resp.Body.Close()
 	buf := bufio.NewReaderSize(resp.Body, 65536)
@@ -79,7 +79,7 @@ func (sd *SamlClient) IdpLogin(User, Password string) (int, error) {
 			}
 		}
 	}
-	return resp.StatusCode, error
+	return resp.StatusCode, err
 }
 
 func noRedirectfunc(req *http.Request, via []*http.Request) error {
@@ -122,7 +122,7 @@ func (sd *SamlClient) GotoSpPage(expect string) (int, error) {
 	req.Header.Set("Cookie", sd.InitCookie)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	resp, err := sd.HttpClient.Do(req)
-	if resp.Request.URL == nil {
+	if err != nil || resp.StatusCode > 399 {
 		return 400, errors.New("Error when go to sp content, URL is Null")
 	}
 	urlData := resp.Request.URL
@@ -152,15 +152,15 @@ func (sd *SamlClient) Logoff() (int, error) {
 	req, _ := http.NewRequest("GET", sd.Url, strings.NewReader(""))
 	req.Header.Add("Cookie", sd.LogoutToken)
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	resp, error := sd.HttpClient.Do(req)
+	resp, err := sd.HttpClient.Do(req)
 	if resp.StatusCode == 302 {
 		sd.Url = resp.Header["Location"][0]
 		req, _ = http.NewRequest("GET", sd.Url, strings.NewReader(""))
 		req.Header.Add(
 			"Cookie", fmt.Sprintf("csrftoken=%s;%s", sd.CsfrToken, sd.LogoutToken),
 		)
-		resp, error = sd.HttpClient.Do(req)
+		resp, err = sd.HttpClient.Do(req)
 	}
 	defer resp.Body.Close()
-	return resp.StatusCode, error
+	return resp.StatusCode, err
 }
