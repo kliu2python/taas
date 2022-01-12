@@ -11,7 +11,10 @@ DATASTORE_POOL_KEYS = {
     "pool_capacity": int,
     "pool_res_avaliable": set,
     "pool_res_assigned": set,
-    "pool_res_share": int
+    "pool_res_share": int,
+    "pool_group": list,
+    "pool_group_next_idx": int,
+    "pool_member_of": str
 }
 
 DATASTORE_RESOURCE_KEYS = {
@@ -30,7 +33,8 @@ POOL_TYPE = {
 }
 
 TYPE_MAPPING = {
-    "fortigate.user": "User"
+    "fortigate.user": "User",
+    "fac.user": "User"
 }
 
 FTM_IOS = {

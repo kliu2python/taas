@@ -213,7 +213,9 @@ def set_tunnel_mode_enable(fgt_ip, fgt_info):
 
 def setup_config(fgt_ip, radius_ip, hostname, config_info):
     logger.info(f"Start setup FGT at ip: {fgt_ip} now: ")
-    folder_path = config_info.get("spec").get("data").get("sslcert").get("folder_path")
+    folder_path = config_info.get("spec").get("data").get("sslcert").get(
+        "folder_path"
+    )
     fgt_info = config_info.get("spec").get("data").get("fgt", {})
     try:
         rename_fortigate(fgt_ip, hostname, fgt_info)

@@ -12,6 +12,44 @@ fgtbenchmark:
     oid: 1.3.6.1.4.1.12356.101.4.1.34
     type: gauge
     help: Current Data Plane memory utilization (percentage) - 1.3.6.1.4.1.12356.101.4.1.34
+fortiauthenticator:
+  get:
+  - 1.3.6.1.4.1.12356.113.1.202.20.0
+  - 1.3.6.1.4.1.12356.113.1.202.21.0
+  - 1.3.6.1.4.1.12356.113.1.202.22.0
+  - 1.3.6.1.4.1.12356.113.1.202.23.0
+  - 1.3.6.1.4.1.12356.113.1.4.0
+  - 1.3.6.1.4.1.12356.113.1.5.0
+  - 1.3.6.1.4.1.12356.113.1.6.0
+  metrics:
+  - name: facAuthEventsTotal
+    oid: 1.3.6.1.4.1.12356.113.1.202.20
+    type: gauge
+    help: Number of authentication events since startup - 1.3.6.1.4.1.12356.113.1.202.20
+  - name: facAuthEvents5Mins
+    oid: 1.3.6.1.4.1.12356.113.1.202.21
+    type: gauge
+    help: Number of authentication events in the last 5 minutes - 1.3.6.1.4.1.12356.113.1.202.21
+  - name: facAuthFailuresTotal
+    oid: 1.3.6.1.4.1.12356.113.1.202.22
+    type: gauge
+    help: Number of authentication failures since startup - 1.3.6.1.4.1.12356.113.1.202.22
+  - name: facAuthFailures5Mins
+    oid: 1.3.6.1.4.1.12356.113.1.202.23
+    type: gauge
+    help: Number of authentication failures in the last 5 minutes - 1.3.6.1.4.1.12356.113.1.202.23
+  - name: facSysCpuUsage
+    oid: 1.3.6.1.4.1.12356.113.1.4
+    type: gauge
+    help: Instantaneous CPU usage - 1.3.6.1.4.1.12356.113.1.4
+  - name: facSysMemUsage
+    oid: 1.3.6.1.4.1.12356.113.1.5
+    type: gauge
+    help: Instantaneous memory utilization - 1.3.6.1.4.1.12356.113.1.5
+  - name: facSysLogDiskUsage
+    oid: 1.3.6.1.4.1.12356.113.1.6
+    type: gauge
+    help: Instantaneous log disk usage - 1.3.6.1.4.1.12356.113.1.6
   version: 2
   max_repetitions: 25
   retries: 3

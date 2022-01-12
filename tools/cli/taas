@@ -143,8 +143,8 @@ def create_resource():
         "share": true,
         "data": {
             "ip": "10.65.13.140",
-            "fgt_user": "admin",
-            "fgt_password": "fortinet",
+            "admin_user": "admin",
+            "admin_password": "fortinet",
             "vdom": "root",
             "user_password": "fortinet",
             "email": "ftc.automation.perf@cloudsolutionsqa.com",

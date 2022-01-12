@@ -1,0 +1,80 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: faccloud-saml-sp
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sp-abcd
+  namespace: faccloud-saml-sp
+spec:
+  replicas: 1
+  selector:
+   matchLabels:
+     app: sp-abcd
+  template:
+    metadata:
+      labels:
+        app: sp-abcd
+    spec:
+      containers:
+      - name: sp-abcd
+        image: 10.160.16.60/faccloud/sp-wsgi:latest
+        imagePullPolicy: Always
+        env:
+        - name: BASE_IP
+          value: "10.160.83.78"
+        - name: BASE_PORT
+          value: "10001"
+        - name: METADATA_URL
+          value: "https://10.160.13.220/saml-idp/fzxbqnihkf3rw91y/metadata/"
+        ports:
+        - containerPort: 10001
+          name: scale-api
+          protocol: TCP
+        securityContext:
+          readOnlyRootFilesystem: false
+      dnsConfig:
+        nameservers:
+          - 10.160.83.102
+#        resources:
+#          requests:
+#            cpu: 1000m
+#        volumeMounts:
+#          - mountPath: /test_assistant_rest_api/scale/config/
+#            name: taas-config
+#      volumes:
+#        - name: taas-config
+#          configMap:
+#            name: taas-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sp-abcd-svc
+  namespace: faccloud-saml-sp
+spec:
+  selector:
+   app: sp-abcd
+  ports:
+  - name: sp-abcd
+    port: 10001
+    protocol: TCP
+---
+apiVersion: k8s.nginx.org/v1alpha1
+kind: TransportServer
+metadata:
+ name: sp-abcd-ts
+ namespace: faccloud-saml-sp
+spec:
+ listener:
+   name: sp-abcd-listener
+   protocol: TCP
+ upstreams:
+ - name: sp-abcd-upstream
+   service: sp-abcd-svc
+   port: 10001
+ action:
+   pass: sp-abcd-upstream

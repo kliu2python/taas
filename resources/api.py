@@ -20,7 +20,8 @@ class CreatePool(Resource):
     post body:
     {
         "id": "v6.4.2-pool",
-        "type": "fortigate.user",
+        "type": "fortigate.user" / "fac.user"
+        "group": "resource group" (optional, used when you have pool aggration)
         "life": 60,
         "res_life": 3,
         "prepare": true,
@@ -97,8 +98,8 @@ class DeletePool(Resource):
     localhost:8000/resourcesmanager/pool/delete/<pool_id>
     """
     def delete(self, pool_id):
-        results = manager.delete_pool(pool_id)
-        return jsonify({"results": results})
+        results, status_code = manager.delete_pool(pool_id)
+        return results, status_code
 
 
 @rest.route("res/request/<string:pool_id>")
@@ -107,8 +108,8 @@ class GetResource(Resource):
     localhost:8000/resourcesmanager/res/request/<pool_id>
     """
     def get(self, pool_id):
-        results = manager.request_resource(pool_id)
-        return jsonify(results)
+        results, status_code = manager.request_resource(pool_id)
+        return results, status_code
 
 
 @rest.route("res/otp/generate/<string:pool_id>/<string:resource_id>")
@@ -117,8 +118,8 @@ class GenerateTotpCode(Resource):
     localhost:8000/resourcesmanager/res/opt/generate/<pool_id>/<resource_id>
     """
     def get(self, pool_id, resource_id):
-        results = manager.generate_otp(pool_id, resource_id)
-        return jsonify({"otp": results})
+        results, status_code = manager.generate_otp(pool_id, resource_id)
+        return {"otp": results}, status_code
 
 
 @rest.route("res/renew")
@@ -136,8 +137,8 @@ class RecycleResource(Resource):
     /res/recycle/10.160.16.50-pool/f632020b-9f8a-48d6-91fc-f4399760ba9d
     """
     def delete(self, pool_id, res_id):
-        results = manager.recycle_resource(pool_id, res_id)
-        return jsonify({"results": results})
+        results, status_code = manager.recycle_resource(pool_id, res_id)
+        return results, status_code
 
 
 @rest.route("fgt/setup")
@@ -156,7 +157,9 @@ class SetupConfiguration(Resource):
     def post(self):
         try:
             data = request.get_json(force=True)
-            result = manager.fgt_setup(data["fgt_ip"], data["radius_ip"], data["hostname"])
+            result = manager.fgt_setup(
+                data["fgt_ip"], data["radius_ip"], data["hostname"]
+            )
         except Exception as err:
             return f"Error: {err}"
         return jsonify(f"result: {result}")

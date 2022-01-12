@@ -22,6 +22,8 @@ def pool_worker():
 
             if pools:
                 for pool_id in pools:
+                    if isinstance(pool_id, dict):
+                        pool_id = pool_id.get("pool_id")
                     pool_expire = manager.datastore.get(
                         "pool_expiration", pool_id
                     )

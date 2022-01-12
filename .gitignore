@@ -15,3 +15,5 @@ pylint-report
 oriole_report.json
 dist
 *.egg-info
+*.exe
+.vscode

@@ -61,6 +61,9 @@ data:
               - 10.160.83.24:9100
               - 10.160.83.25:9100
               - 10.160.83.26:9100
+              - 10.160.83.27:9100
+              - 10.160.83.28:9100
+              - 10.160.83.29:9100
 
       - job_name: 'process-exporter'
         static_configs:
@@ -162,12 +165,27 @@ data:
           - target_label: __address__
             replacement: blackboxexporter:9115
 
-      - job_name: 'snmp'
+      - job_name: 'snmp-fgt'
         static_configs:
           - targets: []
         metrics_path: /snmp
         params:
           module: [fortigate]
+        relabel_configs:
+          - source_labels: [__address__]
+            target_label: __param_target
+          - source_labels: [__param_target]
+            target_label: instance
+          - target_label: __address__
+            replacement: snmp-exporter:9116  # The SNMP exporter's real hostname:port.
+      - job_name: 'snmp-fac'
+        static_configs:
+          - targets:
+            - 10.160.83.158
+            - 10.160.13.220
+        metrics_path: /snmp
+        params:
+          module: [fortiauthenticator]
         relabel_configs:
           - source_labels: [__address__]
             target_label: __param_target

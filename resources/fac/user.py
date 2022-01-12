@@ -1,5 +1,3 @@
-import requests
-
 from resources.ftc.user import User as FtcUser
 from resources.pool import ResourcePoolMixin
 from utils.logger import get_logger
@@ -77,52 +75,6 @@ class User(FtcUser, ResourcePoolMixin):
                 created_user.append(user_name)
         ssh_client.quit()
         return created_user, failed_user
-
-    @classmethod
-    def _add_membership(cls, users, group, ssh_client=None):
-        logger.info(f"Adding group for {len(users)} users")
-        users = " ".join(users)
-        command = [
-            "config user group",
-            f"edit {group}",
-            f"append member {users}",
-            "end"
-        ]
-        ssh_client.send_commands(command, timeout=300)
-
-    @classmethod
-    def _add_membership_api(cls, users, data):
-        end_point = f"api/v2/cmdb/user/group/{data.get('group')}"
-        user_list = [{"name": user} for user in users]
-        headers = {
-            "Content-Type": "application/json"
-        }
-        payload = {
-            "member": user_list
-        }
-        params = {
-            "vdom": data.get("vdom"),
-            "access_token": data.get("fgt_token")
-        }
-        resp = requests.put(
-            url=f"https://{data.get('ip')}/{end_point}",
-            headers=headers,
-            params=params,
-            verify=False,
-            json=payload,
-            timeout=30
-        )
-        assert resp.status_code == 200, resp.text
-
-    @classmethod
-    def _delete_membership(cls, group, ssh_client=None):
-        command = [
-            "config user group",
-            f"edit {group}",
-            "unset member",
-            "end"
-        ]
-        ssh_client.send_commands(command)
 
     def prepare(self, data):
         users, failed_users = self.create_user(data)
