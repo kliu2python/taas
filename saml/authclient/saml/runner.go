@@ -39,7 +39,7 @@ func (sr *SamlRunner) Run(idx int, c chan []int64) {
 		SamlClient.IdpLogin(user, password)
 		status, err := SamlClient.GotoSpPage("Login Successful")
 		if args.LOGOUT == true {
-			status, err = SamlClient.Logoff()
+			SamlClient.Logoff()
 		}
 		if status == 200 && err == nil {
 			pass++
