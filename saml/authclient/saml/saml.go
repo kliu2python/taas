@@ -122,6 +122,9 @@ func (sd *SamlClient) GotoSpPage(expect string) (int, error) {
 	req.Header.Set("Cookie", sd.InitCookie)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	resp, err := sd.HttpClient.Do(req)
+	if resp.Request.URL == nil {
+		return 400, errors.New("Error when go to sp content, URL is Null")
+	}
 	urlData := resp.Request.URL
 	sd.Url = fmt.Sprintf("%s://%s%slogout", urlData.Scheme, urlData.Host, urlData.Path)
 	Cookie := resp.Header["Set-Cookie"]
