@@ -1,5 +1,6 @@
 package interfaces
 
 type Runner interface {
-	Run(idx int, c chan interface{})
+	Setup(idx int)
+	Run() bool
 }

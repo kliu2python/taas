@@ -148,13 +148,13 @@ func (sd *SamlClient) GotoSpPage(expect string) (int, error) {
 func (sd *SamlClient) Logoff() (int, error) {
 	sd.EnableRedirectCookie(false)
 	sd.DisableRedirect(true)
-	req, _ := http.NewRequest("GET", sd.Url, strings.NewReader(""))
+	req, _ := http.NewRequest("GET", sd.Url, http.NoBody)
 	req.Header.Add("Cookie", sd.LogoutToken)
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	resp, err := sd.HttpClient.Do(req)
 	if resp.StatusCode == 302 {
 		sd.Url = resp.Header["Location"][0]
-		req, _ = http.NewRequest("GET", sd.Url, strings.NewReader(""))
+		req, _ = http.NewRequest("GET", sd.Url, http.NoBody)
 		req.Header.Add(
 			"Cookie", fmt.Sprintf("csrftoken=%s;%s", sd.CsfrToken, sd.LogoutToken),
 		)
