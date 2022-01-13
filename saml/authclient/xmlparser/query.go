@@ -4,12 +4,10 @@ import (
 	"github.com/tamerh/xpath"
 )
 
-// CreateXPathNavigator creates a new xpath.NodeNavigator for the specified html.Node.
 func (x *XMLParser) CreateXPathNavigator(top *XMLElement) *XmlNodeNavigator {
 	return &XmlNodeNavigator{curr: top, root: top, attr: -1}
 }
 
-// Compile the given xpath expression
 func (x *XMLParser) CompileXpath(expr string) (*xpath.Expr, error) {
 
 	exp, err := xpath.Compile(expr)
@@ -20,7 +18,6 @@ func (x *XMLParser) CompileXpath(expr string) (*xpath.Expr, error) {
 
 }
 
-// CreateXPathNavigator creates a new xpath.NodeNavigator for the specified html.Node.
 func createXPathNavigator(top *XMLElement) *XmlNodeNavigator {
 	return &XmlNodeNavigator{curr: top, root: top, attr: -1}
 }
@@ -30,7 +27,6 @@ type XmlNodeNavigator struct {
 	attr       int
 }
 
-// Find searches the Node that matches by the specified XPath expr.
 func find(top *XMLElement, expr string) ([]*XMLElement, error) {
 	exp, err := xpath.Compile(expr)
 	if err != nil {
@@ -44,8 +40,6 @@ func find(top *XMLElement, expr string) ([]*XMLElement, error) {
 	return elems, nil
 }
 
-// FindOne searches the Node that matches by the specified XPath expr,
-// and returns first element of matched.
 func findOne(top *XMLElement, expr string) (*XMLElement, error) {
 	exp, err := xpath.Compile(expr)
 	if err != nil {
@@ -54,7 +48,7 @@ func findOne(top *XMLElement, expr string) (*XMLElement, error) {
 	t := exp.Select(createXPathNavigator(top))
 	var elem *XMLElement
 	if t.MoveNext() {
-		elem = t.Current().(*XmlNodeNavigator).curr //getCurrentNode(t)
+		elem = t.Current().(*XmlNodeNavigator).curr
 	}
 	return elem, nil
 }

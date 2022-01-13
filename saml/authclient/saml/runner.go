@@ -11,7 +11,7 @@ import (
 
 type SamlRunner struct{}
 
-func (sr *SamlRunner) Run(idx int, c chan []int64) {
+func (sr *SamlRunner) Run(idx int, c chan interface{}) {
 	jar, err := cookiejar.New(nil)
 	if err != nil {
 		log.Fatal(err)
@@ -22,32 +22,55 @@ func (sr *SamlRunner) Run(idx int, c chan []int64) {
 		},
 		Url: args.URL,
 	}
-	SamlClient.EnableRedirectCookie(true)
 
-	t1 := time.Now()
 	user := fmt.Sprintf("%s%d", args.USER_PREFIX, idx+1)
 	password := args.PASSWORD
 	log.Printf(
 		"IDX: %d started for Saml, User: %s, Password: %s\n",
 		idx, user, password,
 	)
-	var complete int64 = 0
+
 	var pass int64 = 0
 	var fail int64 = 0
-	for complete < args.REPEAT {
-		SamlClient.InitLogin()
-		SamlClient.IdpLogin(user, password)
-		status, err := SamlClient.GotoSpPage("Login Successful")
+	var complete int64
+	t1 := time.Now()
+
+	for complete = 0; complete < args.REPEAT; complete++ {
+		code, err := SamlClient.InitLogin()
+		has_fail := false
+		if err != nil || code != 200 {
+			log.Printf("Init Login Error, code: %d, error: %v", code, err)
+			has_fail = true
+		}
+
+		code, err = SamlClient.IdpLogin(user, password)
+		if err != nil || code != 200 {
+			log.Printf("Idp Login Error, code: %d, error: %v", code, err)
+			has_fail = true
+
+		}
+
+		code, err = SamlClient.GotoSpPage("Login Successful")
+		if err != nil || code != 200 {
+			log.Printf("Page Launch Error, code: %d, error: %v", code, err)
+			has_fail = true
+
+		}
+
 		if args.LOGOUT == true {
-			SamlClient.Logoff()
+			code, err = SamlClient.Logoff()
+			if err != nil || code != 200 {
+				log.Printf("Logoff Error, code: %d, error: %v", code, err)
+				has_fail = true
+			}
 		}
-		if status == 200 && err == nil {
-			pass++
-		} else {
+		if has_fail {
 			fail++
+		} else {
+			pass++
 		}
-		complete++
 	}
+
 	t2 := time.Now()
 	total := t2.Sub(t1)
 	log.Printf(
