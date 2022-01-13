@@ -48,6 +48,8 @@ func Run(idx int, c chan interface{}) {
 	}
 }
 
+// Due to API Call count per second limit on FAC, facapi will not support signle
+// Thread for now
 func getRunner() interfaces.Runner {
 	switch strings.ToLower(args.AUTHMODE) {
 	case "saml":

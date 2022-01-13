@@ -24,6 +24,7 @@ var AUTHMODE = getEnv("AUTHMODE", "SAML")
 // FAC Auth required
 var FAC_ADMIN_USER = getEnv("FAC_ADMIN_USER", "admin")
 var FAC_ADMIN_TOKEN = getEnv("FAC_ADMIN_TOKEN", "")
+var FAC_USER_IDX_SLICE, _ = strconv.Atoi(getEnv("FAC_USER_IDX_SLICE", "500"))
 
 // SAML Auth optional
 var LOGOUT = getEnv("LOGOUT", "yes") == "yes"
