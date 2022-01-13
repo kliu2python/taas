@@ -1,5 +1,5 @@
 package interfaces
 
 type Runner interface {
-	Run(idx int, c chan []int64)
+	Run(idx int, c chan interface{})
 }

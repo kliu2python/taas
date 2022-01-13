@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -29,9 +28,10 @@ type SamlClient struct {
 }
 
 func (sd *SamlClient) InitLogin() (int, error) {
+	sd.EnableRedirectCookie(false)
+	sd.DisableRedirect(false)
 	resp, err := sd.HttpClient.Get(args.URL)
 	if err != nil || resp.StatusCode > 399 {
-		log.Println("Init Login Error")
 		return resp.StatusCode, err
 	}
 	defer resp.Body.Close()
@@ -117,6 +117,7 @@ func (sd *SamlClient) EnableRedirectCookie(enable bool) {
 }
 
 func (sd *SamlClient) GotoSpPage(expect string) (int, error) {
+	sd.EnableRedirectCookie(true)
 	body := strings.NewReader(sd.SamlAssertion.Encode())
 	req, _ := http.NewRequest(strings.ToUpper(sd.AcsMethod), sd.AcsUrl, body)
 	req.Header.Set("Cookie", sd.InitCookie)
@@ -125,6 +126,7 @@ func (sd *SamlClient) GotoSpPage(expect string) (int, error) {
 	if err != nil || resp.StatusCode > 399 {
 		return 400, errors.New("Error when go to sp content, URL is Null")
 	}
+	defer resp.Body.Close()
 	urlData := resp.Request.URL
 	sd.Url = fmt.Sprintf("%s://%s%slogout", urlData.Scheme, urlData.Host, urlData.Path)
 	Cookie := resp.Header["Set-Cookie"]
@@ -133,13 +135,10 @@ func (sd *SamlClient) GotoSpPage(expect string) (int, error) {
 			sd.LogoutToken = header
 		}
 	}
-	if err == nil {
-		defer resp.Body.Close()
-	}
 	if len(expect) > 0 {
 		d, _ := io.ReadAll(resp.Body)
 		target := fmt.Sprintf("%s", d)
-		if strings.Contains(target, expect) {
+		if strings.Contains(target, expect) == false {
 			err = errors.New(fmt.Sprintf("Login Failed! %s", target))
 		}
 	}
@@ -147,8 +146,8 @@ func (sd *SamlClient) GotoSpPage(expect string) (int, error) {
 }
 
 func (sd *SamlClient) Logoff() (int, error) {
+	sd.EnableRedirectCookie(false)
 	sd.DisableRedirect(true)
-	defer sd.DisableRedirect(false)
 	req, _ := http.NewRequest("GET", sd.Url, strings.NewReader(""))
 	req.Header.Add("Cookie", sd.LogoutToken)
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")

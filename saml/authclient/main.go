@@ -25,7 +25,7 @@ func getRunner() interfaces.Runner {
 }
 
 func dispatchJob(runner interfaces.Runner) {
-	c := make(chan []int64)
+	c := make(chan interface{})
 	for i := 0; i < args.CONCURRENT; i++ {
 		go runner.Run(i, c)
 	}

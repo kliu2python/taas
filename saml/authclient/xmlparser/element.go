@@ -6,7 +6,6 @@ type XMLElement struct {
 	InnerText string
 	Childs    map[string][]XMLElement
 	Err       error
-	// filled when xpath enabled
 	childs    []*XMLElement
 	parent    *XMLElement
 	attrs     []*xmlAttr
@@ -19,12 +18,10 @@ type xmlAttr struct {
 	value string
 }
 
-// SelectElements finds child elements with the specified xpath expression.
 func (n *XMLElement) SelectElements(exp string) ([]*XMLElement, error) {
 	return find(n, exp)
 }
 
-// SelectElement finds child elements with the specified xpath expression.
 func (n *XMLElement) SelectElement(exp string) (*XMLElement, error) {
 	return findOne(n, exp)
 }
