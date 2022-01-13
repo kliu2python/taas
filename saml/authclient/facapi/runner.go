@@ -9,8 +9,11 @@ import (
 
 type FacApiAuthRunner struct {
 	AuthClient *FacApiAuthClient
-	UserName   string
 	Password   string
+	BaseName   string
+	Idx        int
+	IdxMin     int
+	IdxSize    int
 }
 
 func (r *FacApiAuthRunner) Setup(idx int) {
@@ -20,17 +23,24 @@ func (r *FacApiAuthRunner) Setup(idx int) {
 	}
 
 	r.AuthClient.SetAuthHeader(args.FAC_ADMIN_USER, args.FAC_ADMIN_TOKEN)
-
-	r.UserName = fmt.Sprintf("%s%d", args.USER_PREFIX, idx+1)
+	r.IdxMin = idx * args.FAC_USER_IDX_SLICE
+	r.IdxSize = r.IdxMin + args.FAC_USER_IDX_SLICE
 	r.Password = args.PASSWORD
+	r.BaseName = args.USER_PREFIX
 	log.Printf(
 		"IDX: %d Setup for FAC API Auth, User: %s, Password: %s\n",
-		idx, r.UserName, r.Password,
+		idx, r.BaseName, r.Password,
 	)
 }
 
 func (r *FacApiAuthRunner) Run() bool {
-	code, err := r.AuthClient.Auth(r.UserName, r.Password, "")
+	if r.Idx < r.IdxSize {
+		r.Idx++
+	} else {
+		r.Idx = r.IdxMin + 1
+	}
+	user := fmt.Sprintf("%s%d", r.BaseName, r.Idx)
+	code, err := r.AuthClient.Auth(user, r.Password, "")
 	if err != nil {
 		log.Printf("Login Error, %v\n", err)
 		return false
