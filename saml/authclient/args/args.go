@@ -13,18 +13,25 @@ func getEnv(key string, defaultValue string) string {
 }
 
 // Generic
-var URL = os.Getenv("URL")
+var URL = getEnv("URL", "")
 var CONCURRENT, _ = strconv.Atoi(getEnv("CONCURRENT", "1"))
 var REPEAT, _ = strconv.ParseInt(getEnv("REPEAT", "1"), 10, 64)
 var PASSWORD = getEnv("PASSWORD", "fortinet")
 var USER_PREFIX = getEnv("USER_PREFIX", "idptest")
 var DISABLE_SSL_VERIFY = getEnv("DISABLE_SSL_VERIFY", "yes") == "yes"
 var AUTHMODE = getEnv("AUTHMODE", "SAML")
+var CLOSE_CONNECTION = getEnv("CLOSE_CONNECTION", "yes") == "yes"
+var AUTH_SERVER_IP = getEnv("AUTH_SERVER_IP", "")
 
 // FAC Auth required
 var FAC_ADMIN_USER = getEnv("FAC_ADMIN_USER", "admin")
 var FAC_ADMIN_TOKEN = getEnv("FAC_ADMIN_TOKEN", "")
 var FAC_USER_IDX_SLICE, _ = strconv.Atoi(getEnv("FAC_USER_IDX_SLICE", "500"))
+
+// OAuth required
+var OAUTH_CLIENT_ID = getEnv("OAUTH_CLIENT_ID", "")
+var OAUTH_CLIENT_SECRET = getEnv("OAUTH_CLIENT_SECRET", "")
+var OAUTH_GRANT_TYPE = getEnv("OAUTH_GRANT_TYPE", "password")
 
 // SAML Auth optional
 var LOGOUT = getEnv("LOGOUT", "yes") == "yes"

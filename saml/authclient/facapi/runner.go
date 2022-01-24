@@ -17,9 +17,16 @@ type FacApiAuthRunner struct {
 }
 
 func (r *FacApiAuthRunner) Setup(idx int) {
+	var Url string
+	if len(args.URL) == 0 {
+		Url = fmt.Sprintf("https://%s/api/v1/auth/", args.AUTH_SERVER_IP)
+	} else {
+		Url = args.URL
+	}
 	r.AuthClient = &FacApiAuthClient{
-		HttpClient: &http.Client{},
-		Url:        args.URL,
+		HttpClient:      &http.Client{},
+		Url:             Url,
+		CloseConnection: args.CLOSE_CONNECTION,
 	}
 
 	r.AuthClient.SetAuthHeader(args.FAC_ADMIN_USER, args.FAC_ADMIN_TOKEN)

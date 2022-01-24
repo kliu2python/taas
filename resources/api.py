@@ -4,7 +4,7 @@ from flask_restful import Resource, request
 import resources.manager as manager
 from rest import RestApi
 
-rest = RestApi(base_route="/resourcesmanager/")
+rest = RestApi(base_route="/resourcesmanager/v1/")
 
 
 @rest.route("pool/create")
@@ -28,8 +28,8 @@ class CreatePool(Resource):
         "capacity": 20,
         "data": {
             "ip": "10.160.50.132",
-            "fgt_user": "admin",
-            "fgt_password": "fortinet",
+            "admin_user": "admin",
+            "admin_password": "fortinet",
             "fgt_token": "xxxxxxx",
             "user_password": "fortinet",
             "email": "znie@fortinet.com",

@@ -153,7 +153,7 @@ def delete_pool(pool_id):
             )
             ret[pool] = "SCHEDULED"
         else:
-            ret[pool] = "POOL {pool_id} NOT EXISTS"
+            ret[pool] = f"POOL {pool_id} NOT EXISTS"
             _clear_pool_data(pool_id)
             ret_code = 400
     if ret:

@@ -1,3 +1,5 @@
+import re
+
 import requests
 
 import resources.constants as constants
@@ -105,10 +107,14 @@ class User:
         for user in users:
             try:
                 user_dict = {
-                    "user": user,
                     "password": data.get("user_password"),
                     "custom_data": data.get("custom_data", None)
                 }
+                if user.startswith("<"):
+                    match = re.search(r">(.*?)<", user).group(1)
+                    user_dict["user"] = match
+                else:
+                    user_dict["user"] = user
                 if ftc_data and mfa_provider in ["fortitoken-cloud"]:
                     if ftc_data.get("mfa_type") in ["ftm", "FTM"]:
                         logger.info(f"Activate token for user: {user}")

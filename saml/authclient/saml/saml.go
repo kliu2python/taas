@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"automation/authclient/args"
-	"automation/authclient/xmlparser"
+	"automation/authclient/pkg/xmlparser"
 )
 
 type SamlClient struct {
