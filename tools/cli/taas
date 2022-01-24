@@ -57,7 +57,7 @@ def show_pool(pool_name=None):
     if pool_name is None:
         pool_name = args.pool_name
     resp = requests.get(
-        get_api_url(f"resourcesmanager/pool/show/{pool_name}", 8001),
+        get_api_url(f"resourcesmanager/v1/pool/show/{pool_name}", 8001),
         verify=False
     )
     return resp.json()
@@ -68,7 +68,7 @@ def delete_pool(pool_name=None):
         pool_name = args.pool_name
     resp = requests.delete(
         get_api_url(
-            f"resourcesmanager/pool/delete/{pool_name}", 8001
+            f"resourcesmanager/v1/pool/delete/{pool_name}", 8001
         ),
         verify=False
     )
@@ -90,7 +90,7 @@ def delete_pool(pool_name=None):
 
 def _create_resource(pool_data):
     resp = requests.post(
-        get_api_url(f"resourcesmanager/pool/create", 8001),
+        get_api_url(f"resourcesmanager/v1/pool/create", 8001),
         json=pool_data,
         verify=False
     )
