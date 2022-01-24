@@ -2,13 +2,13 @@
 # default_pool_life in minutes, 0 means unlimited hours
 default_pool_life: 3
 redis:
-  server: localhost
+  server: 10.160.83.154
   port: 6379
 spec:
   data:
     ftc:
-      cert_path: "C:\\Users\\znie\\Documents\\config_files\\automation\\ftm.crt"
-      key_path: "C:\\Users\\znie\\Documents\\config_files\\automation\\server.key"
+      cert_path: "C:\\Users\\w10\\Documents\\config_files\\automation\\ftm.crt"
+      key_path: "C:\\Users\\w10\\Documents\\config_files\\automation\\server.key"
     sslcert:
       folder_path: "/home/fortinet/data/ca-services"
     fgt:

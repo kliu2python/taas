@@ -15,7 +15,7 @@ class User(FtcUser, ResourcePoolMixin):
         failed_user = []
         capacity = data.get("capacity")
         ssh_client = SshInteractiveConnection(
-            data.get("ip"), data.get("fgt_user"), data.get("fgt_password")
+            data.get("ip"), data.get("admin_user"), data.get("admin_password")
         )
         group = data.get("group")
         vdom = data.get("vdom", "root")
@@ -134,7 +134,7 @@ class User(FtcUser, ResourcePoolMixin):
         deleted = []
         capacity = data.get("capacity")
         ssh_client = SshInteractiveConnection(
-            data.get("ip"), data.get("fgt_user"), data.get("fgt_password")
+            data.get("ip"), data.get("admin_user"), data.get("admin_password")
         )
         vdom = data.get("vdom", "root")
         vdom_cmd = [

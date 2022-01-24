@@ -8,9 +8,10 @@ import (
 )
 
 type FacApiAuthClient struct {
-	HttpClient *http.Client
-	AuthHeader string
-	Url        string
+	HttpClient      *http.Client
+	CloseConnection bool
+	AuthHeader      string
+	Url             string
 }
 
 func (fa *FacApiAuthClient) SetAuthHeader(admuser, admtoken string) {
@@ -40,6 +41,7 @@ func (fa *FacApiAuthClient) Auth(user, password, token string) (int, error) {
 	body := strings.NewReader(payload)
 	req, _ := http.NewRequest("POST", fa.Url, body)
 	req.Header.Add("Authorization", fa.AuthHeader)
+	req.Close = fa.CloseConnection
 	resp, err := fa.HttpClient.Do(req)
 	if err != nil {
 		return 401, err

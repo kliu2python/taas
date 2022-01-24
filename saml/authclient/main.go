@@ -4,17 +4,33 @@ import (
 	"automation/authclient/args"
 	"automation/authclient/facapi"
 	"automation/authclient/interfaces"
+	"automation/authclient/oauth"
 	"automation/authclient/saml"
 	"crypto/tls"
 	"log"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/apache/pulsar-client-go/pulsar"
 )
 
 func switchOffHttpsVerify() {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig =
 		&tls.Config{InsecureSkipVerify: true}
+}
+
+func syncRun() {
+	client, err := pulsar.NewClient(pulsar.ClientOptions{
+		URL:               "pulsar://localhost:6650,localhost:6651,localhost:6652",
+		OperationTimeout:  30 * time.Second,
+		ConnectionTimeout: 30 * time.Second,
+	})
+	if err != nil {
+		log.Fatalf("Could not instantiate Pulsar client: %v", err)
+	}
+
+	defer client.Close()
 }
 
 func Run(idx int, c chan interface{}) {
@@ -56,6 +72,8 @@ func getRunner() interfaces.Runner {
 		return &saml.SamlRunner{}
 	case "facapi":
 		return &facapi.FacApiAuthRunner{}
+	case "oauthtoken":
+		return &oauth.OauthTokenRunner{}
 	default:
 		return &saml.SamlRunner{}
 	}
