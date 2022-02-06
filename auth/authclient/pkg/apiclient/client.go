@@ -1,12 +1,13 @@
 package apiclient
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/goccy/go-json"
 )
 
 type ApiClient struct {

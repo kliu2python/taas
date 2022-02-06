@@ -17,11 +17,19 @@ var URL = getEnv("URL", "")
 var CONCURRENT, _ = strconv.Atoi(getEnv("CONCURRENT", "1"))
 var REPEAT, _ = strconv.ParseInt(getEnv("REPEAT", "1"), 10, 64)
 var PASSWORD = getEnv("PASSWORD", "fortinet")
-var USER_PREFIX = getEnv("USER_PREFIX", "idptest")
+var USER_PREFIX = getEnv("USER_PREFIX", "perftest")
 var DISABLE_SSL_VERIFY = getEnv("DISABLE_SSL_VERIFY", "yes") == "yes"
 var AUTHMODE = getEnv("AUTHMODE", "SAML")
 var CLOSE_CONNECTION = getEnv("CLOSE_CONNECTION", "yes") == "yes"
 var AUTH_SERVER_IP = getEnv("AUTH_SERVER_IP", "")
+var TAAS_IP = getEnv("TAAS_IP", "localhost:8000")
+var USE_TAAS = getEnv("USE_TAAS", "yes") == "yes"
+var RESOURCE_POOL_NAME = getEnv("RESOURCE_POOL_NAME", "")
+var RESOURCE_POOL_SIZE, _ = strconv.Atoi(getEnv("REQUEST_POOL_SIZE", "1"))
+
+// MFA config
+var MFA_RANDOM_TOKEN_HOLD_MAX, _ = strconv.Atoi(getEnv("MFA_RANDOM_TOKEN_HOLD_MAX", "0"))
+var MFA_RANDOM_TOKEN_HOLD_MIN, _ = strconv.Atoi(getEnv("MFA_RANDOM_TOKEN_HOLD_MIN", "0"))
 
 // FAC Auth required
 var FAC_ADMIN_USER = getEnv("FAC_ADMIN_USER", "admin")

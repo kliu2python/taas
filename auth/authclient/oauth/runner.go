@@ -3,6 +3,7 @@ package oauth
 import (
 	"automation/authclient/args"
 	"automation/authclient/pkg/apiclient"
+	"automation/authclient/pkg/taas"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,11 +11,12 @@ import (
 
 type OauthTokenRunner struct {
 	OauthTokenClient *OauthTokenClient
+	ResourceManager  *taas.ResourceManager
 	UserName         string
 	Password         string
 }
 
-func (r *OauthTokenRunner) Setup(idx int) {
+func (r *OauthTokenRunner) Setup(idx int, rm *taas.ResourceManager) {
 	r.UserName = fmt.Sprintf("%s%d", args.USER_PREFIX, idx)
 	r.Password = args.PASSWORD
 	apiClient := &apiclient.ApiClient{
@@ -32,7 +34,25 @@ func (r *OauthTokenRunner) Setup(idx int) {
 }
 
 func (r *OauthTokenRunner) Run() bool {
-	token, err := r.OauthTokenClient.GetToken(r.UserName, r.Password)
+	var user, password string
+	if r.ResourceManager == nil {
+		user = r.UserName
+		password = r.Password
+	} else {
+		res, err := r.ResourceManager.Get()
+		if res == nil {
+			fmt.Printf("No Resource get, error: %v", err)
+			return false
+		}
+		user = res.User
+		password = res.Password
+		r.OauthTokenClient.ClientId = res.CustomData.OauthClientId
+		r.OauthTokenClient.ClientSecret = res.CustomData.OauthClientSecret
+		r.OauthTokenClient.FacIp = res.CustomData.FacIp
+		r.OauthTokenClient.InitClient()
+	}
+
+	token, err := r.OauthTokenClient.GetToken(user, password)
 	if err != nil {
 		log.Printf("Get Token Error, %v\n", err)
 		return false

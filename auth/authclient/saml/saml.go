@@ -5,11 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
 
-	"automation/authclient/args"
+	"automation/authclient/pkg/otp"
 	"automation/authclient/pkg/xmlparser"
 )
 
@@ -27,18 +28,17 @@ type SamlClient struct {
 	SamlAssertion url.Values
 }
 
-func (sd *SamlClient) InitLogin() (int, error) {
-	sd.EnableRedirectCookie(false)
-	sd.DisableRedirect(false)
-	resp, err := sd.HttpClient.Get(args.URL)
-	if err != nil || resp.StatusCode > 399 {
-		return resp.StatusCode, err
-	}
-	defer resp.Body.Close()
-	sd.Cookie = resp.Header["Set-Cookie"][0]
-	sd.Url = resp.Request.Response.Header["Location"][0]
-	sd.InitCookie = resp.Request.Response.Header["Set-Cookie"][0]
-	buf := bufio.NewReaderSize(resp.Body, 65536)
+// func printBody(body io.ReadCloser) {
+// 	b, _ := io.ReadAll(body)
+// 	fmt.Printf("%s", b)
+// }
+
+func (sd *SamlClient) purifyCookie(cookie string) string {
+	return strings.Split(cookie, ";")[0]
+}
+
+func (sd *SamlClient) updateCSRFToken(body io.ReadCloser) {
+	buf := bufio.NewReaderSize(body, 65536)
 	parser := xmlparser.NewXMLParser(buf, "input").ParseAttributesOnly("input")
 	for xml := range parser.Stream() {
 		if xml.Attrs["name"] == "csrfmiddlewaretoken" {
@@ -46,10 +46,24 @@ func (sd *SamlClient) InitLogin() (int, error) {
 			break
 		}
 	}
+}
+
+func (sd *SamlClient) InitLogin(url string) (int, error) {
+	sd.DisableRedirectCookie()
+	sd.EnableRedirect()
+	resp, err := sd.HttpClient.Get(url)
+	if err != nil || resp.StatusCode > 399 {
+		return resp.StatusCode, err
+	}
+	defer resp.Body.Close()
+	sd.Cookie = sd.purifyCookie(resp.Header["Set-Cookie"][0])
+	sd.Url = resp.Request.Response.Header["Location"][0]
+	sd.InitCookie = sd.purifyCookie(resp.Request.Response.Header["Set-Cookie"][0])
+	sd.updateCSRFToken(resp.Body)
 	return resp.StatusCode, err
 }
 
-func (sd *SamlClient) IdpLogin(User, Password string) (int, error) {
+func (sd *SamlClient) IdpLogin(User, Password, seed string) (int, error) {
 	bodyString := fmt.Sprintf(
 		"csrfmiddlewaretoken=%v&username=%v&password=%v&next=%%2F", sd.CsfrToken, User, Password,
 	)
@@ -58,8 +72,20 @@ func (sd *SamlClient) IdpLogin(User, Password string) (int, error) {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Cookie", sd.Cookie)
 	resp, err := sd.HttpClient.Do(req)
-	if err != nil {
+	if err != nil || resp.StatusCode != 200 {
+		resp.Body.Close()
 		return resp.StatusCode, err
+	}
+	if len(seed) > 0 {
+		sd.updateCSRFToken(resp.Body)
+		resp.Body.Close()
+		token := otp.GetOtp(seed)
+		bodyString = fmt.Sprintf(
+			"csrfmiddlewaretoken=%v&username=%v&token_code=%v&next=%%2F",
+			sd.CsfrToken, User, token,
+		)
+		req.Body = ioutil.NopCloser(strings.NewReader(bodyString))
+		resp, err = sd.HttpClient.Do(req)
 	}
 	defer resp.Body.Close()
 	buf := bufio.NewReaderSize(resp.Body, 65536)
@@ -86,14 +112,13 @@ func noRedirectfunc(req *http.Request, via []*http.Request) error {
 	return errors.New("redirect disabled")
 }
 
-func (sd *SamlClient) DisableRedirect(disable bool) {
-	if disable == true {
-		sd.HttpClient.CheckRedirect = noRedirectfunc
-		return
-	}
-	sd.HttpClient.CheckRedirect = nil
+func (sd *SamlClient) DisableRedirect() {
+	sd.HttpClient.CheckRedirect = noRedirectfunc
 }
 
+func (sd *SamlClient) EnableRedirect() {
+	sd.HttpClient.CheckRedirect = nil
+}
 func handleRedirectCookie(req *http.Request, via []*http.Request) error {
 	if len(via) > 0 {
 		for _, cookie := range req.Response.Header["Set-Cookie"] {
@@ -104,27 +129,25 @@ func handleRedirectCookie(req *http.Request, via []*http.Request) error {
 	return nil
 }
 
-func (sd *SamlClient) EnableRedirectCookie(enable bool) {
-	if enable == true && sd.HandleCookie == false {
-		sd.HttpClient.CheckRedirect = handleRedirectCookie
-		sd.HandleCookie = true
-		return
-	}
-	if enable == false && sd.HandleCookie == true {
-		sd.HttpClient.CheckRedirect = nil
-		sd.HandleCookie = false
-	}
+func (sd *SamlClient) EnableRedirectCookie() {
+	sd.HttpClient.CheckRedirect = handleRedirectCookie
+	sd.HandleCookie = true
+}
+
+func (sd *SamlClient) DisableRedirectCookie() {
+	sd.HttpClient.CheckRedirect = nil
+	sd.HandleCookie = false
 }
 
 func (sd *SamlClient) GotoSpPage(expect string) (int, error) {
-	sd.EnableRedirectCookie(true)
+	sd.EnableRedirectCookie()
 	body := strings.NewReader(sd.SamlAssertion.Encode())
 	req, _ := http.NewRequest(strings.ToUpper(sd.AcsMethod), sd.AcsUrl, body)
 	req.Header.Set("Cookie", sd.InitCookie)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	resp, err := sd.HttpClient.Do(req)
 	if err != nil || resp.StatusCode > 399 {
-		return 400, errors.New("Error when go to sp content, URL is Null")
+		return 400, errors.New("error when go to sp content, url is null")
 	}
 	defer resp.Body.Close()
 	urlData := resp.Request.URL
@@ -137,17 +160,17 @@ func (sd *SamlClient) GotoSpPage(expect string) (int, error) {
 	}
 	if len(expect) > 0 {
 		d, _ := io.ReadAll(resp.Body)
-		target := fmt.Sprintf("%s", d)
-		if strings.Contains(target, expect) == false {
-			err = errors.New(fmt.Sprintf("Login Failed! %s", target))
+		target := string(d)
+		if !strings.Contains(target, expect) {
+			err = fmt.Errorf("login failed! %s", target)
 		}
 	}
 	return resp.StatusCode, err
 }
 
 func (sd *SamlClient) Logoff() (int, error) {
-	sd.EnableRedirectCookie(false)
-	sd.DisableRedirect(true)
+	sd.DisableRedirectCookie()
+	sd.DisableRedirect()
 	req, _ := http.NewRequest("GET", sd.Url, http.NoBody)
 	req.Header.Add("Cookie", sd.LogoutToken)
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
