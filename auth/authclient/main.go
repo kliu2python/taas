@@ -5,14 +5,13 @@ import (
 	"automation/authclient/facapi"
 	"automation/authclient/interfaces"
 	"automation/authclient/oauth"
+	"automation/authclient/pkg/taas"
 	"automation/authclient/saml"
 	"crypto/tls"
 	"log"
 	"net/http"
 	"strings"
 	"time"
-
-	"github.com/apache/pulsar-client-go/pulsar"
 )
 
 func switchOffHttpsVerify() {
@@ -20,30 +19,38 @@ func switchOffHttpsVerify() {
 		&tls.Config{InsecureSkipVerify: true}
 }
 
-func syncRun() {
-	client, err := pulsar.NewClient(pulsar.ClientOptions{
-		URL:               "pulsar://localhost:6650,localhost:6651,localhost:6652",
-		OperationTimeout:  30 * time.Second,
-		ConnectionTimeout: 30 * time.Second,
-	})
-	if err != nil {
-		log.Fatalf("Could not instantiate Pulsar client: %v", err)
-	}
+// func syncRun() {
+// 	client, err := pulsar.NewClient(pulsar.ClientOptions{
+// 		URL:               "pulsar://localhost:6650,localhost:6651,localhost:6652",
+// 		OperationTimeout:  30 * time.Second,
+// 		ConnectionTimeout: 30 * time.Second,
+// 	})
+// 	if err != nil {
+// 		log.Fatalf("Could not instantiate Pulsar client: %v", err)
+// 	}
 
-	defer client.Close()
-}
+// 	defer client.Close()
+// }
 
 func Run(idx int, c chan interface{}) {
+	var rm *taas.ResourceManager
+	if args.USE_TAAS {
+		rm = &taas.ResourceManager{}
+		rm.Init(args.TAAS_IP)
+		rm.Request(args.RESOURCE_POOL_SIZE, args.RESOURCE_POOL_NAME)
+	} else {
+		rm = nil
+	}
+
 	runner := getRunner()
-	runner.Setup(idx)
+	runner.Setup(idx, rm)
 
 	var pass int64 = 0
 	var fail int64 = 0
 	var complete int64
 	t1 := time.Now()
-
 	for complete = 0; complete < args.REPEAT; complete++ {
-		if runner.Run() == true {
+		if runner.Run() {
 			pass++
 		} else {
 			fail++
@@ -56,6 +63,9 @@ func Run(idx int, c chan interface{}) {
 		"%s IDX: %d test took %f seconds, %f ms per request",
 		args.AUTHMODE, idx, total.Seconds(), float64(total.Milliseconds()/args.REPEAT),
 	)
+	if rm != nil {
+		rm.Release()
+	}
 	c <- []int64{
 		int64(idx),
 		int64(total.Seconds()),
@@ -90,7 +100,7 @@ func dispatchJob() {
 }
 
 func main() {
-	if args.DISABLE_SSL_VERIFY == true {
+	if args.DISABLE_SSL_VERIFY {
 		switchOffHttpsVerify()
 	}
 	dispatchJob()
