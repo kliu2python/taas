@@ -3,6 +3,7 @@ package saml
 import (
 	"automation/authclient/args"
 	"automation/authclient/pkg/taas"
+	"automation/authclient/pkg/utils"
 	"fmt"
 	"log"
 	"net/http"
@@ -29,15 +30,15 @@ func (sr *SamlRunner) Setup(idx int, rm *taas.ResourceManager) {
 
 	sr.UserName = fmt.Sprintf("%s%d", args.USER_PREFIX, idx+1)
 	sr.Password = args.PASSWORD
-	if rm != nil {
-		sr.ResourceManager = rm
-	}
+	sr.ResourceManager = rm
 	log.Printf(
 		"IDX: %d Setup for Saml\n", idx,
 	)
 }
 
 func (r *SamlRunner) Run() bool {
+	defer utils.CatchError()
+
 	var user, password, seed, url string
 	if r.ResourceManager == nil {
 		user = r.UserName

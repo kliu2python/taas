@@ -2,7 +2,7 @@ package oauth
 
 import (
 	"automation/authclient/pkg/apiclient"
-	"errors"
+	"automation/authclient/pkg/otp"
 	"fmt"
 	"net/http"
 	"strings"
@@ -40,16 +40,31 @@ func (oc *OauthTokenClient) InitClient() {
 	oc.revokeUrl = fmt.Sprintf("https://%s/api/v1/oauth/revoke_token/", oc.FacIp)
 }
 
-func (oc *OauthTokenClient) GetToken(user, password string) (*Token, error) {
+func (oc *OauthTokenClient) GetToken(user, password, seed string) (*Token, error) {
+	var tokenField string
+	if len(seed) > 0 {
+		token := otp.GetOtp(seed)
+		tokenField = fmt.Sprintf(
+			`
+			"challenge": "otp",
+			"challenge_response": "%s",
+			"method": "ftm",
+			`, token,
+		)
+	} else {
+		tokenField = ""
+	}
+
 	body := strings.NewReader(fmt.Sprintf(`
 		{
 			"username": "%s",
 			"password": "%s",
 			"client_id": "%s",
 			"client_secret": "%s",
+			%s
 			"grant_type": "%s"
 		}
-	`, user, password, oc.ClientId, oc.ClientSecret, oc.GrantType))
+	`, user, password, oc.ClientId, oc.ClientSecret, tokenField, oc.GrantType))
 	response := Token{}
 	return &response, oc.ApiClient.Call("POST", oc.requestUrl, nil, body, 200, &response)
 }
@@ -65,7 +80,7 @@ func (oc *OauthTokenClient) VerifyToken(token *Token) error {
 	if len(verification.UserName) > 0 {
 		return nil
 	}
-	return errors.New(fmt.Sprintf("Failed to verify user in response, %s", verification.UserName))
+	return fmt.Errorf("failed to verify user in response, %s", verification.UserName)
 }
 
 func (oc *OauthTokenClient) RevokeToken(token *Token) error {
