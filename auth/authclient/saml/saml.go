@@ -73,8 +73,7 @@ func (sd *SamlClient) IdpLogin(User, Password, seed string) (int, error) {
 	req.Header.Set("Cookie", sd.Cookie)
 	resp, err := sd.HttpClient.Do(req)
 	if err != nil || resp.StatusCode != 200 {
-		resp.Body.Close()
-		return resp.StatusCode, err
+		return 400, err
 	}
 	if len(seed) > 0 {
 		sd.updateCSRFToken(resp.Body)

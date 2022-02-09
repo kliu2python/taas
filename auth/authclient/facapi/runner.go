@@ -4,6 +4,7 @@ import (
 	"automation/authclient/args"
 	"automation/authclient/pkg/otp"
 	"automation/authclient/pkg/taas"
+	"automation/authclient/pkg/utils"
 	"fmt"
 	"log"
 	"net/http"
@@ -37,13 +38,12 @@ func (r *FacApiAuthRunner) Setup(idx int, rm *taas.ResourceManager) {
 	r.IdxSize = r.IdxMin + args.FAC_USER_IDX_SLICE
 	r.Password = args.PASSWORD
 	r.BaseName = args.USER_PREFIX
-	if rm != nil {
-		r.ResourceManager = rm
-	}
+	r.ResourceManager = rm
 	log.Printf("IDX: %d Setup for FAC API Auth\n", idx)
 }
 
 func (r *FacApiAuthRunner) Run() bool {
+	defer utils.CatchError()
 	var user, password, seed string
 	if r.ResourceManager == nil {
 		if r.Idx < r.IdxSize {
@@ -62,7 +62,7 @@ func (r *FacApiAuthRunner) Run() bool {
 		}
 		user = res.User
 		password = res.Password
-
+		r.AuthClient.Url = res.CustomData.ApiAuthUrl
 		r.AuthClient.SetAuthHeader(res.CustomData.FacAdminUser, res.CustomData.FacAdminToken)
 		seed = res.Seed
 	}

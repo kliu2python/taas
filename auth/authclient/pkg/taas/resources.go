@@ -39,6 +39,7 @@ type Resource struct {
 		OauthClientSecret string `json:"oauth_client_secret"`
 		FacIp             string `json:"fac_ip"`
 		SamlSpUrl         string `json:"saml_sp_url"`
+		FgtSslVpnUrl      string `json:"fgt_sslvpn_url"`
 	} `json:"custom_data"`
 }
 

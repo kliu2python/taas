@@ -78,8 +78,6 @@ func Run(idx int, c chan interface{}) {
 // Thread for now
 func getRunner() interfaces.Runner {
 	switch strings.ToLower(args.AUTHMODE) {
-	case "saml":
-		return &saml.SamlRunner{}
 	case "facapi":
 		return &facapi.FacApiAuthRunner{}
 	case "oauthtoken":
