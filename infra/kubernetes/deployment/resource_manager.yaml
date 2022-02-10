@@ -40,6 +40,33 @@ spec:
         #   requests:
         #     cpu: 1000m
 ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resource-manager-worker
+  namespace: resource-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: resource-manager-worker
+  template:
+    metadata:
+      labels:
+        app: resource-manager-worker
+    spec:
+      nodeSelector:
+        node-type: service
+      containers:
+      - name: resource-manager-worker
+        image: 10.160.16.60/resource-manager/resource-manager-worker
+        imagePullPolicy: Always
+        securityContext:
+          readOnlyRootFilesystem: false
+        # resources:
+        #   requests:
+        #     cpu: 1000m
+---
 apiVersion: v1
 kind: Service
 metadata:
