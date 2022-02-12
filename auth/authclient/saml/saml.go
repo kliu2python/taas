@@ -11,11 +11,13 @@ import (
 	"strings"
 
 	"automation/authclient/pkg/otp"
+	"automation/authclient/pkg/pageclient"
 	"automation/authclient/pkg/xmlparser"
 )
 
 type SamlClient struct {
-	HttpClient    *http.Client
+	// HttpClient *http.Client
+	pageclient.PageClient
 	Url           string
 	CsfrToken     string
 	Cookie        string
@@ -32,10 +34,6 @@ type SamlClient struct {
 // 	b, _ := io.ReadAll(body)
 // 	fmt.Printf("%s", b)
 // }
-
-func (sd *SamlClient) purifyCookie(cookie string) string {
-	return strings.Split(cookie, ";")[0]
-}
 
 func (sd *SamlClient) updateCSRFToken(body io.ReadCloser) {
 	buf := bufio.NewReaderSize(body, 65536)
@@ -56,9 +54,9 @@ func (sd *SamlClient) InitLogin(url string) (int, error) {
 		return resp.StatusCode, err
 	}
 	defer resp.Body.Close()
-	sd.Cookie = sd.purifyCookie(resp.Header["Set-Cookie"][0])
+	sd.Cookie = sd.PurifyCookie(resp.Header["Set-Cookie"][0])
 	sd.Url = resp.Request.Response.Header["Location"][0]
-	sd.InitCookie = sd.purifyCookie(resp.Request.Response.Header["Set-Cookie"][0])
+	sd.InitCookie = sd.PurifyCookie(resp.Request.Response.Header["Set-Cookie"][0])
 	sd.updateCSRFToken(resp.Body)
 	return resp.StatusCode, err
 }
@@ -105,37 +103,6 @@ func (sd *SamlClient) IdpLogin(User, Password, seed string) (int, error) {
 		}
 	}
 	return resp.StatusCode, err
-}
-
-func noRedirectfunc(req *http.Request, via []*http.Request) error {
-	return errors.New("redirect disabled")
-}
-
-func (sd *SamlClient) DisableRedirect() {
-	sd.HttpClient.CheckRedirect = noRedirectfunc
-}
-
-func (sd *SamlClient) EnableRedirect() {
-	sd.HttpClient.CheckRedirect = nil
-}
-func handleRedirectCookie(req *http.Request, via []*http.Request) error {
-	if len(via) > 0 {
-		for _, cookie := range req.Response.Header["Set-Cookie"] {
-			req.Header.Add("Cookie", cookie)
-		}
-	}
-
-	return nil
-}
-
-func (sd *SamlClient) EnableRedirectCookie() {
-	sd.HttpClient.CheckRedirect = handleRedirectCookie
-	sd.HandleCookie = true
-}
-
-func (sd *SamlClient) DisableRedirectCookie() {
-	sd.HttpClient.CheckRedirect = nil
-	sd.HandleCookie = false
 }
 
 func (sd *SamlClient) GotoSpPage(expect string) (int, error) {

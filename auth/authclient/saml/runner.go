@@ -6,8 +6,6 @@ import (
 	"automation/authclient/pkg/utils"
 	"fmt"
 	"log"
-	"net/http"
-	"net/http/cookiejar"
 )
 
 type SamlRunner struct {
@@ -18,16 +16,8 @@ type SamlRunner struct {
 }
 
 func (sr *SamlRunner) Setup(idx int, rm *taas.ResourceManager) {
-	jar, err := cookiejar.New(nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	sr.SamlClient = &SamlClient{
-		HttpClient: &http.Client{
-			Jar: jar,
-		},
-	}
-
+	sr.SamlClient = &SamlClient{}
+	sr.SamlClient.GetHttpClient()
 	sr.UserName = fmt.Sprintf("%s%d", args.USER_PREFIX, idx+1)
 	sr.Password = args.PASSWORD
 	sr.ResourceManager = rm
