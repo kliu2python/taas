@@ -3,6 +3,7 @@ package main
 import (
 	"automation/authclient/args"
 	"automation/authclient/facapi"
+	"automation/authclient/fgt"
 	"automation/authclient/interfaces"
 	"automation/authclient/oauth"
 	"automation/authclient/pkg/taas"
@@ -82,6 +83,8 @@ func getRunner() interfaces.Runner {
 		return &facapi.FacApiAuthRunner{}
 	case "oauthtoken":
 		return &oauth.OauthTokenRunner{}
+	case "sslvpn":
+		return &fgt.SslVpnRunner{}
 	default:
 		return &saml.SamlRunner{}
 	}
