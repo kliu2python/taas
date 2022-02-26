@@ -45,6 +45,7 @@ class Session(ApiBase):
                 versions = []
                 loggings = []
                 logging_obj = []
+                servers = []
                 for device_info in devices:
                     owner, name = device_info.split(",")
                     device = user_db.Device.objects(user=owner, name=name)[0]
@@ -54,6 +55,8 @@ class Session(ApiBase):
                         "ssh_password": credential.get("password"),
                         "ssh_ip": device.ip
                     }
+                    if "server" in device.protocol:
+                        servers.append(command_cred)
                     if device.logging:
                         for log_def in device.logging:
                             logging_obj.append(log_def)
@@ -66,7 +69,7 @@ class Session(ApiBase):
                     "session_id": plan.name,
                     "session_id_override": session_id_override,
                     "version": version,
-                    "servers": [],
+                    "servers": servers,
                     "target_platform": plan.target_platform,
                     "runner_count": plan.runner_count,
                     "loop": plan.loop,
