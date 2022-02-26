@@ -32,11 +32,13 @@ class _PerfMetrics(Metrics):
             ssh_ip,
             ssh_user,
             ssh_password,
-            target_server_ip,
             target_platform,
             session_id,
+            target_server_ip=None,
             **data
     ):
+        if not target_server_ip:
+            target_server_ip = ssh_ip
         conn = class_mapping.get(target_platform)(
             ssh_user, ssh_password, ssh_ip, target_server_ip, **data
         )
