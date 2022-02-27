@@ -9,6 +9,7 @@ from scale.common.variables import (
 )
 from scale.db.logs import CaseHistory
 from scale.db.logs import FailureLog
+from scale.db.logs import Pictures
 from utils.dictionary import deep_update
 from utils.logger import get_logger
 
@@ -63,7 +64,7 @@ def read_session(session_id=None, keys: dict = None):
         return f"Fail, {e}"
 
 
-def update_session(data_dict, common_dict=None, session_id=None):
+def update_session(data_dict, common_dict=None, session_id=None, target=None):
     """
     update session
     common_dict: update shared session data item.
@@ -121,6 +122,21 @@ def update_session(data_dict, common_dict=None, session_id=None):
                             session_name=session_id,
                             log=v
                         )
+                        continue
+                if k in ["screen_cap"]:
+                    if v:
+                        total_pods = ds_common.get(
+                            "pods_created", session_id, 0
+                        )
+                        for category, img in v.items():
+                            Pictures.create(
+                                id=uuid.uuid4(),
+                                session_name=session_id,
+                                session_numbers=abs(total_pods),
+                                uploader_name=target,
+                                category=category,
+                                imgb64=img
+                            )
                         continue
                 ds.set(k, v, identifier)
 

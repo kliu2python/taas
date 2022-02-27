@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 import pandas as pd
 
 import scale.db.logs as user_logs
@@ -25,3 +27,18 @@ class CommandLog(ApiBase):
             else:
                 logs = df
         return logs
+
+
+class ScreenCap(ApiBase):
+    __db_model__ = user_logs.Pictures
+
+    @classmethod
+    def get_imgs(cls, session_name, **filters):
+        imgs = cls.read_all(
+            session_name=session_name,
+            **filters
+        )
+        ret = defaultdict(dict)
+        for img in imgs:
+            ret[img["uploader_name"]][img["category"]] = img["imgb64"]
+        return ret

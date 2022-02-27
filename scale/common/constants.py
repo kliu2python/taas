@@ -140,3 +140,31 @@ COMMANDLOG_TEMPLATE = """
   </body>
 </html>
 """
+
+SCREENCAP_TEMPLATE = """
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+
+<h1>Screen Cap {sessions} sessions</h1>
+
+{img_content}
+
+</body>
+</html>
+"""
+
+SCREENCAP_RUNNER_TEMPLATE = """
+<div>
+  <h2>*************{runner_name}*************</h2>
+</div>
+"""
+
+SCREENCAP_IMG_TEMPLATE = """
+<div>
+  <p>{category}</p>
+  <img src="data:image/png;base64, {b64img}" alt="{alt}" />
+</div>
+"""

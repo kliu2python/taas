@@ -69,3 +69,18 @@ class FailureLog(Model):
         default=datetime.datetime.utcnow
     )
     log = columns.List(columns.Text)
+
+
+class Pictures(Model):
+    __keyspace__ = __keyspace__
+    __table_name__ = "pictures"
+
+    id = columns.UUID(primary_key=True)
+    session_name = columns.Text(index=True)
+    uploader_name = columns.Text()
+    session_numbers = columns.Integer(
+        primary_key=True,
+        clustering_order="desc"
+    )
+    category = columns.Text()
+    imgb64 = columns.Text()

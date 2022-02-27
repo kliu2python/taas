@@ -118,7 +118,8 @@ class Session(ApiBase):
             results = controller.update_session(
                 data.get("data_dict"),
                 data.get("common_dict"),
-                session_id=session_id
+                session_id=session_id,
+                target=data.get("target")
             )
             ret_msg = results
             if results != "SUCCESS":

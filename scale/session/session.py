@@ -299,7 +299,7 @@ class Session:
             kube_file = os.path.join(
                 KUBE_FILE_PATH, f"kube_file_{self.session_id}.yaml"
             )
-            os.system(f"kubectl delete -f {kube_file}")
+            os.system(f"kubectl delete -f {kube_file} --now=true --wait=false")
         except Exception as e:
             logger.exception(
                 "Error when delete kube deployment, please check on k8s",
