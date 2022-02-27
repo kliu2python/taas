@@ -71,7 +71,7 @@ def stop_task():
                         task_event = tasks_events.pop(task_id)
                         if task_event:
                             task_event.set()
-                        retry = 10
+                        retry = 30
                         while retry > 0:
                             if not task_proc.is_alive():
                                 logger.info("task process exited")

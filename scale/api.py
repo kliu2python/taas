@@ -6,9 +6,9 @@ from flask_restful import Resource, request
 import scale.session.controller as controller
 import scale.services.user as user_api
 import scale.services.log as log_api
+import scale.common.constants as const
 from args import parser
 from rest import RestApi
-from scale.common.constants import COMMANDLOG_TEMPLATE
 
 rest = RestApi(base_route="/scale/v1/")
 
@@ -236,8 +236,11 @@ class Session(Resource):
         post data type:
         {
             common_dict: {
-                case_list: []
-                "fail_log": []
+                case_list: [],
+                "fail_log": [],
+                "screen_cap": {
+                    "category": "xxx"
+                },
             }
             data_dict: {
                 target: hostname_str #required
@@ -318,8 +321,44 @@ class LogsHtml(Resource):
             for log in logs["log"]:
                 item = log.replace("\n", "<br>")
                 ret += f"<br>{item}<br><br>"
-            html = COMMANDLOG_TEMPLATE.format(category=category,
+            html = const.COMMANDLOG_TEMPLATE.format(category=category,
                                               command_logs=ret)
+            headers = {'Content-Type': 'text/html'}
+            return make_response(render_template_string(html), 200, headers)
+
+
+@rest.route(
+    "logs/screencap/html/<string:session_id>/<int:concurrents>"
+)
+class ScreenCapHtml(Resource):
+    def get(self, session_id, concurrents=0):
+        """
+        Get crash log in text
+        session_id: session id for the crashlog
+        count: how many crash logs want to display
+        0 : all
+        n: last n number
+        """
+        imgs = log_api.ScreenCap.get_imgs(
+            session_name=session_id,
+            session_numbers=concurrents
+        )
+        if len(imgs) > 0:
+            ret = ""
+            for uploader, img in imgs.items():
+                ret += const.SCREENCAP_RUNNER_TEMPLATE.format(
+                    runner_name=uploader
+                )
+                for category, b64 in img.items():
+                    ret += const.SCREENCAP_IMG_TEMPLATE.format(
+                        category=category,
+                        b64img=b64,
+                        alt=category
+                    )
+
+            html = const.SCREENCAP_TEMPLATE.format(
+                sessions=concurrents, img_content=ret
+            )
             headers = {'Content-Type': 'text/html'}
             return make_response(render_template_string(html), 200, headers)
 
