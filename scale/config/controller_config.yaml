@@ -17,6 +17,6 @@ grafana_dash_board:
   fil: http://10.160.83.213:3000/d/1V34bd5Gk/fortiisolator-scaling-test?orgId=1
 db:
   cluster_ips: [10.160.83.213]
-  username: "taas"
-  password: "taas"
+  username: "zheng"
+  password: "fortinet"
   dc: dc1

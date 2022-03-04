@@ -413,7 +413,9 @@ def delete_session(user=None, sess_id=None):
     resp = requests.delete(
         get_api_url(f"scale/v1/session/{user}/{sess_id}")
     )
-    assert resp.status_code == 200, "Failed to stop session"
+    assert resp.status_code == 200, PrintInColor.red(
+        f"Failed to stop session: {resp.json()}"
+    )
     PrintInColor.green("Session Stopped")
     dashboard = resp.json()
     PrintInColor.yellow(f"Session Dashboard: {dashboard}")

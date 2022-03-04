@@ -328,10 +328,11 @@ class LogsHtml(Resource):
 
 
 @rest.route(
-    "logs/screencap/html/<string:session_id>/<int:concurrents>"
+    "logs/screencap/html/<string:session_id>/"
+    "<int:concurrents>/<int:iteration>"
 )
 class ScreenCapHtml(Resource):
-    def get(self, session_id, concurrents=0):
+    def get(self, session_id, concurrents=0, iteration=0):
         """
         Get crash log in text
         session_id: session id for the crashlog
@@ -341,7 +342,8 @@ class ScreenCapHtml(Resource):
         """
         imgs = log_api.ScreenCap.get_imgs(
             session_name=session_id,
-            session_numbers=concurrents
+            session_numbers=concurrents,
+            iteration=iteration
         )
         if len(imgs) > 0:
             ret = ""
