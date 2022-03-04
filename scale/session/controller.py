@@ -128,11 +128,13 @@ def update_session(data_dict, common_dict=None, session_id=None, target=None):
                         total_pods = ds_common.get(
                             "pods_created", session_id, 0
                         )
+                        iteration = v.pop("iteration", 0)
                         for category, img in v.items():
                             Pictures.create(
                                 id=uuid.uuid4(),
                                 session_name=session_id,
                                 session_numbers=abs(total_pods),
+                                iteration=iteration,
                                 uploader_name=target,
                                 category=category,
                                 imgb64=img

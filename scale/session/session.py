@@ -195,9 +195,9 @@ class Session:
     def stop(self):
         self.data_store_common.set("should_stop_update_session", 1)
         self.data_store_common.set("stop_time", str(datetime.datetime.now()))
+        self._delete_runner_deployment()
         self.notifier.stop()
         self._stop_metrics()
-        self._delete_runner_deployment()
         try:
             ThreadsManager().wait_for_complete([self.cid_pods_metrics])
         except Exception as e:
@@ -299,7 +299,7 @@ class Session:
             kube_file = os.path.join(
                 KUBE_FILE_PATH, f"kube_file_{self.session_id}.yaml"
             )
-            os.system(f"kubectl delete -f {kube_file} --now=true --wait=false")
+            os.system(f"kubectl delete -f {kube_file} --wait=false")
         except Exception as e:
             logger.exception(
                 "Error when delete kube deployment, please check on k8s",

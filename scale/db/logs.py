@@ -82,5 +82,6 @@ class Pictures(Model):
         primary_key=True,
         clustering_order="desc"
     )
+    iteration = columns.Integer(default=0)
     category = columns.Text()
     imgb64 = columns.Text()
