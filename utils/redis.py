@@ -173,3 +173,7 @@ class DataStore:
     def delete(self, key, identifier=None):
         k = self.craft_key(key, identifier)
         return self.redis.delete(k)
+
+    def sinter(self, *keys, identifier=None):
+        keys = [self.craft_key(k, identifier) for k in keys]
+        return self.redis.sinter(keys)

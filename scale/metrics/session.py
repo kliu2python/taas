@@ -1,4 +1,5 @@
 import scale.common.constants as constants
+from scale.common.variables import ds_common
 from utils.metrics import Metrics
 
 SESS_METRICS = {
@@ -67,11 +68,13 @@ SESS_METRICS = {
 
 class SessionMetrics(Metrics):
     def __init__(self, session, **data):
+        job = (f"{session.session_id}-{data.get('target_platform', '')}"
+               f"_sess_metrics")
         super().__init__(
             SESS_METRICS,
-            f"{session.session_id}-{data.get('target_platform', '')}"
-            f"_sess_metrics",
+            job,
             session,
             config_path=constants.CONFIG_PATH
         )
+        ds_common.set("metrics_running", [job])
         self.start_async()

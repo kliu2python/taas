@@ -2,6 +2,7 @@
 from scale.collector.fil import FilCollector
 from scale.collector.ftc import FtcCollector
 from scale.common.constants import CONFIG_PATH
+from scale.common.variables import ds_common
 from utils.metrics import Metrics
 
 
@@ -42,9 +43,11 @@ class _PerfMetrics(Metrics):
         conn = class_mapping.get(target_platform)(
             ssh_user, ssh_password, ssh_ip, target_server_ip, **data
         )
+        job = f"{session_id}-{target_platform}_perf"
+        ds_common.set("metrics_running", [job])
         super().__init__(
             PERF_METRICS,
-            f"{session_id}-{target_platform}_perf",
+            job,
             conn,
             {"ip": target_server_ip},
             config_path=CONFIG_PATH

@@ -4,6 +4,7 @@ import re
 
 import requests
 from scale.common.constants import CONFIG_PATH
+from scale.common.variables import ds_common
 from utils.metrics import Metrics
 
 ELASTICSEARCH_METRICS = {
@@ -145,13 +146,15 @@ class ElasticSearchFtc(ElasticSearchMixin):
 class ElasticSearchMetrics(Metrics):
     def __init__(self, session_id, **data):
         elasticsearch = ElasticSearchFtc(data)
+        job = f"{session_id}-elastic_search"
         super().__init__(
             ELASTICSEARCH_METRICS,
-            f"{session_id}-elastic_search",
+            job,
             elasticsearch,
             data.get("ftc_server"),
             config_path=CONFIG_PATH
         )
+        ds_common.set("metrics_running", [job])
         self.start_async()
 
 

@@ -9,6 +9,10 @@ from utils.threads import thread_run, ThreadsManager
 logger = get_logger()
 
 
+def delete_from_gateway(ip, job, grouping_key=None):
+    prometheus_client.delete_from_gateway(ip, job, grouping_key)
+
+
 class Metrics:
     def __init__(
             self,
@@ -51,7 +55,7 @@ class Metrics:
         logger.info(f"Stopping metrics {self.__class__.__name__}")
         self._running = False
         try:
-            prometheus_client.delete_from_gateway(
+            delete_from_gateway(
                 self.config.pushgateway_ip,
                 job=self.job,
                 grouping_key=self.grouping_key

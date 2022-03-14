@@ -117,6 +117,8 @@ class Session:
             self.elastic_search = ElasticSearchMetrics(
                 self.session_id, **data
             )
+        data["pulsar_topic"] = (f"non-persistent://public/default/"
+                                f"{self.session_id}")
         self.notifier = Notifier(
             self,
             before_callback=self._before_notify_callback,

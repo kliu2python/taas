@@ -86,13 +86,15 @@ class CommandMetrics:
             else:
                 raise ValueError("category value should be crashlog or general")
             conn = CLASS_MAPPING.get(device_type)(ds_common, session_id, target)
+            job = f"{device_type}_{target.get('category')}-{session_id}"
             metrics = Metrics(
                 metrics,
-                f"{device_type}_{target.get('category')}-{session_id}",
+                job,
                 conn,
                 config_path=CONFIG_PATH,
                 interval_seconds=target.get("interval_seconds")
             )
+            ds_common.set("metrics_running", [job])
             metrics.start_async()
             self.command_metrics.append(metrics)
 
