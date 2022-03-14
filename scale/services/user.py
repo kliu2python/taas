@@ -37,7 +37,6 @@ class Session(ApiBase):
 
     @classmethod
     def start(cls, user, plan_name, session_id_override=True):
-        ret_code = 202
         try:
             plan = user_db.Plan.objects(user=user, name=plan_name)[0]
             if plan.status == 1:
@@ -107,7 +106,7 @@ class Session(ApiBase):
                 }
             else:
                 return f"Plan {plan.name} is disabled", 403
-            return ret_msg, ret_code
+            return ret_msg, 202
         except Exception as e:
             return f"Exception when start session {e}", 500
 

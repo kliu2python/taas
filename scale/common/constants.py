@@ -80,7 +80,8 @@ COMMOM_KEYS_DEF = {
     "updated_runners": str,
     "total_commands": int,
     "command_log": list,
-    "last_command_log": str
+    "last_command_log": str,
+    "metrics_running": set
 }
 
 CLIENT_KEYS_DEF = {
@@ -96,7 +97,8 @@ SESS_CTRL_KEYS_DEF = {
     "active_session_ids": set,
     "completed_session_ids": set,
     "new_session_queue": set,
-    "new_metrics_queue": set
+    "new_metrics_queue": set,
+    "housecleaned_session_id": set
 }
 
 WORKER_CTRL_KEYS_DEF = {

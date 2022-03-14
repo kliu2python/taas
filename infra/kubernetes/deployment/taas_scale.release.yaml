@@ -399,6 +399,28 @@ spec:
 #      nodeName: kubecluster-1-node1
 
 ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scale-housekeeper
+  namespace: scale-controller
+spec:
+  replicas: 1
+  selector:
+   matchLabels:
+     app: scale-housekeeper
+  template:
+    metadata:
+      labels:
+        app: scale-housekeeper
+    spec:
+      containers:
+      - name: scale-housekeeper
+        image: 10.160.16.60/taas/scale-housekeeper
+        imagePullPolicy: Always
+        securityContext:
+          readOnlyRootFilesystem: false
+---
 apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
 metadata:
