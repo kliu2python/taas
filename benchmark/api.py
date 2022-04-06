@@ -156,6 +156,44 @@ class CrashLog(Resource):
 
 
 @rest.route(
+    "log/console/<string:job_name>/<string:build_id>/<string:case_name>"
+)
+class ConsoleLog(Resource):
+    def get(self, job_name, build_id, case_name):
+        msg = service.CrashLogApi.read_all(
+            job_name=job_name,
+            build_id=build_id,
+            case_name=case_name
+        )
+        return jsonify(msg)
+
+    def post(self):
+        """
+        post data example:
+        {
+            "job_name": "BLSM-FGT7040E",         # Jenkins job name
+            "build_id": "1234",                  # Jenkins build number
+            "platform": "FGT-7040E",             # DUT Model / Platform
+            "version": "V6.4.2GA",               # FOS Version on DUT
+            "timestamp": "xxx", (Optional)       # Trigger / Test Owner
+            "test": "test name" (not required)   # Test Case Name
+            "log": "xxxx",                       # Crash log content
+        }
+
+        **Schema validation skipped**
+        """
+        data = request.json
+        msg, code = service.ConsoleLogApi.create(data)
+        return msg, code
+
+    def delete(self, job_name, build_id):
+        msg, code = service.ConsoleLogApi.delete(
+            job_name=job_name, build_id=build_id
+        )
+        return msg, code
+
+
+@rest.route(
     "log/command/<string:job_name>/<string:build_id>/<string:case_name>"
 )
 class CommandLog(Resource):
