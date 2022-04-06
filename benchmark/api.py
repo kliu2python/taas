@@ -160,7 +160,7 @@ class CrashLog(Resource):
 )
 class ConsoleLog(Resource):
     def get(self, job_name, build_id, case_name):
-        msg = service.CrashLogApi.read_all(
+        msg = service.ConsoleLogApi.read_all(
             job_name=job_name,
             build_id=build_id,
             case_name=case_name
