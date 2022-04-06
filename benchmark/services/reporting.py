@@ -14,5 +14,9 @@ class CrashLogApi(ApiBase):
     __db_model__ = log_db.CrashLog
 
 
+class ConsoleLogApi(ApiBase):
+    __db_model__ = log_db.ConsoleLog
+
+
 class CommandLogApi(ApiBase):
     __db_model__ = log_db.CommandLog

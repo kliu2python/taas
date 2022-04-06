@@ -76,6 +76,23 @@ class CrashLog(Model):
     log = columns.Text()
 
 
+class ConsoleLog(Model):
+    __keyspace__ = __keyspace__
+    __table_name__ = "consolelogs"
+    __unique_values__ = False
+
+    job_name = columns.Text(primary_key=True, partition_key=True)
+    build_id = columns.Text(primary_key=True, partition_key=True)
+    datetime = columns.DateTime(
+        primary_key=True,
+        partition_key=True,
+        default=datetime.datetime.now
+    )
+    case_name = columns.Text()
+    exec_time = columns.Integer()
+    log = columns.Text()
+
+
 class CommandLog(Model):
     __keyspace__ = __keyspace__
     __table_name__ = "commandlogs"
