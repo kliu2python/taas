@@ -1,7 +1,12 @@
 ---
+rabbitmq: amqp://taas:taas@10.160.83.213:5672/benchmark
+push_gateway: 10.160.13.11:9091
+redis:
+  server: 10.160.13.11
+  port: 6379
 db:
   cluster_ips:
-    - 10.160.13.13
+    - 10.160.83.213
   username: taas
   password: taas
   dc: dc1

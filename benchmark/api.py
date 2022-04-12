@@ -2,6 +2,7 @@ from flask import jsonify
 from flask_restful import Resource, request
 
 import benchmark.services.reporting as service
+from benchmark.tasks.lifecycle import check_job_status
 from rest import RestApi
 
 rest = RestApi(base_route="/benchmark/v1/")
@@ -228,3 +229,12 @@ class CommandLog(Resource):
             job_name=job_name, build_id=build_id
         )
         return msg, code
+
+
+@rest.route(
+    "task/<string:job_name>"
+)
+class Task(Resource):
+    def get(self, job_name):
+        msg = check_job_status(job_name)
+        return None, 200 if msg else 404
