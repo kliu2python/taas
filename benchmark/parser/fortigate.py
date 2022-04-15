@@ -154,7 +154,7 @@ class FortigateParser:
                 v = None
                 v_type = None
                 d = None
-                if line.startswith("CPU "):
+                if "CPU " in line:
                     d = {}
                     v_type = "cpu"
                     v = str(100 - int(
