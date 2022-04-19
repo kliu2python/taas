@@ -44,7 +44,16 @@ data:
               - 10.160.13.80:9100
               - 10.160.13.81:9100
               - 10.160.13.88:9100
+
+      - job_name: 'openstack-1-controller'
+        static_configs:
+          - targets:
               - 10.160.83.2:9100
+              - 10.160.83.3:9100
+
+      - job_name: 'openstack-1-compute'
+        static_configs:
+          - targets:
               - 10.160.83.11:9100
               - 10.160.83.12:9100
               - 10.160.83.13:9100
@@ -65,7 +74,12 @@ data:
               - 10.160.83.28:9100
               - 10.160.83.29:9100
               - 10.65.13.11:9100
-              - 10.65.13.12:9100
+              - 10.160.27.31:9100
+              - 10.160.27.32:9100
+      - job_name: 'openstack-1-storage'
+        static_configs:
+          - targets:
+              - 10.160.83.7:9100
 
       - job_name: 'process-exporter'
         static_configs:
@@ -95,6 +109,11 @@ data:
               - esxi-expr-1-69:9512
               - esxi-expr-1-68:9512
               - esxi-expr-1-65:9512
+
+      - job_name: 'lvs-expoter'
+        static_configs:
+          - targets:
+              - 10.160.83.7:9898
 
       - job_name: 'ftc_check_40.31'
         metrics_path: /probe
