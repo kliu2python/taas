@@ -115,6 +115,12 @@ data:
           - targets:
               - 10.160.83.7:9898
 
+      - job_name: 'openstack-rabbitmq'
+        static_configs:
+          - targets:
+              - 10.160.83.2:15692
+              - 10.160.83.3:15692
+
       - job_name: 'ftc_check_40.31'
         metrics_path: /probe
         params:
