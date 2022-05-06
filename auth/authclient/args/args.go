@@ -14,7 +14,10 @@ func getEnv(key string, defaultValue string) string {
 
 // Generic
 var URL = getEnv("URL", "")
+var PUSH_DATA = getEnv("PUSH_DATA", "yes") == "yes"
+var LOG_LEVEL = getEnv("LOG_LEVEL", "info")
 var CONCURRENT, _ = strconv.Atoi(getEnv("CONCURRENT", "1"))
+var REPORT_INTERVAL, _ = strconv.Atoi(getEnv("REPORT_INTERVAL", "10"))
 var REPEAT, _ = strconv.ParseInt(getEnv("REPEAT", "1"), 10, 64)
 var PASSWORD = getEnv("PASSWORD", "fortinet")
 var USER_PREFIX = getEnv("USER_PREFIX", "perftest")
@@ -26,6 +29,11 @@ var TAAS_IP = getEnv("TAAS_IP", "localhost:8000")
 var USE_TAAS = getEnv("USE_TAAS", "yes") == "yes"
 var RESOURCE_POOL_NAME = getEnv("RESOURCE_POOL_NAME", "")
 var RESOURCE_POOL_SIZE, _ = strconv.Atoi(getEnv("REQUEST_POOL_SIZE", "1"))
+
+//RABBITMQ
+
+var AMQP_URL = getEnv("AMQP_URL", "amqp://taas:taas@10.160.83.213:5672/faccloud")
+var AMQP_QUEUE = getEnv("AMQP_QUEUE", "pushproxy_queue")
 
 // MFA config
 var MFA_RANDOM_TOKEN_HOLD_MAX, _ = strconv.Atoi(getEnv("MFA_RANDOM_TOKEN_HOLD_MAX", "0"))
@@ -43,3 +51,7 @@ var OAUTH_GRANT_TYPE = getEnv("OAUTH_GRANT_TYPE", "password")
 
 // SAML Auth optional
 var LOGOUT = getEnv("LOGOUT", "yes") == "yes"
+
+// PushGateway
+var PUSHGATEWAYURL = getEnv("PUSHGATEWAY_URL", "http://10.160.83.213:9091")
+var PUSHGATEWAYJOB = getEnv("PUSHGATEWAY_JOB", "perf_job")

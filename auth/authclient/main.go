@@ -6,13 +6,16 @@ import (
 	"automation/authclient/fgt"
 	"automation/authclient/interfaces"
 	"automation/authclient/oauth"
+	"automation/authclient/pkg/gatewaypusher"
 	"automation/authclient/pkg/taas"
 	"automation/authclient/saml"
 	"crypto/tls"
-	"log"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func switchOffHttpsVerify() {
@@ -48,31 +51,40 @@ func Run(idx int, c chan interface{}) {
 
 	var pass int64 = 0
 	var fail int64 = 0
-	var complete int64
+	var complete int64 = 0
+	var lastComplete int64 = 0
+	var interval int64 = int64(args.REPORT_INTERVAL)
+
 	t1 := time.Now()
-	for complete = 0; complete < args.REPEAT; complete++ {
+	for ; complete < args.REPEAT; complete++ {
 		if runner.Run() {
 			pass++
 		} else {
 			fail++
 		}
+		if complete > 0 && complete%interval == 0 {
+			t2 := time.Now()
+			total := t2.Sub(t1)
+			c <- []int64{
+				int64(idx),
+				t2.Unix(),
+				int64(total.Seconds()),
+				int64(total.Milliseconds() / (complete - lastComplete)),
+				complete,
+				pass,
+				fail,
+			}
+			lastComplete = complete
+			t1 = time.Now()
+		}
+
 	}
 
-	t2 := time.Now()
-	total := t2.Sub(t1)
-	log.Printf(
-		"%s IDX: %d test took %f seconds, %f ms per request",
-		args.AUTHMODE, idx, total.Seconds(), float64(total.Milliseconds()/args.REPEAT),
-	)
 	if rm != nil {
 		rm.Release()
 	}
-	c <- []int64{
-		int64(idx),
-		int64(total.Seconds()),
-		int64(total.Milliseconds() / args.REPEAT),
-		complete, pass, fail,
-	}
+
+	c <- []int64{}
 }
 
 // Due to API Call count per second limit on FAC, facapi will not support signle
@@ -91,12 +103,36 @@ func getRunner() interfaces.Runner {
 }
 
 func dispatchJob() {
-	c := make(chan interface{})
+	c := make(chan interface{}, 1024)
 	for i := 0; i < args.CONCURRENT; i++ {
 		go Run(i, c)
 	}
-	for i := 0; i < args.CONCURRENT; i++ {
-		log.Printf("%v\n", <-c)
+
+	var stopped int = 0
+	pusher := gatewaypusher.GateWayRabbit{}
+
+	if args.PUSH_DATA {
+		pusher.Connect()
+		pusher.PrepareData(args.CONCURRENT)
+	}
+
+	for {
+		v := (<-c).([]int64)
+		if len(v) == 0 {
+			stopped++
+			if stopped == args.CONCURRENT {
+				break
+			}
+		}
+		if args.PUSH_DATA {
+			pusher.Push(v)
+		}
+
+		log.Debug(
+			fmt.Sprintf("%s IDX: %d, %d test took %d seconds, %d ms per request, pass: %d, fail: %d",
+				args.AUTHMODE, v[0], v[4], v[2], v[3], v[5], v[6],
+			),
+		)
 	}
 }
 
@@ -104,5 +140,10 @@ func main() {
 	if args.DISABLE_SSL_VERIFY {
 		switchOffHttpsVerify()
 	}
+	logLevel := log.InfoLevel
+	if args.LOG_LEVEL == "debug" {
+		logLevel = log.DebugLevel
+	}
+	log.SetLevel(logLevel)
 	dispatchJob()
 }
