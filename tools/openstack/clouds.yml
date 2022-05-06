@@ -3,9 +3,9 @@ clouds:
     region_name: RegionOne
     volume_api_version: '3'
     auth:
-      username: automation
-      password: fortinet
-      project_name: automation
+      username: xx
+      password: xxxxx
+      project_name: xxxxx
       user_domain_name: default
       project_domain_name: default
       auth_url: 'http://10.160.83.5:5000/v3'
