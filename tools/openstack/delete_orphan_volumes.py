@@ -15,7 +15,7 @@ _OS_VOL_URL = "http://10.160.83.5:8776/v3"
 config_path = os.path.join(os.path.dirname(__file__), "clouds.yml")
 
 with open(config_path) as F:
-    auth = yaml.safe_load(F).get("clouds", {}).get(CLOUD_NAME, {}).get("auth")
+    auth = yaml.safe_load(F)["clouds"][CLOUD_NAME]["auth"]
 
 auth_dict = {
     "auth": {
