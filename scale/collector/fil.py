@@ -19,7 +19,7 @@ class FilCollector(SshCollector):
             ssh_ip,
             timeout,
             display,
-            prepare_commands=data.get("prepare_commands", ['fnsysctl shell']),
+            prepare_commands=data.get("prepare_commands", []),
             expect_format=data.get("expect_cmd_format", '.*[#>].*'),
             **data
         )

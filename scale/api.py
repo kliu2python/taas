@@ -239,7 +239,8 @@ class Session(Resource):
                 case_list: [],
                 "fail_log": [],
                 "screen_cap": {
-                    "category": "xxx"
+                    "category": "xxx",
+                    "tag": "xxx"
                 },
             }
             data_dict: {
@@ -329,10 +330,12 @@ class LogsHtml(Resource):
 
 @rest.route(
     "logs/screencap/html/<string:session_id>/"
-    "<int:concurrents>/<int:iteration>"
+    "<int:concurrents>/<int:iteration>/<string:tag>/<int:limit>"
 )
 class ScreenCapHtml(Resource):
-    def get(self, session_id, concurrents=0, iteration=0):
+    def get(
+            self, session_id, concurrents=0, iteration=0, tag=None, limit=0
+    ):
         """
         Get crash log in text
         session_id: session id for the crashlog
@@ -340,11 +343,17 @@ class ScreenCapHtml(Resource):
         0 : all
         n: last n number
         """
-        imgs = log_api.ScreenCap.get_imgs(
-            session_name=session_id,
-            session_numbers=concurrents,
-            iteration=iteration
-        )
+        filters = {
+            "session_numbers": concurrents
+        }
+        if iteration > 0:
+            filters["iteration"] = iteration
+        if limit > 0:
+            filters["limit"] = limit
+        if tag:
+            filters["tag"] = tag
+        imgs = log_api.ScreenCap.get_imgs(session_id, **filters)
+
         if len(imgs) > 0:
             ret = ""
             for uploader, img in imgs.items():

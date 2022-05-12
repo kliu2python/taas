@@ -129,6 +129,7 @@ def update_session(data_dict, common_dict=None, session_id=None, target=None):
                             "pods_created", session_id, 0
                         )
                         iteration = v.pop("iteration", 0)
+                        tag = v.pop("tag", "none")
                         for category, img in v.items():
                             Pictures.create(
                                 id=uuid.uuid4(),
@@ -137,7 +138,8 @@ def update_session(data_dict, common_dict=None, session_id=None, target=None):
                                 iteration=iteration,
                                 uploader_name=target,
                                 category=category,
-                                imgb64=img
+                                imgb64=img,
+                                tag=tag
                             )
                         continue
                 ds.set(k, v, identifier)

@@ -84,4 +84,5 @@ class Pictures(Model):
     )
     iteration = columns.Integer(default=0)
     category = columns.Text()
+    tag = columns.Text()
     imgb64 = columns.Text()
