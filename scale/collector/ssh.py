@@ -100,28 +100,30 @@ class SshCollector(SshInteractiveConnection):
             )
 
     def get_cpu_usage(self):
-        self.send_commands(
-            self.prepare_commands, exp=self.exp_format, display=self.display
-        )
-        commands = ['cat /proc/stat']
-        result = self.send_commands(
-            commands, exp=self.exp_format, display=self.display
-        )
-        sleep(0.5)
-        new_result = self.send_commands(
-            commands, exp=self.exp_format, display=self.display
-        )
-        total_idle, non_idle, total = self.calc_cpu_usage(new_result)
-        prev_total_idle, prev_non_idle, prev_total = self.calc_cpu_usage(result)
-        percentage = self.calc_cpu_percentage(
-            total_idle,
-            non_idle,
-            total,
-            prev_total_idle,
-            prev_non_idle,
-            prev_total
-        )
-        return percentage
+        if self.prepare_commands:
+            self.send_commands(
+                self.prepare_commands, exp=self.exp_format, display=self.display
+            )
+            commands = ['cat /proc/stat']
+            result = self.send_commands(
+                commands, exp=self.exp_format, display=self.display
+            )
+            sleep(0.5)
+            new_result = self.send_commands(
+                commands, exp=self.exp_format, display=self.display
+            )
+            total_idle, non_idle, total = self.calc_cpu_usage(new_result)
+            prev_total_idle, prev_non_idle, prev_total = self.calc_cpu_usage(result)
+            percentage = self.calc_cpu_percentage(
+                total_idle,
+                non_idle,
+                total,
+                prev_total_idle,
+                prev_non_idle,
+                prev_total
+            )
+            return percentage
+        return 0
 
     @staticmethod
     def remove_kb(mem_str):
@@ -129,11 +131,13 @@ class SshCollector(SshInteractiveConnection):
         return float(temp_list[0])
 
     def get_memory_usage(self):
-        commands = self.prepare_commands + ['cat /proc/meminfo']
-        result = self.send_commands(
-            commands, exp=self.exp_format, display=self.display
-        )
-        result_dict = self.get_status_dict(result)
-        mem_total = self.remove_kb(result_dict['MemTotal'])
-        mem_free = self.remove_kb(result_dict['MemAvailable'])
-        return 100 * (mem_total - mem_free) / mem_total
+        if self.prepare_commands:
+            commands = self.prepare_commands + ['cat /proc/meminfo']
+            result = self.send_commands(
+                commands, exp=self.exp_format, display=self.display
+            )
+            result_dict = self.get_status_dict(result)
+            mem_total = self.remove_kb(result_dict['MemTotal'])
+            mem_free = self.remove_kb(result_dict['MemAvailable'])
+            return 100 * (mem_total - mem_free) / mem_total
+        return 0
