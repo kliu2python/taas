@@ -1,0 +1,28 @@
+---
+- hosts: workers
+  tasks:
+
+    - name: update docker ca
+      shell: /home/ubuntu/update_docker_cert.sh
+      args:
+        chdir: /home/ubuntu/
+    
+    - name: install vnc
+      shell: |
+               sudo apt update
+               sudo apt install -y tigervnc-xorg-extension tigervnc-standalone-server tigervnc-scraping-server tigervnc-common
+     
+    - name: copy service file
+      shell: |
+               sudo cp xvnc.service /etc/systemd/system
+
+    - name: enable vnc service
+      shell: |
+               sudo systemctl enable xvnc.service
+               sudo systemctl start xvnc.service
+
+    - name: join cluster
+      shell: /home/ubuntu/join_cluster.sh {{master_ip}} {{bootstrap_token}}
+      args:
+        chdir: /home/ubuntu/
+
