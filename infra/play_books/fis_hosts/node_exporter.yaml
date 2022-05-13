@@ -1,0 +1,26 @@
+---
+- hosts: hosts
+  become: yes
+  tasks:
+
+    - name: copy node exporter folder to remote
+      become: true 
+      copy:
+        src: /home/zheng/znie/Documents/git/taas/infra/play_books/node_exporter-1.0.1.linux-amd64
+        dest: /opt
+        owner: jwu
+        group: jwu        
+        mode: 0644
+     
+    - name: copy service file
+      shell: |
+               sudo cp /opt/node_exporter-1.0.1.linux-amd64/prometheus_node_exporter.service /etc/systemd/system
+
+    - name: change permission
+      shell: |
+               sudo chmod +x /opt/node_exporter-1.0.1.linux-amd64/node_exporter
+
+    - name: enable node_exporter
+      shell: |
+               sudo systemctl enable prometheus_node_exporter.service
+               sudo systemctl start prometheus_node_exporter.service
