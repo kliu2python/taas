@@ -52,6 +52,7 @@ class Plan(Model):
     launch_command = columns.List(columns.Text, default=[])
     launch_args = columns.List(columns.Text, default=[])
     namespace = columns.Text()
+    free_will_mode_interval = columns.Integer(default=0)
 
 
 class Device(Model):
@@ -169,3 +170,4 @@ class Session(Model):
     launch_command = columns.List(columns.Text, default=[])
     launch_args = columns.List(columns.Text, default=[])
     namespace = columns.Text()
+    free_will_mode_interval = columns.Integer()

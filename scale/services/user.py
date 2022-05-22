@@ -80,7 +80,8 @@ class Session(ApiBase):
                     "runner_image": plan.runner_image,
                     "launch_command": plan.launch_command,
                     "launch_args": plan.launch_args,
-                    "namespace": plan.namespace
+                    "namespace": plan.namespace,
+                    "free_will_mode_interval": plan.free_will_mode_interval
                 }
                 try:
                     session_name = controller.create_session(session_data)

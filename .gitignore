@@ -17,3 +17,5 @@ dist
 *.egg-info
 *.exe
 .vscode
+node_exporter-1.0.1.linux-amd64
+*@*

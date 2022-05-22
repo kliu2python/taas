@@ -134,9 +134,28 @@ class Session:
         self.data_store_common.set(
             "session_status", constants.SessionStatus.RUNNING, self.session_id
         )
-        self._apply_runner_deployment(self.runner_count, redeploy=True)
+
+        self._free_will_mode_interval = int(
+            data.get("free_will_mode_interval", 0)
+        )
+        if self._free_will_mode_interval > 0:
+            self._monitor_free_will_runners(self._free_will_mode_interval)
+        else:
+            self._apply_runner_deployment(self.runner_count, redeploy=True)
         # TODO: Investigate dynamic runner
         # self._create_runners(self.runner_count, redeploy=True)
+
+    @thread
+    def _monitor_free_will_runners(self, interval):
+        self._apply_runner_deployment(self.runner_count, redeploy=True)
+
+        while not self.data_store_common.get("should_stop_update_session"):
+            sleep(interval)
+            if not self.data_store_common.get("should_stop_update_session"):
+                self._update_runners()
+            else:
+                self._delete_runner_deployment()
+                break
 
     def _set_runner_count(self, runner_count):
         if isinstance(runner_count, list):
@@ -320,38 +339,41 @@ class Session:
         except Exception as e:
             logger.exception("Error when update runners count", exc_info=e)
 
+    def _update_runners(self):
+        self._handle_updated_runners()
+        if self.runner_count_range or self._runners_updated:
+            curr_runner_count = self.runner_count
+            if self._runners_updated:
+                self._runners_updated = False
+            else:
+                self.runner_count += self.pods_adjust_momentum
+                if self.pods_adjust_momentum > 0:
+                    self.runner_count = min(
+                        self.runner_count, self.runner_count_range[1]
+                    )
+                else:
+                    self.runner_count = max(
+                        self.runner_count, self.runner_count_range[1]
+                    )
+            if curr_runner_count != self.runner_count:
+                logger.info(
+                    f"Adjusting Running pods to {self.runner_count}"
+                )
+                self._apply_runner_deployment(self.runner_count, wait=True)
+                # TODO: Move back later
+                # self._create_runners(self.runner_count, wait=True)
+            else:
+                logger.info(
+                    "Reached target runners number,"
+                    "no change for runners count"
+                )
+
     def _handle_session_end(self):
         if not self.data_store_common.get("loop"):
             self.data_store_common.set("should_stop_update_session", 1)
-        else:
+        elif self._free_will_mode_interval <= 0:
             # update test pods count if we are setting set step changing pods.
-            self._handle_updated_runners()
-            if self.runner_count_range or self._runners_updated:
-                curr_runner_count = self.runner_count
-                if self._runners_updated:
-                    self._runners_updated = False
-                else:
-                    self.runner_count += self.pods_adjust_momentum
-                    if self.pods_adjust_momentum > 0:
-                        self.runner_count = min(
-                            self.runner_count, self.runner_count_range[1]
-                        )
-                    else:
-                        self.runner_count = max(
-                            self.runner_count, self.runner_count_range[1]
-                        )
-                if curr_runner_count != self.runner_count:
-                    logger.info(
-                        f"Adjusting Running pods to {self.runner_count}"
-                    )
-                    self._apply_runner_deployment(self.runner_count, wait=True)
-                    # TODO: Move back later
-                    # self._create_runners(self.runner_count, wait=True)
-                else:
-                    logger.info(
-                        "Reached target runners number,"
-                        "no change for runners count"
-                    )
+            self._update_runners()
 
     @thread
     def _start_pods_metrics_collector(self):
