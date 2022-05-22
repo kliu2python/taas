@@ -1,77 +1,72 @@
 package main
 
 import (
-	"fmt"
-	"io/ioutil"
+	config "cmd_exporter/Config"
+	"cmd_exporter/collector"
+	"flag"
+	"log"
 	"net/http"
-	"os/exec"
-	"strconv"
+	"os"
 	"strings"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-var (
-	dataUsed = prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "node_lvs_data_used_percent",
-		Help: "Data used for volume group",
-	})
-	metaUsed = prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "node_lvs_metad_used_percent",
-		Help: "Metadata used for volume group",
-	})
-)
+var Collectors []collector.Collector
 
-func GetLvmUsage() (float64, float64) {
-	cmd := exec.Command(
-		"lvs", "--separator", ",",
-		"-o", "data_percent,metadata_percent", "cinder-volumes/cinder-volumes-pool",
-	)
-	stdout, err := cmd.StdoutPipe()
+func registerCollectors() {
+	Collectors = []collector.Collector{}
 
-	if err != nil {
-		fmt.Println("Error when exec lvs command", err)
+	if *config.Collectors == "" {
+		log.Print("Collect Engine is not specified")
+		os.Exit(1)
 	}
 
-	if err := cmd.Start(); err != nil {
-		fmt.Println("Error when exec lvs command", err)
+	collectorsList := strings.Split(*config.Collectors, ",")
+
+	for _, col := range collectorsList {
+		switch col {
+		case "lvs":
+			Collectors = append(Collectors, &collector.LvmCollector{})
+		case "nvme":
+			Collectors = append(Collectors, &collector.NvmeCollector{})
+		case "softraid":
+			Collectors = append(Collectors, &collector.SoftraidCollector{})
+		default:
+			log.Panicf("Unknown collect engine: %s", col)
+		}
 	}
+}
 
-	data, err := ioutil.ReadAll(stdout)
-
-	if err != nil {
-		fmt.Println("Error when exec lvs command", err)
+func initMetrics() {
+	for _, col := range Collectors {
+		col.InitMetrics()
 	}
+}
 
-	out := string(data)
-	out_list := strings.Split(out, "\n")[1:]
-
-	if len(out_list) == 2 {
-		out = out_list[0]
-		out_list = strings.Split(out, ",")
-
-		dataPercent, _ := strconv.ParseFloat(out_list[0], 64)
-		metadataPercent, _ := strconv.ParseFloat(out_list[1], 64)
-		return dataPercent, metadataPercent
+func getMetrics() {
+	for _, col := range Collectors {
+		col.GetMetrics()
 	}
-	return -1, -1
+}
+
+func collect() {
+	go func() {
+		for {
+			getMetrics()
+			time.Sleep(time.Second * time.Duration(*config.CollectInterval))
+		}
+	}()
 }
 
 func main() {
-	prometheus.MustRegister(dataUsed)
-	prometheus.MustRegister(metaUsed)
+	flag.Parse()
 
-	go func() {
-		for {
-			data, meta := GetLvmUsage()
+	registerCollectors()
+	initMetrics()
 
-			dataUsed.Set(data)
-			metaUsed.Set(meta)
-			time.Sleep(time.Second * 5)
-		}
-	}()
+	collect()
 
 	http.Handle("/metrics", promhttp.Handler())
 	http.ListenAndServe(":9898", nil)

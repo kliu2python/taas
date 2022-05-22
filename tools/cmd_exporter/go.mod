@@ -1,4 +1,4 @@
-module lvs_exporter
+module cmd_exporter
 
 go 1.17
 

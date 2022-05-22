@@ -1,21 +1,23 @@
 package collector
 
 import (
+	config "cmd_exporter/Config"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os/exec"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 type NvmeCollector struct {
-	metrics map[string]prometheus.G
+	metrics map[string]prometheus.Gauge
 }
 
 func (lc *NvmeCollector) runCommand() map[string]interface{} {
 	cmd := exec.Command(
-		"nvme", "smart-log", "/dev/nvme0", "-o", "json",
+		"nvme", "smart-log", *config.NvmeDevice, "-o", "json",
 	)
 	stdout, _ := cmd.StdoutPipe()
 
@@ -31,7 +33,7 @@ func (lc *NvmeCollector) runCommand() map[string]interface{} {
 		fmt.Println("Error when exec nvme command", err)
 		return result
 	}
-
+	cmd.Wait()
 	dataJson := string(data)
 
 	json.Unmarshal([]byte(dataJson), &result)
@@ -41,12 +43,17 @@ func (lc *NvmeCollector) runCommand() map[string]interface{} {
 
 func (lc *NvmeCollector) InitMetrics() {
 	data := lc.runCommand()
+
+	lc.metrics = make(map[string]prometheus.Gauge)
+
 	for key, _ := range data {
-		lc.metrics[key] = prometheus.NewGauge(
+		metricName := fmt.Sprintf("node_nvme_%s", key)
+		g := promauto.NewGauge(
 			prometheus.GaugeOpts{
-				Name: fmt.Sprintf("cmd_%s", key),
+				Name: metricName,
 			},
 		)
+		lc.metrics[key] = g
 	}
 
 }
@@ -54,7 +61,9 @@ func (lc *NvmeCollector) InitMetrics() {
 func (lc *NvmeCollector) GetMetrics() {
 	data := lc.runCommand()
 	for key, value := range data {
-		collector := lc.metrics[key]
-		collector.Set(value.(string))
+		collector, ok := lc.metrics[key]
+		if ok {
+			collector.Set(float64(value.(float64)))
+		}
 	}
 }

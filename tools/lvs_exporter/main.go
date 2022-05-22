@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -21,12 +22,16 @@ var (
 		Name: "node_lvs_metad_used_percent",
 		Help: "Metadata used for volume group",
 	})
+	volumeCount = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "node_lvs_total_volumes",
+		Help: "Total count of created volumes",
+	})
 )
 
-func GetLvmUsage() (float64, float64) {
+func GetLvmUsage() {
 	cmd := exec.Command(
 		"lvs", "--separator", ",",
-		"-o", "data_percent,metadata_percent", "cinder-volumes/cinder-volumes-pool",
+		"-o", "data_percent,metadata_percent", "cinder-volumes",
 	)
 	stdout, err := cmd.StdoutPipe()
 
@@ -47,28 +52,33 @@ func GetLvmUsage() (float64, float64) {
 	out := string(data)
 	out_list := strings.Split(out, "\n")[1:]
 
-	if len(out_list) == 2 {
+	if len(out_list) >= 2 {
 		out = out_list[0]
-		out_list = strings.Split(out, ",")
+		out_list_vg := strings.Split(out, ",")
 
-		dataPercent, _ := strconv.ParseFloat(out_list[0], 64)
-		metadataPercent, _ := strconv.ParseFloat(out_list[1], 64)
-		return dataPercent, metadataPercent
+		dataPercent, _ := strconv.ParseFloat(strings.Trim(out_list_vg[0], " "), 64)
+		metadataPercent, _ := strconv.ParseFloat(strings.Trim(out_list_vg[1], " "), 64)
+		dataUsed.Set(dataPercent)
+		metaUsed.Set(metadataPercent)
+		volumeCount.Set(float64(len(out_list) - 2))
+		return
 	}
-	return -1, -1
+	dataUsed.Set(-1)
+	metaUsed.Set(-1)
+	volumeCount.Set(-1)
 }
 
 func main() {
 	prometheus.MustRegister(dataUsed)
 	prometheus.MustRegister(metaUsed)
+	prometheus.MustRegister(volumeCount)
 
-	for {
-		data, meta := GetLvmUsage()
-
-		dataUsed.Set(data)
-		metaUsed.Set(meta)
-
-		http.Handle("/metrics", promhttp.Handler())
-		http.ListenAndServe(":9898", nil)
-	}
+	go func() {
+		for {
+			GetLvmUsage()
+			time.Sleep(time.Second * 5)
+		}
+	}()
+	http.Handle("/metrics", promhttp.Handler())
+	http.ListenAndServe(":9898", nil)
 }
