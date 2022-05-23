@@ -19,6 +19,7 @@ type LvmCollector struct {
 }
 
 func (lc *LvmCollector) InitMetrics() {
+	fmt.Println("Starting lvm Metric")
 	lc.dataUsed = promauto.NewGauge(prometheus.GaugeOpts{
 		Name: "node_lvs_data_used_percent",
 		Help: "Data used for volume group",
