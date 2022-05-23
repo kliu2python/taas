@@ -15,65 +15,61 @@ type SoftraidCollector struct {
 	metrics map[string]prometheus.Gauge
 }
 
-func (lc *SoftraidCollector) runCommand() string {
-	data, err := exec.Command(
-		"bash", "-c", "mdadm --detail "+*config.SoftraidDevice+" | grep \"Active Devices\\|Working Devices\\|Failed Devices\"",
-	).Output()
+func (lc *SoftraidCollector) runCommand() map[string]float64 {
+	ret := make(map[string]float64)
 
+	cmd := exec.Command(
+		"bash", "-c", "mdadm --detail "+*config.SoftraidDevice+" | grep \"Active Devices\\|Working Devices\\|Failed Devices\"",
+	)
+	dataBytes, err := cmd.Output()
 	if err != nil {
 		fmt.Println("Error when exec madam command", err.Error())
-		return err.Error()
+		return ret
+	}
+	cmd.Wait()
+	data := string(dataBytes)
+	data_list := strings.Split(string(data), "\n")
+
+	for _, d := range data_list {
+		if d != "" {
+			valueList := strings.Split(d, ":")
+			if len(valueList) == 2 {
+				metrics := strings.ToLower(strings.ReplaceAll(strings.Trim(valueList[0], " "), " ", "_"))
+				v, _ := strconv.ParseFloat(strings.Trim(valueList[1], " "), 64)
+				ret[metrics] = v
+				continue
+			}
+			fmt.Println("Did not get enough data from cmd,", valueList)
+		}
 	}
 
-	return string(data)
-}
-
-func (lc *SoftraidCollector) getMetricName(in string) string {
-	d := ""
-	if in != "\n" {
-		d = strings.ToLower(strings.ReplaceAll(strings.Trim(in, " "), " ", "_"))
-		d = fmt.Sprintf("node_softraid_%s", d)
-	}
-	return d
+	return ret
 }
 
 func (lc *SoftraidCollector) InitMetrics() {
+	fmt.Println("Starting softraid Metric")
 	data := lc.runCommand()
-	data_list := strings.Split("\n", data)
-	fmt.Println(data_list)
+
 	lc.metrics = make(map[string]prometheus.Gauge)
 
-	for _, d := range data_list {
-		d = strings.Split(d, ":")[0]
-		d = lc.getMetricName(d)
-		fmt.Println("found name:", d)
-		if d != "" {
+	for name, _ := range data {
+		fmt.Println("found metrics:", name)
+		if name != "" {
 			g := promauto.NewGauge(
-				prometheus.GaugeOpts{Name: d},
+				prometheus.GaugeOpts{Name: fmt.Sprintf("node_softraid_%s", name)},
 			)
-			lc.metrics[d] = g
+			lc.metrics[name] = g
 		}
 	}
 
 }
 
 func (lc *SoftraidCollector) GetMetrics() {
-	data := lc.runCommand()
-	data_list := strings.Split("\n", data)
-	for _, d := range data_list {
-		if d == "\n" {
-			continue
-		}
-		dl := strings.Split(d, ":")
-		d = dl[0]
-		v := dl[1]
-		d = lc.getMetricName(d)
-		if d != "" {
-			collector, ok := lc.metrics[d]
-			if ok {
-				v, _ := strconv.ParseFloat(v, 64)
-				collector.Set(v)
-			}
+	data_list := lc.runCommand()
+	for name, v := range data_list {
+		collector, ok := lc.metrics[name]
+		if ok {
+			collector.Set(v)
 		}
 	}
 }
