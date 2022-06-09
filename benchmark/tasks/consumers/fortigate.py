@@ -8,7 +8,6 @@ from benchmark.tasks.lifecycle import register_alive
 from benchmark.tasks.lifecycle import terminate
 from utils.logger import get_logger
 
-
 LOGGER = get_logger()
 IDX_MAPPING = {"-1": "dataplane", "-2": "MBD"}
 PUSH_GATEWAY = CONF.get("push_gateway")
@@ -72,29 +71,30 @@ def upload_to_push_proxy(data, job, time=None):
             if labels:
                 to_append["labels"] = labels
             push_data.append(to_append)
-
+        
         push_proxy = PushGateway(PUSH_GATEWAY, job)
         push_proxy.push(push_data, time)
     except Exception as e:
         LOGGER.exception("", exc_info=e)
 
 
-def upload_to_db(data, job_name, build_id, case_name, exec_time):
+def upload_to_db(data, job_name, build_id, case_name, exec_time, bmrk_time):
     for d in data:
         d["job_name"] = job_name
         d["build_id"] = build_id
         d["case_name"] = case_name
         d["exec_time"] = exec_time
+        d["bmrk_time"] = bmrk_time
         msg, code = service.CounterApi.create(d)
         if code != 201:
-            LOGGER.error(f"Failed to upload data to db: {msg}")
+            LOGGER.error(f"Debug,Failed to upload data to db: {msg}")
 
 
 def consume_data(message):
     data = json.loads(message)
     push_job_name = data.get("push_job_name")
     status = data.get("status")
-
+    
     if status in ["terminated"]:
         terminate(push_job_name)
     else:
@@ -104,10 +104,12 @@ def consume_data(message):
         job_name = data.get("job_name")
         build_id = data.get("build_id")
         case_name = data.get("case_name")
-
+        bmrk_time = data.get("bmrk_time")
+        
         metrics = FortigateParser.parse(cmd_out)
-
+        
         upload_to_push_proxy(metrics, push_job_name, time)
-        upload_to_db(metrics, job_name, build_id, case_name, exec_time)
-
+        upload_to_db(metrics, job_name, build_id, case_name, exec_time,
+                     bmrk_time)
+        
         register_alive(push_job_name)

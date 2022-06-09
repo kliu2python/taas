@@ -56,6 +56,7 @@ class Counter(Model):
     idx = columns.Text()
     target_info = columns.Text()
     exec_time = columns.Integer()
+    bmrk_time = columns.Integer()
     value = columns.Text()
 
 
