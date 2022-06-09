@@ -77,12 +77,17 @@ class FortigateParser:
                         value_list = line.split(":")
                         value_list = list(filter(None, value_list))
                         value_type = value_list[0]
-                        d = {
-                            "idx": value_type,
-                            "counter": f"dpdk-drop-{statics_type}",
-                            "value": str(int(value_list[1]))
-                        }
-                        data.append(d)
+                        statics_value = value_list[1].split(" ")
+                        idx = 0
+                        for v in statics_value:
+                            if v.isnumeric():
+                                d = {
+                                    "idx": f"{value_type}-{idx}",
+                                    "counter": f"dpdk-drop-{statics_type}",
+                                    "value": str(int(v))
+                                }
+                                idx += 1
+                                data.append(d)
                     if total and "Engine" in line:
                         break
         else:
