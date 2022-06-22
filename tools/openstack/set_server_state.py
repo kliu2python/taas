@@ -3,7 +3,7 @@ import openstack
 conn = openstack.connect("stack1")
 
 filters = {
-    "OS-EXT-SRV-ATTR:host": "stack-1-compute17-nvm",
+    # "OS-EXT-SRV-ATTR:host": "stack-1-compute17-nvm",
     "OS-EXT-STS:vm_state": "error"
 }
 

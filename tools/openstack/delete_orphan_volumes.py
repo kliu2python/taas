@@ -5,7 +5,7 @@ import openstack
 import requests
 
 
-CLOUD_NAME = "stack1"
+CLOUD_NAME = "stack2"
 
 conn = openstack.connect(CLOUD_NAME)
 project_id = conn.current_project.get("id")
