@@ -268,7 +268,7 @@ def create_plan():
             verify=False
         )
         assert resp.status_code == 200, "Failed to update Test plan"
-    if resp.status_code > 403:
+    if resp.status_code > 399:
         raise Exception(f"Failed to create Test plan, {resp.text}")
     PrintInColor.green("Plan Create Successful")
     return {
