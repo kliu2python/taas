@@ -91,6 +91,7 @@ class Device(Model):
         default=datetime.datetime.utcnow
     )
     updated_at = columns.DateTime()
+    prepare_commands = columns.List(columns.Text)
 
 
 class Templates(Model):
