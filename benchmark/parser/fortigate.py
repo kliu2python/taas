@@ -5,7 +5,7 @@ from utils.logger import get_logger
 LOGGER = get_logger("clear")
 RE_CPU = re.compile(r"nice\s(.*?)%\sidle")
 RE_MEM = re.compile(r"used\s\((.*?)%\)")
-RE_BLADE_SLOTS_INFO = re.compile(r"Slot:\s(.*?)\s\s")
+RE_BLADE_SLOTS_INFO = re.compile(r"(?:Slot:|Current slot:)\s(.*?)\s\s")
 RE_DATA_PLAN_INFO = re.compile(r"states:\s(.*?)%(\r)?$")
 CPU_IDX_MAPPING = {"-1": "dataplane", "-2": "MBD"}
 CMD_PARSER_MAP = {
@@ -166,7 +166,10 @@ class FortigateParser:
                         RE_CPU.search(line).group(1)
                     ))
                     info_line = cmd_out[line_number - 1]
-                    if info_line.startswith("Slot:"):
+                    if (
+                            info_line.startswith("Slot:")
+                            or info_line.startswith("Current slot:")
+                    ):
                         idx = (
                             RE_BLADE_SLOTS_INFO.search(info_line).group(1)
                         )
