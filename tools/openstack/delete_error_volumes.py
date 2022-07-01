@@ -78,7 +78,7 @@ def _reset_volume_status(volume_id):
 
 volumes = conn.volume.volumes()
 for vol in volumes:
-    if vol.status in ["error_deleting", "reserved"]:
+    if vol.status in ["error", "error_deleting", "reserved"]:
         _reset_volume_status(vol.id)
         conn.delete_volume(vol.id)
         print(f"volume {vol.id} deleted")
