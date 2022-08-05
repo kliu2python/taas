@@ -5,5 +5,6 @@ RESOURCE_MAPPING = {
     "scale_controller": "scale.api",
     "monitor": "monitor.api",
     "qr_display": "qrdisplay.api",
-    "benchmark": "benchmark.api"
+    "benchmark": "benchmark.api",
+    "fos": "fos.api"
 }

@@ -1,0 +1,138 @@
+import xmltodict
+
+from fos.conf import CONF
+from utils.mongodb import MongoDB
+
+
+class Fortigate:
+    """FOS Platform parser for parsing platforms.xml from FOS builds of
+    info.fortinet.com, all data will store in self._platforms, and accessed
+    by get_featuers() function
+    """
+    def __init__(self, xml_str):
+        self._platforms = {}
+        self._parse(xml_str)
+        self._db = MongoDB(CONF.get("db"), "fos")
+
+    @staticmethod
+    def _load_platform_xml(xml_str):
+        def _format_handler(path, key, value):
+            return key.lstrip("@").lstrip("#"), value
+
+        platform_xml = xmltodict.parse(
+            xml_str, postprocessor=_format_handler
+        )
+
+        if "fortigate" in platform_xml:
+            return platform_xml["fortigate"]
+        raise KeyError(
+            f"fortigate platform category is not in xml platform file"
+        )
+
+    def _parse_general_info(self, xml_dict):
+        self._platforms = {
+            "version": xml_dict["version"],
+            "build": xml_dict["build"],
+            "build_type": xml_dict["build_type"]
+        }
+
+    def _parse_categories(self, xml_dict):
+        fc = {}
+
+        for feature in xml_dict["feature_categorys"]["feature_category"]:
+            fc[feature.pop("id")] = feature["text"]
+
+        self._platforms["feature_categories"] = fc
+
+    def _parse_features(self, xml_dict):
+        """
+        Convert list of features in dict to a single dict contains all
+        platforms loaded from platform xml
+
+        Args:
+            xml_dict (dict): orginal loaded content of xml file
+
+        Returns: None
+        """
+        features = {}
+
+        for feature in xml_dict["features"]["feature"]:
+            features[feature.pop("id")] = feature
+
+        self._platforms["features"] = features
+
+    def _parse_platforms(self, xml_dict):
+        """
+        Convert list of platfroms in dict to a single dict contains all
+        platforms
+
+        Args:
+            xml_dict (dict): orginal loaded content of xml file
+
+        Returns: None
+
+        """
+        platforms = {}
+
+        for platform in xml_dict["platforms"]["platform"]:
+            platforms[platform.pop("name")] = platform
+
+        self._platforms["platforms"] = platforms
+
+    def _parse(self, stream):
+        self._platforms = self._load_platform_xml(stream)
+
+    def list_all_platforms(self):
+        return self._platforms
+
+    def _update_platforms(self, version):
+        """
+        Update parsed platform information dict to db. Note: if data with same
+        version exists, there will be only update. rather than create.
+        if record not exist, it will create new one.
+
+        This involved two collections:
+
+        "platforms": storing all platform information
+        "versions": storing latest build number for each major version
+
+        """
+        self._db.update(version, self._platforms, "platforms")
+
+    def _update_models(self, version):
+        for info in self._platforms["platforms"]["platform"]:
+            info.update(version)
+            features = []
+            for feature in info["supported_features"]["supported_feature"]:
+                features.append(feature["id"])
+            info["supported_features"] = features
+            query = version.copy()
+            query["name"] = info["name"]
+            self._db.update(query, info, "models")
+
+    def _update_features(self, version):
+        info = self._platforms["features"].copy()
+        info.update(version)
+        query = version.copy()
+        self._db.update(query, info, "features")
+
+    def update(self):
+        major = self._platforms["version"]["major"]
+        version = {
+            "major_version": major,
+            "build": self._platforms["build"],
+            "build_type": self._platforms["build_type"]
+        }
+        if not self._db.find(version, "versions"):
+            self._update_platforms(version)
+            self._update_models(version)
+            self._update_features(version)
+            self._db.update(
+                version, version, "versions"
+            )
+
+
+if __name__ == "__main__":
+    xml = Fortigate(r"C:\Users\znie\Documents\platform.xml")
+    # xml.update_platforms()
+    print(xml.list_all_platforms())

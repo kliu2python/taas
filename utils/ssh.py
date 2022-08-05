@@ -68,7 +68,7 @@ class SshInteractiveConnection:
                 self.connect()
 
     def _send_command(self, command=None, exp: str = None, display=False,
-                     new_line=True, timeout=None, exp_output=False):
+                      new_line=True, timeout=None, exp_output=False):
         first_output = None
 
         if self.skip_exp:
