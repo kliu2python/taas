@@ -1,0 +1,22 @@
+# k8s deployment use
+#db: mongodb://fos:fos@mongodb-0.mongodb-svc.mongodb.svc.cluster.local:27017,mongodb-1.mongodb-svc.mongodb.svc.cluster.local:27017,mongodb-2.mongodb-svc.mongodb.svc.cluster.local:27017/fos
+
+# None k8s
+db: mongodb://fos:fos@10.160.27.172:30001/fos?directConnection=true
+
+redis:
+  server: 10.160.27.113
+  port: 6379
+
+infosite:
+  ftp_ip: 172.16.100.71
+  ftp_user: znie
+  ftp_password: xxxxxxxx
+  check_interval: 30
+
+targets:
+  - product: FortiOS
+    version: v7.00
+
+  - product: FortiOS
+    version: v6.00

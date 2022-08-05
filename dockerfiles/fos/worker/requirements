@@ -1,0 +1,4 @@
+motor==3.0.0
+redis==4.3.4
+rq==1.11.0
+xmltodict==0.13.0
