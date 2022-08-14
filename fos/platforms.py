@@ -1,3 +1,5 @@
+import time
+
 import xmltodict
 
 from fos.conf import CONF
@@ -9,9 +11,9 @@ class Fortigate:
     info.fortinet.com, all data will store in self._platforms, and accessed
     by get_featuers() function
     """
-    def __init__(self, xml_str):
+    def __init__(self, data):
         self._platforms = {}
-        self._parse(xml_str)
+        self._parse(data)
         self._db = MongoDB(CONF.get("db"), "fos")
 
     @staticmethod
@@ -79,8 +81,12 @@ class Fortigate:
 
         self._platforms["platforms"] = platforms
 
-    def _parse(self, stream):
-        self._platforms = self._load_platform_xml(stream)
+    def _parse(self, data):
+        self._platforms = self._load_platform_xml(data.pop("data"))
+        self._platforms.update({
+            "branch": data.pop("branch"),
+            "file": data.pop("file")
+        })
 
     def list_all_platforms(self):
         return self._platforms
@@ -121,18 +127,15 @@ class Fortigate:
         version = {
             "major_version": major,
             "build": self._platforms["build"],
-            "build_type": self._platforms["build_type"]
+            "branch": self._platforms["branch"]
         }
-        if not self._db.find(version, "versions"):
-            self._update_platforms(version)
-            self._update_models(version)
-            self._update_features(version)
-            self._db.update(
-                version, version, "versions"
-            )
+        query = version.copy()
+        query.pop("build")
+        self._update_platforms(version)
+        self._update_models(version)
+        self._update_features(version)
 
-
-if __name__ == "__main__":
-    xml = Fortigate(r"C:\Users\znie\Documents\platform.xml")
-    # xml.update_platforms()
-    print(xml.list_all_platforms())
+        version["update_at"] = time.asctime()
+        self._db.update(
+            query, version, "versions"
+        )

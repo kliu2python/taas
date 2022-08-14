@@ -31,6 +31,7 @@ setup(
         'redis',
         'cassandra-driver', 'pandas', 'eventlet', 'pika', 'rq'
     ],
+    packages=[],
     name='taas',
     version='0.9',
     zip_safe=False
