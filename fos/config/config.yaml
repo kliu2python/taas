@@ -1,8 +1,8 @@
 # k8s deployment use
-#db: mongodb://fos:fos@mongodb-0.mongodb-svc.mongodb.svc.cluster.local:27017,mongodb-1.mongodb-svc.mongodb.svc.cluster.local:27017,mongodb-2.mongodb-svc.mongodb.svc.cluster.local:27017/fos
+#db: mongodb://fos:fos@mongodb-0.mongodb-svc.mongodb.svc.cluster.local:27017,mongodb-1.mongodb-svc.mongodb.svc.cluster.local:27017,mongodb-2.mongodb-svc.mongodb.svc.cluster.local:27017/fos?replicaSet=mongodb&tls=true&tlsInsecure=true
 
-# None k8s
-db: mongodb://fos:fos@10.160.27.172:30001/fos?directConnection=true
+# None k8s, external access. need update hosts file or in dns
+db: mongodb://fos:fos@mongodb-0.qtf.fortinetqa.com:30001,mongodb-1.qtf.fortinetqa.com:30002,mongodb-2.qtf.fortinetqa.com:30003/fos?replicaSet=mongodb&tls=true&tlsInsecure=true
 
 redis:
   server: 10.160.27.113
@@ -11,12 +11,12 @@ redis:
 infosite:
   ftp_ip: 172.16.100.71
   ftp_user: znie
-  ftp_password: xxxxxxxx
-  check_interval: 30
+  ftp_password: xxxxxx
+  check_interval: 3600
 
 targets:
   - product: FortiOS
     version: v7.00
 
-  - product: FortiOS
-    version: v6.00
+job:
+  timeout: 3600

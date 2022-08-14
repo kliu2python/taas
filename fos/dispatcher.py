@@ -9,7 +9,7 @@ from fos.conf import CONF
 from utils.logger import get_logger
 
 LOGGER = get_logger()
-DEBUG = os.environ.get("DEBUG", "False") != "True"
+DEBUG = not os.environ.get("DEBUG", "False") == "True"
 
 
 def init_rq():
@@ -18,8 +18,9 @@ def init_rq():
         port=CONF.get("redis", {}).get("redis_port", 6379),
         decode_responses=True
     )
+    job_timeout = CONF.get("job", {}).get("timeout", 30)
     # to debug , set is_async to False
-    return Queue(connection=conn, default_timeout=30, is_async=DEBUG)
+    return Queue(connection=conn, default_timeout=job_timeout, is_async=DEBUG)
 
 
 class RqDispatcher:

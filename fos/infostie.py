@@ -1,24 +1,26 @@
-import io
-import os
-import re
-
 import ftplib
+import io
+import re
+from collections import OrderedDict
+
 
 from fos.conf import CONF
+from fos.platforms import Fortigate
 from utils.logger import get_logger
+from utils.mongodb import MongoDB
 
-IMAGE_PATH = "Images/{product}/{version}/images/"
+IMAGE_PATH = "/home/Images/{product}/{version}/images"
 LOGGER = get_logger()
-CONF = CONF["infosite"]
+REF_FILE = r"platform\-*(.+)*.xml$"
 
 
 class InfoSiteClient:
     def __init__(self):
-        self.ftp_client = ftplib.FTP(CONF["ftp_ip"])
-        self._user = CONF["ftp_user"]
-        self._password = CONF["ftp_password"]
-        self._curr_dir = None
-        self._in_progress = set()
+        self.ftp_client = ftplib.FTP(CONF["infosite"]["ftp_ip"])
+        self._user = CONF["infosite"]["ftp_user"]
+        self._password = CONF["infosite"]["ftp_password"]
+        self._builds = []
+        self._db = MongoDB(CONF.get("db"), "fos")
 
     def login(self):
         self.ftp_client.login(self._user, self._password)
@@ -30,75 +32,99 @@ class InfoSiteClient:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.quit()
 
-    def set_build(self, build="0", product="FortiOS", version="v7.00"):
-        """
-        Set build number for client, by default it will be latest. for now
-        we only support latest.
-        """
-        if build in ["0", 0]:
-            path = IMAGE_PATH.format(product=product, version=version)
-            self._go_to_dir(path)
-            dirs = self.ftp_client.nlst()
+    def _download_latest_build(self, product, version, branch, path):
+        build = 0
+        cache = OrderedDict()
+        dirs = self.ftp_client.nlst(path)
 
-            ret = 0
-            latest_path = None
-            for d in dirs:
-                build_re = re.search(r"\d+", d)
-                if build_re:
-                    number = int(build_re.group(0))
-                    if number > ret:
-                        ret = number
-                        latest_path = d
-            self.ftp_client.cwd(latest_path)
-            self._curr_dir = os.path.join(path, latest_path)
-        else:
-            raise NotImplementedError(
-                "set to none latest build is not supported yet"
-            )
+        for d in dirs:
+            build_re = re.search(r"\d+$", d)
+            if build_re:
+                number = int(build_re.group(0))
+                if number > build:
+                    build = number
+                    latest_path = d
+                    cache[number] = latest_path
 
-    def download(self, file_name, dir_name=None, stream=True):
-        if dir_name:
-            file_path = os.path.join(dir_name, file_name)
-        else:
-            file_path = file_name
+        if not dirs:
+            return None
+
         try:
-            if stream:
-                with io.BytesIO() as BUF:
-                    self.ftp_client.retrbinary(f"RETR {file_name}", BUF.write)
-                    data = BUF.getvalue()
-                return data
-            else:
-                if file_path not in self._in_progress:
-                    self._in_progress.add(file_path)
-
-                    with open(file_path, "wb") as F:
-                        self.ftp_client.retrbinary(f"RETR {file_name}", F.write)
+            major_version = re.search(r"v(.)\.", version).group(1)
+            while cache:
+                data = cache.popitem()
+                versions_db = {
+                    "major_version": major_version,
+                    "build": str(data[0]),
+                    "branch": branch
+                }
+                if not self._db.find(versions_db, "versions"):
+                    LOGGER.info(f"Adding {versions_db}")
+                    file_path = f"{data[1]}"
+                    files = self.ftp_client.nlst(file_path)
+                    updated = False
+                    for file in files:
+                        if re.search(REF_FILE, file):
+                            content = self._do_download(file)
+                            file = file.split("/")[-1]
+                            LOGGER.info(f"File: {file}")
+                            d = {
+                                "product": product,
+                                "version": version,
+                                "branch": branch,
+                                "build": data[0],
+                                "file": file,
+                                "data": content
+                            }
+                            Fortigate(d).update()
+                            updated = True
+                    if updated:
+                        break
                 else:
-                    LOGGER.info(
-                        "Another Downloading is in progress, please try again"
-                    )
+                    LOGGER.info(f"Build version {versions_db}exists, skipping")
+                    break
         except Exception as e:
             LOGGER.exception(
-                f"Error when download file {file_name}", exc_info=e
+                f"Error when download laetst build {path}", exc_info=e
             )
-            file_path = None
-        finally:
-            if not stream:
-                self._in_progress.remove(file_path)
 
-        return file_path
+    def _do_download(self, file_path):
+        with io.BytesIO() as BUF:
+            self.ftp_client.retrbinary(
+                f"RETR {file_path}", BUF.write
+            )
+            data = BUF.getvalue()
+        return data.decode()
 
-    def _go_to_dir(self, full_path):
-        for path in full_path.split("/"):
-            self.ftp_client.cwd(path)
+    def download(
+            self,
+            product="FortiOS",
+            version="v7.00"
+    ):
+        ret = []
+        path = IMAGE_PATH.format(product=product, version=version)
+
+        self._download_latest_build(product, version, "", path)
+
+        branches = self.ftp_client.nlst(f"{path}/NoMainBranch")
+        for branch in branches:
+            branch_name = branch.split("/")[-1]
+            self._download_latest_build(
+                product, version, branch_name, branch
+            )
+
+        return ret
 
     def quit(self):
         self.ftp_client.quit()
 
 
 if __name__ == "__main__":
-    client = InfoSiteClient()
-    client.login()
-    client.set_build()
-    client.download("platform.xml")
-    client.quit()
+    # To Drop all collections, run uncomments following three lines
+    db = MongoDB(CONF.get("db"), "fos")
+    for x in ["versions", "models", "platforms", "features"]:
+        db.drop_collection("fos", x)
+    # client = InfoSiteClient()
+    # client.login()
+    # client.download()
+    # client.quit()

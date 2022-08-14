@@ -59,3 +59,7 @@ class MongoDB:
         coll = self._get_collection(db, collection)
         result = await coll.find_one(query)
         return result
+
+    @_exec
+    async def drop_collection(self, db, collection):
+        await self._db_client[db].drop_collection(collection)
