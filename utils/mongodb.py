@@ -58,7 +58,8 @@ class MongoDB:
     async def find_one(self, query, collection=None, db=None):
         coll = self._get_collection(db, collection)
         result = await coll.find_one(query)
-        result.pop("_id")
+        if result:
+            result.pop("_id")
         return result
 
     @_exec
