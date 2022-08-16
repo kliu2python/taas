@@ -117,10 +117,19 @@ class Fortigate:
             self._db.update(query, info, "models")
 
     def _update_features(self, version):
-        info = self._platforms["features"].copy()
-        info.update(version)
-        query = version.copy()
-        self._db.update(query, info, "features")
+        features_mapping = {}
+        for feature in self._platforms["features"]["feature"]:
+            features_mapping[feature.pop("id")] = feature
+
+        for info in self._platforms["platforms"]["platform"]:
+            info.update(version)
+            features = {}
+            for feature_id in info["supported_features"]:
+                features[feature_id] = features_mapping[feature_id]
+            info["supported_features"] = features
+            query = version.copy()
+            query["name"] = info["name"]
+            self._db.update(query, info, "features")
 
     def update(self):
         major = self._platforms["version"]["major"]
