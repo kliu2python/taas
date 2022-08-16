@@ -11,7 +11,7 @@ redis:
 infosite:
   ftp_ip: 172.16.100.71
   ftp_user: znie
-  ftp_password: xxxxxx
+  ftp_password: xxxxx
   check_interval: 3600
 
 targets:
