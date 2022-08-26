@@ -1,6 +1,5 @@
 import os
 
-from utils.cassandra import register_connection
 from utils.config import Config
 
 
