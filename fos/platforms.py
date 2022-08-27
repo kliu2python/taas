@@ -105,31 +105,21 @@ class Fortigate:
         """
         self._db.update(version, self._platforms, "platforms")
 
-    def _update_models(self, version):
-        for info in self._platforms["platforms"]["platform"]:
-            info.update(version)
-            features = []
-            for feature in info["supported_features"]["supported_feature"]:
-                features.append(feature["id"])
-            info["supported_features"] = features
-            query = version.copy()
-            query["name"] = info["name"]
-            self._db.update(query, info, "models")
-
-    def _update_features(self, version):
         features_mapping = {}
         for feature in self._platforms["features"]["feature"]:
+            self._db.update({"id": feature["id"]}, feature, "features")
             features_mapping[feature.pop("id")] = feature
 
         for info in self._platforms["platforms"]["platform"]:
             info.update(version)
             features = {}
-            for feature_id in info["supported_features"]:
+            for feature_id in info["supported_features"]["supported_feature"]:
+                feature_id = feature_id["id"]
                 features[feature_id] = features_mapping[feature_id]
             info["supported_features"] = features
             query = version.copy()
             query["name"] = info["name"]
-            self._db.update(query, info, "features")
+            self._db.update(query, info, "models")
 
     def update(self):
         major = self._platforms["version"]["major"]
@@ -141,8 +131,6 @@ class Fortigate:
         query = version.copy()
         query.pop("build")
         self._update_platforms(version)
-        self._update_models(version)
-        self._update_features(version)
 
         version["update_at"] = time.asctime()
         self._db.update(

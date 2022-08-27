@@ -34,26 +34,8 @@ class Models(Resource):
         return jsonify(res)
 
 
-@rest.route(
-    "features/<string:version>/<string:branch>/<string:platform>/<string:build>"
-)
+@rest.route("features")
 class Features(Resource):
-    def get(self, version, branch, platform, build="latest"):
-        if branch in ["main"]:
-            branch = ""
-
-        query = {
-            "major_version": version,
-            "branch": branch
-        }
-
-        if build in ["latest"]:
-            latest_build = db.find_one(query, "versions")
-            build = latest_build["build"]
-
-        query["build"] = build
-        query["name"] = platform
-
-        res = db.find_one(query, "features")
-
-        return jsonify(res)
+    def get(self):
+        res = db.find({}, "features")
+        return jsonify({"all_features": res})
