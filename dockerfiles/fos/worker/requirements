@@ -3,3 +3,4 @@ redis==4.3.4
 rq==1.11.0
 xmltodict==0.13.0
 PyYAML==5.3.1
+singleton_decorator==1.0.0
