@@ -10,6 +10,7 @@ from utils.logger import get_logger
 LOGGER = get_logger()
 KEY_PREFIX = "pushproxy__"
 PUSHGATEWAY = CONF.get("push_gateway")
+PUSH_PROXY_JOB_SET = f"{KEY_PREFIX}jobs"
 
 redis_conf = CONF.get("redis", {})
 conn = redis.Redis(
@@ -26,6 +27,7 @@ def register_alive(job):
     """
     try:
         conn.set(_get_queue_job_name(job), datetime.datetime.now().timestamp())
+        conn.sadd(PUSH_PROXY_JOB_SET, job)
     except Exception as e:
         LOGGER.exception("Error when register alive", exc_info=e)
 
