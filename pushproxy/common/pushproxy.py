@@ -15,11 +15,13 @@ def remove_push_gateway(ip, job, grouping_key=None):
 
 class PushGateway:
     POOL = {}
-    
+
     def __init__(self, push_gateway_ip, job, grouping_key=None):
         self.push_gateway_ip = push_gateway_ip
         self.job = job
         self.grouping_key = grouping_key
+        self.created_gauges = {}
+        self.registry = prometheus_client.CollectorRegistry()
         PushGateway.POOL[job] = self
 
     def cleanup(self):
@@ -60,23 +62,22 @@ class PushGateway:
             }
         ]
         """
-        registry = prometheus_client.CollectorRegistry()
-        created_gauges = {}
+
         for counter_value in data:
             try:
                 if counter_value is not None:
                     labels = counter_value.get("labels", [])
                     category = counter_value.get("category")
-                    if category not in created_gauges:
+                    if category not in self.created_gauges:
                         gauge = self._get_gauge(
                             category,
                             counter_value.get("description"),
                             label_names=list(labels[0].keys()),
-                            registry=registry
+                            registry=self.registry
                         )
-                        created_gauges[category] = gauge
+                        self.created_gauges[category] = gauge
                     else:
-                        gauge = created_gauges.get(category)
+                        gauge = self.created_gauges.get(category)
                     values = counter_value.get("values", [])
                     if len(labels) > 0:
                         for label, value in zip(labels, values):
@@ -92,7 +93,7 @@ class PushGateway:
                     f"Error when collect data for:{counter_value}",
                     exc_info=e
                 )
-        self._push(registry)
+        self._push(self.registry)
 
     def _push(self, registry):
         prometheus_client.push_to_gateway(
