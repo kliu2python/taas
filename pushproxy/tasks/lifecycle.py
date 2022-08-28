@@ -10,7 +10,7 @@ from utils.logger import get_logger
 LOGGER = get_logger()
 KEY_PREFIX = "pushproxy__"
 PUSHGATEWAY = CONF.get("push_gateway")
-PUSH_PROXY_JOB_SET = f"__PUSHPROXY__jobs"
+PUSH_PROXY_JOB_SET = f"__PUSH_PROXY__jobs"
 
 redis_conf = CONF.get("redis", {})
 conn = redis.Redis(
