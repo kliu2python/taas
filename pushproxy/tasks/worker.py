@@ -55,3 +55,4 @@ class Worker:
                 self.channel.start_consuming()
             except Exception as e:
                 LOGGER.exception("Error when consume message", exc_info=e)
+                self.init_message_queue()
