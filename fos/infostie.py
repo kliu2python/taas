@@ -20,7 +20,7 @@ class InfoSiteClient:
         self._user = CONF["infosite"]["ftp_user"]
         self._password = CONF["infosite"]["ftp_password"]
         self._builds = []
-        self._db = MongoDB(CONF.get("db"), "fos")
+        self._db = MongoDB(CONF.get("db"), CONF.get("default_db", "fos"))
 
     def login(self):
         self.ftp_client.login(self._user, self._password)
@@ -121,9 +121,9 @@ class InfoSiteClient:
 
 if __name__ == "__main__":
     # To Drop all collections, run uncomments following three lines
-    db = MongoDB(CONF.get("db"), "fos")
+    db = MongoDB(CONF.get("db"), CONF.get("default_db", "fos"))
     for x in ["versions", "models", "platforms", "features"]:
-        db.drop_collection("fos", x)
+        db.drop_collection(CONF.get("default_db", "fos"), x)
     # client = InfoSiteClient()
     # client.login()
     # client.download()
