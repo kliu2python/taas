@@ -3,6 +3,7 @@
 
 # None k8s, external access. need update hosts file or in dns
 db: mongodb://fos:fos@mongodb-0.qtf.fortinetqa.com:30001,mongodb-1.qtf.fortinetqa.com:30002,mongodb-2.qtf.fortinetqa.com:30003/fos?replicaSet=mongodb&tls=true&tlsInsecure=true
+default_db: fos
 
 redis:
   server: 10.160.27.113

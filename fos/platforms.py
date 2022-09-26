@@ -14,7 +14,7 @@ class Fortigate:
     def __init__(self, data):
         self._platforms = {}
         self._parse(data)
-        self._db = MongoDB(CONF.get("db"), "fos")
+        self._db = MongoDB(CONF.get("db"), CONF.get("default_db", "fos"))
 
     @staticmethod
     def _load_platform_xml(xml_str):
@@ -113,9 +113,29 @@ class Fortigate:
         for info in self._platforms["platforms"]["platform"]:
             info.update(version)
             features = {}
-            for feature_id in info["supported_features"]["supported_feature"]:
-                feature_id = feature_id["id"]
+            for feature in info.keys():
+                if feature not in ["supported_features"]:
+                    feature = f"g_{feature}"
+                    feature_dict = {
+                        "id": feature,
+                        "cat": "global",
+                        "name": "global feature or values"
+                    }
+                    self._db.update({"id": feature}, feature_dict, "features")
+
+            for feature in info["supported_features"]["supported_feature"]:
+                feature_id = feature["id"]
+                value = feature.get("text")
                 features[feature_id] = features_mapping[feature_id]
+                if value:
+                    features[feature_id]["value"] = value
+                if value:
+                    if value.isnumeric():
+                        if "." in value:
+                            value = float(value)
+                        else:
+                            value = int(value)
+                    info[feature_id] = value
             info["supported_features"] = features
             query = version.copy()
             query["name"] = info["name"]

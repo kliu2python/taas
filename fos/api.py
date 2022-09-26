@@ -6,7 +6,7 @@ from rest import RestApi
 from utils.mongodb import MongoDB
 
 rest = RestApi(base_route="/fos/v1/")
-db = MongoDB(CONF.get("db"), "fos")
+db = MongoDB(CONF.get("db"), CONF.get("default_db", "fos"))
 
 
 @rest.route(
