@@ -129,8 +129,7 @@ class Fortigate:
                 features[feature_id] = features_mapping[feature_id]
                 if value:
                     features[feature_id]["value"] = value
-                if value:
-                    if value.isnumeric():
+                    if not value.isalpha():
                         if "." in value:
                             value = float(value)
                         else:
