@@ -1,11 +1,12 @@
 service_config:
-  services:
-    #        - platform_operator
-    #        - resource_manager
-    #        - image_classifier
-    # - scale_controller
-    #        - benchmark
-    #        - monitor
-    #        - qr_display
-    #        - fos
-    - k8s
+    services:
+#        - platform_operator
+#        - resource_manager
+#        - image_classifier
+#        - scale_controller
+#        - benchmark
+#        - monitor
+#        - qr_display
+#        - fos
+#        - -k8s
+        - bp

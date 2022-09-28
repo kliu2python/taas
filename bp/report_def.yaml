@@ -1,0 +1,7 @@
+report_def:
+  robot_test:
+    timeseries:
+      section: Test Results for Malware/Strike Results
+      method: value_all_column
+      columns: [ Measurement, Value (Strikes) ]
+      return: [ Measurement, Value (Strikes) ]
