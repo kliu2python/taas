@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body onload="clearFunc()">
+    <!-- Load the default parameters -->
+    <h1>NaaS Launcher:</h1>
+    <form id = "textboxframe" > 
+        <!-- Kubernetes parameters shown here -->
+        <textarea class = "maintextbox"  id="fname" name="fname">
+        </textarea><br><br>
+    </form>
+    <button id = "submit" class="button" onclick = "submitData()">Submit</button>
+    <button id = "btn" class="button" onclick = "clearFunc()">Reset</button>
+    <br>
+    <label id = "msgbox">Result shown here</label>
+</body>
+</html>
+
+<script type = "text/javascript">
+    var changetextarea = document.getElementById('fname');
+   
+    // The Reset function, also work as the default value
+    function clearFunc()
+    {
+        changetextarea.value  = 
+`{"replicas": "2",
+"namespace": "default-perf-runner",
+"env": {
+    "CONCURRENT": "5",
+    "REPEAT": "100000000",
+    "AUTHMODE": "naas",
+    "USE_TAAS": "no",
+    "NAAS_SSL_CERT": "/fgt_b.crt",
+    "NAAS_SSL_KEY": "/fgt_b.key",
+    "NAAS_SERVER_IP": "10.160.78.42",
+    "AMQP_URL": "amqp://taas:taas@10.160.83.213:5672/naas",
+    "PUSHGATEWAY_JOB": "NaaSPERF_runner_test_1"
+    }
+}
+`   
+    document.getElementById("msgbox").innerHTML = "Reset to default parameters."   
+    }
+
+    // The submit function, POST the data
+    function submitData() {
+        var temp = document.getElementById('fname').value;
+        document.getElementById('fname').value = temp;     
+        
+        var myHeaders = new Headers();
+        myHeaders.append("Content-Type", "application/json");
+        myHeaders.append("Access-Control-Allow-Origin","*");
+
+        // Serialize the input data to JSON string    
+        var html = changetextarea.value;
+        var data = {html}; 
+        var raw_data = data['html'];
+        var raw = JSON.stringify(raw_data);
+        var requestOptions = {
+        method: 'POST',
+        headers: myHeaders,
+        body: raw,
+        redirect: 'follow',
+        mode: 'no-cors'
+        };
+
+        fetch("http://localhost:8000/k8s/v1/deploy", requestOptions)
+        .then(response => {response.text();
+        console.log('response.status: ', response.status); 
+        // console.log(response);
+        if (response.status == 0 || response.status == 200)
+        {
+            document.getElementById("msgbox").innerHTML = "Successfully Submitted";
+        }
+        else
+        {
+            document.getElementById("msgbox").innerHTML = "Error";
+        }
+        })
+        .then()
+        .catch(error => {
+            console.log('error', error);   
+    }
+        );
+        document.getElementById("msgbox").innerHTML = "Submitted";
+    }
+</script>
