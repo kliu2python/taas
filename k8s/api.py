@@ -1,10 +1,13 @@
+import ast
+import json
 import os
 
 import requests
 import yaml
 from flask_restful import Resource, request
+
 from rest import RestApi
-from scale.common.variables import config
+from k8s.conf import CONF
 
 rest = RestApi(base_route="/k8s/v1/")
 
@@ -30,10 +33,16 @@ class Deploy(Resource):
     """
 
     def post(self):
-        config_download_server = config.get(
+        config_download_server = CONF.get(
             "config_download_server", "10.160.50.118:8889"
         )
-        input_data = request.json
+        input_data = request.data.decode()
+        input_data = ast.literal_eval(input_data)
+        # Process and deserialize the data
+        input_data.replace("\\n", "")
+        input_data.replace("\\", "")
+        input_data.replace("\n", "")
+        input_data = json.loads(input_data)
 
         # Set the default value
         replica = input_data.get("replicas", 1)
@@ -73,7 +82,7 @@ class Deploy(Resource):
                 if "command" not in containers:
                     containers[0]["command"] = ["/bin/bash"]
                 if "args" not in containers:
-                    containers[len(containers)-1]["args"] = [
+                    containers[len(containers) - 1]["args"] = [
                         "-c",
                         "wget http://10.160.50.118:8889/fgt_b.crt;"
                         "wget http://10.160.50.118:8889/fgt_b.key;"
