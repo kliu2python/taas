@@ -7,5 +7,6 @@ RESOURCE_MAPPING = {
     "qr_display": "qrdisplay.api",
     "benchmark": "benchmark.api",
     "fos": "fos.api",
+    "bp": "bp.api",
     "k8s": "k8s.api"
 }
