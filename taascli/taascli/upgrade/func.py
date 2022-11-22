@@ -75,8 +75,10 @@ def _show_update_by_id(upgrade_id):
     if status:
         if "fail" in status:
             PrintInColor.red(out)
-        else:
+        elif "completed" in status:
             PrintInColor.green(out)
+        else:
+            PrintInColor.yellow(out)
         return True
     else:
         PrintInColor.yellow(
