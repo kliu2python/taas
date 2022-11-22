@@ -43,6 +43,10 @@ def update_sys(args):
         res = resp.json()
         PrintInColor.yellow(res)
         ret.append(res)
+    if os.path.exists(CACHE_FILE):
+        history = load_pickle(CACHE_FILE)
+        if history and isinstance(history, list):
+            ret = history + ret
     save_pickle(ret, CACHE_FILE)
     if args.wait:
         PrintInColor.yellow("Waiting upgrade finish. "
