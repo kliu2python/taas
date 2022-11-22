@@ -1,0 +1,7 @@
+pyamqp==0.1.0.7
+celery==5.2.7
+redis==4.3.4
+PyYAML==5.3.1
+paramiko==2.7.1
+paramiko-expect==0.2.8
+singleton_decorator

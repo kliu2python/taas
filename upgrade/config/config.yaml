@@ -1,0 +1,31 @@
+celery:
+  broker_url: pyamqp://taas:taas@10.160.83.213:5672/celery
+  result_backend: rpc://taas:taas@10.160.83.213:5672/celery
+  result_expires: 600
+  task_track_started: True
+  task_routes:
+    task_default_exchange: taas.direct
+    task_default_exchange_type: topic
+    upgrade.task.*:
+      queue: taas.upgrade.tasks
+      routing_key: taas.upgrade.tasks
+
+
+infosite:
+  ip: 172.16.100.71
+#  portal: info.fortinet.com
+  user: znie
+  password: xxxxxx
+
+ftp:
+  ip: 10.160.27.193
+  dst_dir: "c:\\Users\\znie\\Downloads"
+  user: fortinet
+  password: fortinet
+
+redis:
+  host: 10.160.27.108
+  port: 6379
+
+task:
+  retry: 1

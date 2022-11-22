@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    author='Automation Team',
+    author='Automation Team, Zheng Nie',
     description='Test As A Service',
     install_requires=[
         'Appium-Python-Client==1.0.2',
@@ -29,10 +29,11 @@ setup(
         'imagehash',
         'zeep==4.0.0',
         'redis',
-        'cassandra-driver', 'pandas', 'eventlet', 'pika', 'rq'
+        'cassandra-driver', 'pandas', 'eventlet', 'pika', 'rq', 'celery',
+        'cryptography', 'urllib3', 'beautifulsoup4'
     ],
     packages=[],
     name='taas',
-    version='0.9',
+    version='1.4',
     zip_safe=False
 )

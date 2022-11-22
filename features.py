@@ -8,5 +8,6 @@ RESOURCE_MAPPING = {
     "benchmark": "benchmark.api",
     "fos": "fos.api",
     "bp": "bp.api",
-    "k8s": "k8s.api"
+    "k8s": "k8s.api",
+    "upgrade": "upgrade.api"
 }
