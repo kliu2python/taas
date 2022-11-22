@@ -1,4 +1,3 @@
-# pylint: disable=too-many-arguments,too-many-instance-attributes
 import socket
 from time import sleep
 
@@ -8,7 +7,17 @@ from paramiko_expect import SSHClientInteraction
 from utils.logger import get_logger
 from utils.threads import thread
 
-logger = get_logger()
+
+class CommandParseError(Exception):
+    pass
+
+
+class CommandFailedError(Exception):
+    pass
+
+
+class CommandUnknownActionError(Exception):
+    pass
 
 
 class SshInteractiveConnection:
@@ -16,24 +25,30 @@ class SshInteractiveConnection:
         self.hostname = hostname
         self.username = username
         self.password = password
+        self.logger = get_logger(name=f"cli.{hostname}")
         self.timeout = timeout
         self.display = display
         self.disconnected = True
         self.skip_exp = None
         self.con = None
-        self.client = None
-        self.connect()
 
     def connect(self):
-        self.client = paramiko.SSHClient()
+        client = paramiko.SSHClient()
         # Set SSH key parameters to auto accept unknown hosts
-        self.client.load_system_host_keys()
-        self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        self.client.connect(hostname=self.hostname, username=self.username,
-                            password=self.password)
-        self.con = SSHClientInteraction(self.client, timeout=self.timeout,
-                                        display=self.display, tty_height=1000,
-                                        newline='')
+        client.load_system_host_keys()
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        client.connect(
+            hostname=self.hostname,
+            username=self.username,
+            password=self.password
+        )
+        self.con = SSHClientInteraction(
+            client,
+            timeout=self.timeout,
+            display=self.display,
+            tty_height=1000,
+            newline=''
+        )
         self.skip_exp = False
         self.disconnected = False
 
@@ -51,24 +66,18 @@ class SshInteractiveConnection:
             self.con.expect(exp, timeout=timeout, default_match_prefix='.*')
         return self.con.current_output
 
-    def send_command(self, command=None, exp: str = None, display=False,
-                     new_line=True, timeout=None, exp_output=False):
-        retry = 5
-        while retry > 0:
-            try:
-                return self._send_command(
-                    command, exp, display, new_line, timeout, exp_output
-                )
-            except Exception as e:
-                retry -= 1
-                if retry <= 0:
-                    raise e
-                sleep(2)
-                self.quit()
-                self.connect()
-
-    def _send_command(self, command=None, exp: str = None, display=False,
-                      new_line=True, timeout=None, exp_output=False):
+    def send_command(
+            self,
+            command=None,
+            exp=None,
+            display=False,
+            new_line=True,
+            timeout=None,
+            exp_output=None,
+            ignore_error=False
+    ):
+        if self.disconnected:
+            self.connect()
         first_output = None
 
         if self.skip_exp:
@@ -81,47 +90,97 @@ class SshInteractiveConnection:
                 command += '\r'
             self.con.send(command)
 
-        if exp_output is not False:
+        if exp_output is not None:
             first_output = self.con.current_output
             self.extract_output(exp_output, timeout=timeout)
             self.skip_exp = True
 
         if display:
-            print('PREVIOUSLY:')
+            self.logger.info('PREVIOUSLY:')
 
-            if exp_output is False:
-                print(self.con.current_output)
+            if exp_output is None:
+                self.logger.info(self.con.current_output)
             else:
-                print(first_output)
+                self.logger.info(first_output)
 
-            print(f'SENT: {command}')
+            self.logger.info(f'SENT: {command}')
 
-            if exp_output is not False:
-                print('CURRENT:')
-                print(self.con.current_output)
+            if exp_output is not None:
+                self.logger.info('CURRENT:')
+                self.logger.info(self.con.current_output)
 
-        if 'command parse error' in self.con.current_output:
-            raise Exception(self.con.current_output)
+            self.logger.info(f"Last Command: {command}")
 
-        return self.con.current_output
+        curr_output = self.con.current_output
+        if not ignore_error:
+            if 'command parse error' in curr_output.lower():
+                raise CommandParseError(curr_output)
+            if "command fail" in curr_output.lower():
+                raise CommandFailedError(curr_output)
+            if "unknown action" in curr_output.lower():
+                raise CommandUnknownActionError(curr_output)
 
-    def send_commands(self, commands: list, exp=None, display=True, timeout=30,
-                      new_line=True):
+        return curr_output
+
+    def send_commands(
+            self,
+            commands: list,
+            exp=None,
+            display=True,
+            timeout=None,
+            new_line=True,
+            ignore_error=False
+    ):
         if isinstance(commands, str):
             commands = [commands]
         output = []
-        for command in commands:
-            output.append(self.send_command(command, exp, display=display,
-                                            timeout=timeout))
+        cmd_len = len(commands)
+        for i, command in enumerate(commands):
+            if command in ["y", "n"]:
+                if (i + 1) == cmd_len:
+                    last_new_line = True
+                    last_is_yn = True
+                else:
+                    last_new_line = False
+                    last_is_yn = False
+            else:
+                last_is_yn = False
+                last_new_line = new_line
+            if (
+                    i + 1 < cmd_len
+                    and commands[i + 1] in ["y", "n"]
+                    and not last_is_yn
+            ):
+                out = self.send_command(
+                    command,
+                    exp,
+                    display=display,
+                    timeout=30,
+                    new_line=last_new_line,
+                    ignore_error=ignore_error,
+                    exp_output=r"n\)"
+                )
+            else:
+                out = self.send_command(
+                    command,
+                    exp,
+                    display=display,
+                    timeout=timeout,
+                    new_line=last_new_line,
+                    ignore_error=ignore_error
+                )
+            output.append(out)
         if new_line:
             output.append(
-                self.send_command(' ', exp, display=display, timeout=timeout))
+                self.send_command(
+                    " ",
+                    exp,
+                    display=display,
+                    timeout=timeout,
+                    ignore_error=ignore_error
+                )
+            )
 
-        for line in output:
-            if 'Command fail' in line:
-                print('Command failed')
-                print(output)
-            break
         if len(output) == 1:
             return output[0]
         return output
@@ -142,9 +201,10 @@ class SshInteractiveConnection:
         return self.con.current_output
 
     def quit(self):
-        self.con.close()
-        self.client.close()
         self.disconnected = True
+        if self.con:
+            self.get_output()
+            self.con.close()
 
     @staticmethod
     def is_in_output(value, output):
@@ -160,7 +220,7 @@ class SshNoneInteractiveConnection:
         self.username = username
         self.password = password
         self.timeout = timeout
-
+        self.logger = get_logger(name=f"cli.{host}")
         self.client = None
         self.disconnected = True
         self.connect()
@@ -199,7 +259,9 @@ class SshNoneInteractiveConnection:
         self.client.close()
         self.disconnected = False
 
-    def send_commands(self, cmds):
+    def send_commands(self, cmds, **kwargs):
+        if kwargs:
+            self.logger.debug(f"{kwargs} args will be ignored")
         retry = 5
         while retry > 0:
             try:

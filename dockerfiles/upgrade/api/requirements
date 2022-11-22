@@ -1,0 +1,4 @@
+pyamqp==0.1.0.7
+celery==5.2.7
+redis==4.3.4
+cryptography==2.1.4

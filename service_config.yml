@@ -9,4 +9,5 @@ service_config:
 #        - qr_display
 #        - fos
 #        - -k8s
-        - bp
+#        - bp
+        - upgrade

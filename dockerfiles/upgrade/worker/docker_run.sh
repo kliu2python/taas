@@ -1,0 +1,1 @@
+celery -A upgrade.task.celery worker -Q $QUEUE -l INFO --concurrency=$CONCURRENT

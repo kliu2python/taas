@@ -9,10 +9,11 @@ logger = get_logger()
 
 
 class DataStore:
-    def __init__(self, keys, redis_conn: redis.Redis, identifier=None):
+    def __init__(self, keys, redis_conn: redis.Redis, identifier=None, ex=None):
         self.identifier = identifier
         self.redis = redis_conn
         self.supported_keys: dict = keys
+        self.default_expire = ex
 
     def craft_key(self, key, identifier=None):
         iden = self.identifier
@@ -25,6 +26,16 @@ class DataStore:
         if identifier:
             iden = identifier
         return key.replace(f"{iden}_", "") if iden else key
+
+    def set_expire(self, key, expire):
+        if expire is None:
+            if self.default_expire:
+                self.redis.expire(key, self.default_expire)
+        elif isinstance(expire, int):
+            self.redis.expire(key, expire)
+        elif expire is not False:
+            raise ValueError(f"expire mast be None, int, "
+                             f"or False for set function")
 
     def get(self, key, identifier=None, default=None):
         dt = self.supported_keys.get(key)
@@ -45,7 +56,9 @@ class DataStore:
             elif dt is set:
                 ret = list(self.redis.smembers(k))
             elif dt is dict:
-                ret = json.loads(self.redis.get(k))
+                ret = self.redis.get(k)
+                if ret:
+                    ret = json.loads(ret)
             if not ret:
                 return default
             return ret
@@ -70,7 +83,7 @@ class DataStore:
             result[key] = self.get(key, identifier)
         return result
 
-    def set(self, key, value, identifier=None):
+    def set(self, key, value, identifier=None, expire=None):
         dt = self.supported_keys.get(key)
         if dt:
             k = self.craft_key(key, identifier)
@@ -96,6 +109,7 @@ class DataStore:
             else:
                 raise ValueError(f"failed to write to redis, type: {dt} not "
                                  f"supported")
+            self.set_expire(k, expire)
         else:
             raise TypeError(f"unsupported data type {dt}")
 
