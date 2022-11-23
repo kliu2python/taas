@@ -1,9 +1,9 @@
 CONFIG_TEMPLATES_JSON = """[{
     "platform": "fos",
     "build_info": {
-        "version": "v7.00",
         "repo": "FortiOS",
         "branch": "",
+        "release": "7.0.1"
         "build": 0,
         "type": "image"
     },
@@ -16,9 +16,9 @@ CONFIG_TEMPLATES_JSON = """[{
 {
     "platform": "fos",
     "build_info": {
-        "version": "v7.00",
         "repo": "AVEngine",
         "branch": "",
+        "release": "7"
         "build": 0,
         "type": "av",
         "file_pattern": "avengine-v7.(.*)-fosv(.*).tgz"
@@ -33,10 +33,10 @@ CONFIG_TEMPLATES_JSON = """[{
 CONFIG_TEMPLATES_YAML = """---
 platform: fos
 build_info: 
-    version: v7.00
     # product: fgt  This is not required for FortiGate and FortiFirewall
     repo: FortiOS
     branch: ""
+    release: 7.0.1      # 7.0.1ga OR  7 for latest of the trunk if build = 0
     build: 0
     type: image
 device_access: 
@@ -46,10 +46,10 @@ device_access:
 ---
 platform: fos
 build_info: 
-    version: v7.00
     # product: fgt  This is not required for FortiGate and FortiFirewall
     repo: AVEngine
     branch: ""
+    release: 7
     build: 0
     type: av
     file_pattern: avengine-v7.(.*)-fosv(.*).tgz

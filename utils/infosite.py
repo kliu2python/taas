@@ -30,6 +30,7 @@ class InfoSiteFtpClient:
         build = 0
         latest_path = None
         dirs = self.ftp_client.nlst(path)
+        desired_build = int(desired_build)
 
         if not dirs:
             return None
@@ -47,7 +48,8 @@ class InfoSiteFtpClient:
                     break
         if not latest_path:
             raise FileNotFoundError(
-                f"Failed to fine target build:{desired_build}, path: {path}"
+                f"Failed to fine target build:{desired_build}, "
+                f"path: {latest_path}"
             )
 
         try:

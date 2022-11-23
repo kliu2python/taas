@@ -32,6 +32,7 @@ class Update(Resource):
                 "product": "FAC" (later) // No need for FGT/FWF
                 "repo": "FortiOS-6K7K"
                 "branch": "", "" for main branch
+                "release": "7.0.0"
                 "build": int,
                 "type": "image",
                 "file_pattern": null // no need for FortiOS and FortiOS-6K7K

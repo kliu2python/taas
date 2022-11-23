@@ -3,10 +3,11 @@ TYPE_MAPPING = {
 }
 PRODUCT_MAPPING = {
     "fortigate": "fgt",
-    "fortifirewall": "FWF"
+    "fortifirewall": "fwf"
 }
 TASK_KEYS = {
     "status": str,
     "task_id": str,
-    "task_data": dict
+    "task_data": dict,
+    "infosite_builds": set
 }

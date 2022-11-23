@@ -1,10 +1,13 @@
 import os
+import re
 from copy import deepcopy
 
 from upgrade.conf import CONF
-from utils.infosite.ftp import InfoSiteFtpClient
 from upgrade.base import Updater
 from upgrade.fos.ssh import FgtSsh
+from upgrade.infosite import get_cache
+from upgrade.infosite import get_key
+from utils.infosite import InfoSiteFtpClient
 
 
 class FosUpdater(Updater, FgtSsh):
@@ -19,6 +22,7 @@ class FosUpdater(Updater, FgtSsh):
             build_info.get("file_pattern")
         )
         build_info["repo"] = repo
+        build_info = self.determin_build(build_info)
         with InfoSiteFtpClient(**infosite) as client:
             file = client.download(
                 file_name=file_name, dst_dir=dst, **build_info
@@ -39,4 +43,29 @@ class FosUpdater(Updater, FgtSsh):
         else:
             return self.get_device_info(repo)
 
+    def determin_build(self, build_info):
+        release = str(build_info.get("release"))
+        if release:
+            print(release)
+            matches = re.search(r"^(\d+).(\d+).(\d+)", release)
+            if matches:
+                build_info["version"] = f"v{matches.group(1)}.00"
+                if build_info.get("build") == 0:
+                    repo = build_info.get("repo")
+                    key = get_key(repo, release.lower())
+                    build_list = get_cache(key)
+                    if build_list:
+                        build = max(build_list)
+                        build_info["build"] = build
+                    else:
+                        raise Exception(f"latest build for {release} "
+                                        f"does not exists")
+                return build_info
 
+            matches = re.search(r"^(\d+)$", release)
+            if matches:
+                build_info["version"] = f"v{release}.00"
+                return build_info
+            raise Exception("release value is not in correct format, "
+                            "For trunk branch, use single digits like 7 or 6"
+                            "For Release, use like 7.0.1")
