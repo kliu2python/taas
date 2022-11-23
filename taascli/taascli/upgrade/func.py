@@ -20,10 +20,10 @@ def update_sys(args):
         data = [{
             "platform": args.platform,
             "build_info": {
-                "version": args.version,
                 "product": args.product,
                 "repo": args.repo,
                 "branch": args.branch,
+                "release": args.release,
                 "build": args.build,
                 "type": args.type,
                 "file_pattern": args.file_pattern

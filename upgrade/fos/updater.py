@@ -46,7 +46,6 @@ class FosUpdater(Updater, FgtSsh):
     def determin_build(self, build_info):
         release = str(build_info.get("release"))
         if release:
-            print(release)
             matches = re.search(r"^(\d+).(\d+).(\d+)", release)
             if matches:
                 build_info["version"] = f"v{matches.group(1)}.00"

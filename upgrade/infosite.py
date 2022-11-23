@@ -59,4 +59,4 @@ if __name__ == "__main__":
     from time import sleep
     while True:
         update_cache()
-        sleep(10)
+        sleep(1800)
