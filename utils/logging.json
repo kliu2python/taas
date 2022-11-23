@@ -23,13 +23,6 @@
       "stream": "ext://sys.stdout",
       "level": "INFO",
       "formatter": "cli"
-    },
-    "logfile": {
-      "class": "logging.FileHandler",
-      "filename": "$AUTOMATION_DIR/logs/output-$LOG_NAME.log",
-      "mode": "w",
-      "level": "INFO",
-      "formatter": "cli"
     }
   },
   "loggers": {
