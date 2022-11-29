@@ -5,7 +5,8 @@ CONFIG_TEMPLATES_JSON = """[{
         "branch": "",
         "release": "7.0.1"
         "build": 0,
-        "type": "image"
+        "type": "image",
+        "debug": "false"
     },
     "device_access": {
         "host": "xxx.xxx.xxx.xxx",
@@ -39,6 +40,7 @@ build_info:
     release: 7.0.1      # 7.0.1ga OR  7 for latest of the trunk if build = 0
     build: 0
     type: image
+    debug: False
 device_access: 
     host: xxx.xxx.xxx.xxx
     username: username

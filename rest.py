@@ -58,3 +58,10 @@ def load_api_resource(api):
 
 def get_loaded_api():
     return _loaded_api
+
+
+def after_request(f):
+    def wrap(func):
+        _api.app.after_request(f)
+        return func
+    return wrap

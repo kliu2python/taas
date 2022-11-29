@@ -44,7 +44,7 @@ upgrade_update_parser.add_argument(
                                                          "fos is default"
 )
 upgrade_update_parser.add_argument(
-    "-d", "--product", type=str, default="fgt", help="Product to upgrade, "
+    "-o", "--product", type=str, default="fgt", help="Product to upgrade, "
                                                      "by default this is fgt"
 )
 upgrade_update_parser.add_argument(
@@ -95,6 +95,10 @@ upgrade_update_parser.add_argument(
 upgrade_update_parser.add_argument(
     "-w", "--wait", action="store_true",
     help="hold command until upgrade complete command"
+)
+upgrade_update_parser.add_argument(
+    "-d", "--debug", action="store_true", default=False,
+    help="use debug build"
 )
 
 # upgrade cancel - sub parser

@@ -2,9 +2,8 @@ FROM python:3.6.12-slim-buster
 
 COPY . /root/.jupyter/
 COPY generate_cert_docker.sh /bin/gencert
-RUN chmod +x /bin/gencert
-
-RUN pip3 install jupyterlab
+RUN chmod +x /bin/gencert \
+    && pip3 install jupyterlab
 
 WORKDIR /shared_folder
 

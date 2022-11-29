@@ -2,11 +2,11 @@ import os
 import uuid
 
 from upgrade.conf import CONF
-from upgrade.cache import Cache
+from upgrade.caches import TaskCache
 from upgrade.constants import TYPE_MAPPING
 from utils.celery import make_celery
 
-cache = Cache()
+cache = TaskCache()
 celery = make_celery("updater", CONF["celery"])
 
 

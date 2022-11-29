@@ -19,7 +19,8 @@ class FosUpdater(Updater, FgtSsh):
         dst = os.path.join(dst, req_id)
         repo, file_name = self._get_build_info(
             build_info.get("repo"),
-            build_info.get("file_pattern")
+            build_info.get("file_pattern"),
+            build_info.get("debug", False)
         )
         build_info["repo"] = repo
         build_info = self.determin_build(build_info)
@@ -37,11 +38,14 @@ class FosUpdater(Updater, FgtSsh):
                 f"{build_info['type']} file not found to upgrade"
             )
 
-    def _get_build_info(self, repo, file_pattern=None):
+    def _get_build_info(self, repo, file_pattern=None, debug=False):
         if file_pattern:
             return repo, file_pattern
         else:
-            return self.get_device_info(repo)
+            repo, file_pattern = self.get_device_info(repo)
+            if debug:
+                file_pattern = file_pattern.replace(".out", ".deb")
+            return repo, file_pattern
 
     def determin_build(self, build_info):
         release = str(build_info.get("release"))
