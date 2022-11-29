@@ -118,15 +118,11 @@ class DataStore:
             self.set(k, v, identifier)
 
     def _incr_decr(self, key, amount: int, increase=True, identifier=None):
-        dt = self.supported_keys.get(key)
-        if dt is int:
-            k = self.craft_key(key, identifier)
-            if increase:
-                self.redis.incr(k, amount)
-            else:
-                self.redis.decr(k, amount)
+        k = self.craft_key(key, identifier)
+        if increase:
+            self.redis.incr(k, amount)
         else:
-            raise TypeError(f"key data type {dt} is not int")
+            self.redis.decr(k, amount)
 
     def incr(self, key, amount: int, identifier=None):
         self._incr_decr(key, amount, identifier=identifier)

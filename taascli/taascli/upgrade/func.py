@@ -26,7 +26,8 @@ def update_sys(args):
                 "release": args.release,
                 "build": args.build,
                 "type": args.type,
-                "file_pattern": args.file_pattern
+                "file_pattern": args.file_pattern,
+                "debug": args.debug
             },
             "device_access": {
                 "host": args.ip,

@@ -2,10 +2,10 @@ import re
 
 import requests
 
-from upgrade.cache import Cache
+from upgrade.caches import InfositeCache
 from utils.logger import get_logger
 
-cache = Cache()
+cache = InfositeCache()
 logger = get_logger()
 INFOSITE_DATA_URL = "http://10.160.19.9/fos_all.txt"
 
