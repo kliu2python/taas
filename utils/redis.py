@@ -187,3 +187,14 @@ class DataStore:
     def sinter(self, *keys, identifier=None):
         keys = [self.craft_key(k, identifier) for k in keys]
         return self.redis.sinter(keys)
+
+    def replace(self, key, value, identifier):
+        dt = self.supported_keys.get(key)
+        if dt:
+            k = self.craft_key(key, identifier=identifier)
+            with self.redis.pipeline() as pipe:
+                if dt is list:
+                    pipe.delete(k)
+                    pipe.rpush(k, *value)
+
+                pipe.execute()

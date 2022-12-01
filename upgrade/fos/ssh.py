@@ -163,13 +163,12 @@ class FgtSsh(SshInteractiveConnection):
         self.back_to_root_level()
         cmds = [
             f"execute restore {file_type} ftp {file} {ip} {user} {password}",
-            "y",
-            "y"
-        ]
+        ] + ["y"] * 10
         if self.has_global():
             cmds = ["config global"] + cmds
-        self.send_commands(cmds, ignore_timeout=True, display=True,
-                           ignore_error=True, timeout=120, retry=1)
+            self.send_commands(cmds, ignore_timeout=True, display=True,
+                               ignore_error=True, timeout=2, retry=1)
+
         if file_type in ["image"]:
             self.wait_fortigate_bootup()
 

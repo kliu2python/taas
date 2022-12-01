@@ -1,3 +1,4 @@
+import datetime
 import os
 import uuid
 
@@ -38,9 +39,8 @@ def do_update(req_id, data):
             cache.set("task_data", {"input": data}, req_id)
             updater = get_updater(data.get("platform"))
             access_info = data["device_access"]
-            file, version = updater(**access_info).update(req_id, data)
-            data["used_file"] = file
-            data["current_version"] = version
+            result = updater(**access_info).update(req_id, data)
+            data.update(result)
             cache.set("task_data", data, req_id)
             cache.set("status", "completed", req_id)
             break
@@ -55,6 +55,7 @@ def do_update(req_id, data):
 
 def update(data):
     req_id = str(uuid.uuid4())
+    data["time"] = str(datetime.datetime.now())
     task = do_update.delay(req_id, data)
     cache.set("task_id", task.id, req_id)
     return req_id
