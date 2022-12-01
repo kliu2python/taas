@@ -10,8 +10,14 @@ _loaded_api = []
 
 
 class RestApi:
-    def __init__(self, base_route):
+    def __init__(self, base_route, **kwargs):
         self.base_route = base_route
+        self.callbacks = kwargs
+        self.register_callbacks()
+
+    def register_callbacks(self):
+        for k, v in self.callbacks.items():
+            getattr(_api.app, k)(v)
 
     def route(self, route_path):
         def wrap(func):
@@ -58,10 +64,3 @@ def load_api_resource(api):
 
 def get_loaded_api():
     return _loaded_api
-
-
-def after_request(f):
-    def wrap(func):
-        _api.app.after_request(f)
-        return func
-    return wrap

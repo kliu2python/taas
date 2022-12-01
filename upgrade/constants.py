@@ -12,11 +12,15 @@ TASK_CACHE_KEYS = {
     "infosite_builds": set
 }
 INFOSITE_CACHE_KEYS = {
-    "infosite_builds": set
+    "builds": set,
+    "releases": list
 }
 STATICS_CACHE_KEYS = {
     "update_get": int,
     "update_post": int,
     "update_delete": int,
     "build_get": int
+}
+IMAGE_CACHE_KEYS = {
+    "file": str
 }

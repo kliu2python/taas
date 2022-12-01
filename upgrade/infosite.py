@@ -1,3 +1,4 @@
+import os
 import re
 
 import requests
@@ -7,19 +8,25 @@ from utils.logger import get_logger
 
 cache = InfositeCache()
 logger = get_logger()
-INFOSITE_DATA_URL = "http://10.160.19.9/fos_all.txt"
+DATA_IP = os.environ.get("DATA_IP", "10.160.19.9")
+INFOSITE_DATA_URL = f"http://{DATA_IP}/fos_all.txt"
+KEY_PREFIX = "__infosite"
 
 
 def get_key(repo, release):
-    return f"___{repo}_{release}"
+    return f"{KEY_PREFIX}_{repo}_{release}"
 
 
-def set_cache(data, key):
-    cache.set("infosite_builds", data, key)
+def set_build_cache(data, key):
+    cache.set("builds", data, key)
 
 
-def get_cache(key):
-    return cache.get("infosite_builds", key)
+def get_build_cache(key):
+    return cache.get("builds", key)
+
+
+def get_release_cache():
+    return cache.get("releases", KEY_PREFIX)
 
 
 def update_cache():
@@ -29,10 +36,13 @@ def update_cache():
         data = data.split("\n")
 
         interm_builds = []
+        releases = []
         release = ""
         for line in data:
-            logger.info(f"Update build: {line}")
             if line:
+                logger.info(f"Update build: {line}")
+                if "Release" in line:
+                    releases.append(line)
                 line = line.split(",")
                 repo = line[0].strip()
                 ver = line[1].strip()
@@ -43,16 +53,17 @@ def update_cache():
                 else:
                     if interm_builds:
                         key = get_key(repo, release)
-                        set_cache(interm_builds, key)
+                        set_build_cache(interm_builds, key)
                         interm_builds = []
 
                     release = ver.replace("Release", "").replace(" ", "")
                     release = release.replace("v", "").lower()
                     key = get_key(repo, release)
-                    set_cache([build], key)
+                    set_build_cache([build], key)
                     interm_builds.append(build)
 
                     release = re.search(r"(.*)(.[a-z])", release).group(1)
+        cache.replace("releases", releases, KEY_PREFIX)
 
 
 if __name__ == "__main__":
