@@ -11,7 +11,12 @@ _loaded_api = []
 
 class RestApi:
     def __init__(self, base_route, **kwargs):
-        self.base_route = base_route
+        if isinstance(base_route, str):
+            self.base_routes = [base_route]
+        elif isinstance(base_route, list):
+            self.base_routes = base_route
+        else:
+            raise Exception("base route should be a string or list")
         self.callbacks = kwargs
         self.register_callbacks()
 
@@ -21,15 +26,17 @@ class RestApi:
 
     def route(self, route_path):
         def wrap(func):
-            route = f"{self.base_route}{route_path}"
-            routes = [route]
-            if "<" in route:
-                route_list = route.split("<")
-                routes = [route_list[0].rstrip("/")]
-                last_route = route_list[0]
-                for route_item in route_list[1:]:
-                    last_route = f"{last_route}<{route_item}"
-                    routes.append(last_route.rstrip("/"))
+            routes = []
+            for base_route in self.base_routes:
+                route = f"{base_route}{route_path}"
+                routes.append(route)
+                if "<" in route:
+                    route_list = route.split("<")
+                    routes = [route_list[0].rstrip("/")]
+                    last_route = route_list[0]
+                    for route_item in route_list[1:]:
+                        last_route = f"{last_route}<{route_item}"
+                        routes.append(last_route.rstrip("/"))
             _api.add_resource(func, *routes)
             return func
         return wrap

@@ -22,7 +22,7 @@ class FosUpdater(Updater, FgtSsh):
             build_info["repo"],
             build_info["version"],
             build_info["branch"],
-            build_info["build"]
+            str(build_info["build"])
         ]
         return "_".join(build_info)
 
@@ -59,8 +59,11 @@ class FosUpdater(Updater, FgtSsh):
                     file_name=file_name, dst_dir=dst, **build_info
                 )
         if file:
-            file_restore = os.path.join(req_id, file[-1])
-            if not cached:
+            if cached:
+                file_restore = file
+                file = file_restore.split("/")[-1]
+            else:
+                file_restore = os.path.join(req_id, file[-1])
                 self.update_image_cache(build_info, file_restore)
             self.restore_binary(file_restore, build_info["type"], **conf["ftp"])
             _, version = self.get_model_version()
