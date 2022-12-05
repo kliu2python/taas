@@ -8,6 +8,7 @@ PRODUCT_MAPPING = {
 TASK_CACHE_KEYS = {
     "status": str,
     "task_id": str,
+    "task_lock": str,
     "task_data": dict,
     "infosite_builds": set
 }

@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from scipy.signal import savgol_filter
 
-from bp.Analysis.constants import ANALYZER_DEF
+from bpproxy.analysis.constants import ANALYZER_DEF
 from utils.helper import dict_merge
 
 
