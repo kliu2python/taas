@@ -9,5 +9,6 @@ service_config:
 #        - qr_display
 #        - fos
 #        - -k8s
-#        - bp
+#        - bpproxy
+#        - bpmanager
         - upgrade

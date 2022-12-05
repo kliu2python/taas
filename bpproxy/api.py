@@ -1,10 +1,10 @@
 from flask_restful import Resource, Api
 from flask import Flask, jsonify, request, make_response
 
-from bp.common import process as pros
+from bpproxy.common import process as pros
 from rest import RestApi
 
-rest = RestApi(base_route="/bp/")
+rest = RestApi(base_route=["/bp/", "/bpproxy/v1/"])
 
 
 @rest.route("run")

@@ -53,10 +53,12 @@ def load_api_resource(api):
     )
     with open(config_path) as FILE:
         service_config = yaml.safe_load(FILE)
-
-    enabled_features = (
-        service_config.get("service_config", {}).get("services", [])
-    )
+    if service_config:
+        enabled_features = (
+            service_config.get("service_config", {}).get("services", [])
+        )
+    else:
+        raise Exception("Failed to load service_config")
     _load_resource("welcome")
     for feature in enabled_features:
         print(f"Loading Feature: {feature}")

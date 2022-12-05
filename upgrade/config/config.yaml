@@ -1,6 +1,6 @@
 celery:
-  broker_url: pyamqp://taas:taas@10.160.83.213:5672/celery
-  result_backend: rpc://taas:taas@10.160.83.213:5672/celery
+  broker_url: pyamqp://taas:taas@10.160.83.213:5672/upgrade
+  result_backend: rpc://taas:taas@10.160.83.213:5672/upgrade
   result_expires: 600
   task_track_started: True
   task_routes:
@@ -14,7 +14,7 @@ celery:
 infosite:
   ip: 172.16.100.71
   user: znie
-  password: xxxxxx
+  password: Apple!nc4
 
 ftp:
   ip: 10.160.27.193

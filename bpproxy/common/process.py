@@ -4,10 +4,10 @@ import time
 
 import yaml
 
-from bp.common.versions import RESOURCE_MAPPING
-from bp.common import bp as bps
+from bpproxy.common.versions import RESOURCE_MAPPING
+from bpproxy.common import bp as bps
 from utils.logger import get_logger
-from bp.Analysis import analyzer
+from bpproxy.analysis import analyzer
 
 logger = get_logger("clear")
 

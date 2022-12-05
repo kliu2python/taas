@@ -1,14 +1,17 @@
 import datetime
 import os
 import uuid
+from time import sleep
 
 from upgrade.conf import CONF
 from upgrade.caches import TaskCache
 from upgrade.constants import TYPE_MAPPING
 from utils.celery import make_celery
+from utils.logger import get_logger
 
 cache = TaskCache()
 celery = make_celery("updater", CONF["celery"])
+logger = get_logger()
 
 
 def get_updater(platform):
@@ -29,11 +32,32 @@ def _prepare(req_id, data):
     return data
 
 
-@celery.task
-def do_update(req_id, data):
+def _wait_task_lock(req_id, data):
+    logger.info("Wait existing task finish")
+    while True:
+        lock = check_wait(data)
+        if lock:
+            sleep(5)
+        else:
+            set_task_lock(req_id, data)
+            logger.info(f"Depended task {lock} completed, starting new task")
+            break
+
+
+def _handle_exception(req_id, e, data):
+    cache.set("status", "failed", req_id)
+    data["error"] = f"{e}"
+    cache.set("task_data", data, req_id)
+
+
+@celery.task(time_limit=3600)
+def do_update(req_id, data, wait):
     retry = CONF.get("task", {}).get("retry", 1)
+    error = None
     while retry > 0:
         try:
+            if wait:
+                _wait_task_lock(req_id, data)
             data = _prepare(req_id, data)
             cache.set("status", "in progress", req_id)
             cache.set("task_data", {"input": data}, req_id)
@@ -44,21 +68,70 @@ def do_update(req_id, data):
             cache.set("task_data", data, req_id)
             cache.set("status", "completed", req_id)
             break
-        except Exception as e:
-            cache.set("status", f"failed", req_id)
-            data["error"] = f"{e}"
-            cache.set("task_data", data, req_id)
+        except Exception as error:
+            _handle_exception(req_id, error, data)
             retry -= 1
-            if retry <= 0:
-                raise e
+        finally:
+            unlock_task_lock(data)
+            if error:
+                raise error
 
 
-def update(data):
+def _get_host_ip(data):
+    host = data.get("device_access", {}).get("host")
+    if host:
+        return host
+    raise Exception("target ip is required for upgrade")
+
+
+def get_task_lock(data):
+    host = _get_host_ip(data)
+    return cache.get("task_lock", host)
+
+
+def set_task_lock(req_id, data):
+    host = _get_host_ip(data)
+    cache.set("task_lock", req_id, host, expire=3600)
+
+
+def unlock_task_lock(data):
+    host = _get_host_ip(data)
+    cache.delete("task_lock", host)
+
+
+def get_task_status(req_id):
+    return cache.get("status", req_id)
+
+
+def check_wait(data):
+    running_task = get_task_lock(data)
+    if running_task:
+        status = get_task_status(running_task)
+        if status in ["in progress", "pending"]:
+            return True
+    return False
+
+
+def schedule(data):
     req_id = str(uuid.uuid4())
-    data["time"] = str(datetime.datetime.now())
-    task = do_update.delay(req_id, data)
-    cache.set("task_id", task.id, req_id)
-    return req_id
+    ret = {"upgrade_id": req_id}
+    try:
+        wait = False
+        if not data.get("force", False):
+            wait = check_wait(data)
+        if not wait:
+            set_task_lock(req_id, data)
+
+        data["time"] = str(datetime.datetime.now())
+        cache.set("task_data", data, req_id)
+        task = do_update.delay(req_id, data, wait)
+        cache.set("task_id", task.id, req_id)
+        cache.set("status", "pending", req_id)
+    except Exception as e:
+        _handle_exception(req_id, e, data)
+        logger.exception(f"Error when schedule job {req_id}", exc_info=e)
+        ret["error"] = e
+    return ret
 
 
 def get_result(req_id):

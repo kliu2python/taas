@@ -5,7 +5,7 @@ from flask_restful import request
 from upgrade.infosite import get_release_cache
 from upgrade.statics import count_access
 from upgrade.task import get_result
-from upgrade.task import update
+from upgrade.task import schedule
 from upgrade.task import revoke_task
 from rest import RestApi
 
@@ -52,8 +52,8 @@ class Update(Resource):
         :rtype: json
         """
         data = request.json
-        upgrade_id = update(data)
-        return jsonify({"upgrade_id": upgrade_id})
+        ret = schedule(data)
+        return jsonify(ret)
 
     def delete(self, upgrade_id):
         revoke_task(upgrade_id)
