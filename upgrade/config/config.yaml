@@ -14,7 +14,7 @@ celery:
 infosite:
   ip: 172.16.100.71
   user: znie
-  password: Apple!nc4
+  password: xxxxxx
 
 ftp:
   ip: 10.160.27.193
