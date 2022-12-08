@@ -26,11 +26,10 @@ class Update(Resource):
 
     def post(self):
         """
-        sample post body:
+        sample post body for image:
         {
             "platform": "fos" # "only support fos for now",
             "build_info": {
-                "version": "v7.00",
                 "product": "FAC" (later) // No need for FGT/FWF
                 "repo": "FortiOS-6K7K"
                 "branch": "", "" for main branch
@@ -39,11 +38,60 @@ class Update(Resource):
                 "type": "image",
                 "file_pattern": null, // no need for FortiOS and FortiOS-6K7K
                 "debug": true/false // when true, use debug image.,
-                "verify": true/false
-                "use_cache": true/false // by default it is true
+                "verify": true/false // by default this is true,
+                "use_cache": true/false // by default it is true,
+                "force": true/false // force upgrade even existing job running
             }
             "device_access": {
-                "ip": "xxxx",
+                "host": "xxxx",
+                "username": "xxxx",
+                "password": "xxxx"
+            }
+        }
+
+        For  packages: av / aveng, ips / ipseng malware
+        {
+            "platform": "fos" # "only support fos for now",
+            "build_info": {
+                "product": "FGT" (later) // No need for FGT/FWF
+                "type": "pkg",
+                "pkgs": [               // you can input some of the category
+                    "avsig": {          // if you don`t want to upgrade all
+                        "release": "7.0.0",
+                        "build_list": {
+                            "ETDB.High": "90.08471",
+                            "FLDB": "90.08471",
+                            "MMDB": "90.08471"
+                        }
+                    },
+                    "aveng": {
+                        "release": "7.0.0",
+                        "build": "xxxx"
+                    },
+                    "ipssig": {
+                        "release": "7.0.0",
+                        "build_list": {
+                            "isdb": "90.08471",
+                            "nids": "90.08471",
+                            "apdb": "90.08471"
+                        }
+                    },
+                    "ipseng": {
+                        "release": "7.0.0",
+                        "build": "xxxx"
+                    },
+                    "malware": {
+                        "release": "7.0.0",
+                        "build": "xxxx"
+                    }
+                ],
+                "verify": true/false,
+                "file_pattern": null, // no need for FortiOS and FortiOS-6K7K
+                "use_cache": true/false, // by default it is true
+                "force": true/false // force upgrade even existing job running
+            }
+            "device_access": {
+                "host": "xxxx",
                 "username": "xxxx",
                 "password": "xxxx"
             }
@@ -56,6 +104,13 @@ class Update(Resource):
         return jsonify(ret)
 
     def delete(self, upgrade_id):
+        """
+        stop upgrade task
+        :param upgrade_id: upgrade id to stop
+        :type upgrade_id: str
+        :return: null
+        :rtype: null
+        """
         revoke_task(upgrade_id)
 
 

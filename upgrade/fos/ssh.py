@@ -28,8 +28,7 @@ class FgtSsh(SshInteractiveConnection):
 
     def reboot_system(self):
         cmd = [
-            "exec reboot",
-            "y"
+            "exec reboot...y"
         ]
         self.send_commands(cmd, ignore_timeout=True, display=False)
 
@@ -39,11 +38,11 @@ class FgtSsh(SshInteractiveConnection):
             commands: list,
             exp=None,
             display=True,
-            timeout=None,
-            new_line=True,
+            timeout=30,
             ignore_timeout=True,
-            retry=3,
-            ignore_error=False
+            retry=1,
+            ignore_error=False,
+            ignore_socket_error=False
     ):
         output = None
         while retry > 0:
@@ -52,14 +51,10 @@ class FgtSsh(SshInteractiveConnection):
                 output = super().send_commands(
                     commands,
                     exp=exp,
-                    display=display,
-                    timeout=timeout,
-                    new_line=True
+                    timeout=timeout
                 )
                 break
             except Exception as e:
-                if display:
-                    logger.exception("retry commands due to error", exc_info=e)
                 ex = e
                 try:
                     self.quit()
@@ -76,32 +71,49 @@ class FgtSsh(SshInteractiveConnection):
                         if not ignore_timeout:
                             raise ex
                         logger.info(
-                            "socket timeout, but we choose to ignore"
+                            "ignoring socket timeout"
                         )
+                    elif isinstance(ex, (OSError, socket.error)):
+                        if not ignore_socket_error:
+                            raise ex
+                        logger.info(
+                            "ignoring socket error"
+                        )
+
                     else:
                         if not ignore_error:
                             raise ex
                         logger.info(
                             f"We have exception, now ignore: {ex}"
                         )
-                sleep(3)
+                else:
+                    if display:
+                        logger.exception(
+                            "retry commands due to error", exc_info=ex
+                        )
+                sleep(2)
         return output
 
+    @classmethod
+    def _check_root_level(cls, msg):
+        matches = re.search(r".*\)\s#\s$", msg)
+        if matches:
+            return False
+        return True
+
     def back_to_root_level(self):
-        super().send_commands(
-            ["end"] * 5,
-            display=False,
-            ignore_error=True
-        )
+        last_out = self.send_command("")
+        while last_out and not self._check_root_level(last_out):
+            last_out = self.send_command("end")
 
     def has_global(self):
         if self.has_vdom is None:
-            retry = 5
+            retry = 1
             while retry:
                 try:
                     self.back_to_root_level()
                     self.send_commands(
-                        ["config global"], retry=1, display=False
+                        ["config global"], retry=1, display=False, timeout=5
                     )
                     logger.info("System multivdom is enabled")
                     self.has_vdom = True
@@ -151,23 +163,27 @@ class FgtSsh(SshInteractiveConnection):
     def restore_settings(self, file, tftp_ip):
         self.back_to_root_level()
         cmds = [
-            f"execute restore config tftp {file} {tftp_ip}",
-            "y"
+            f"execute restore config tftp {file} {tftp_ip}...y"
         ]
         if self.has_global():
             cmds = ["config global"] + cmds
-        self.send_commands(cmds, ignore_timeout=True, display=False)
+        self.send_commands(
+            cmds, ignore_timeout=True, ignore_socket_error=True, display=False
+        )
         self.wait_fortigate_bootup()
 
-    def restore_binary(self, file, file_type, ip, user, password):
+    def restore_binary(
+            self, file, file_type, ip, user, password, ignore_error=False
+    ):
         self.back_to_root_level()
         cmds = [
-            f"execute restore {file_type} ftp {file} {ip} {user} {password}",
-        ] + ["y"] * 10
+            f"diagnose autoupdate downgrade enable",
+            f"execute restore {file_type} ftp {file} {ip} "
+            f"{user} {password}...y",
+        ]
         if self.has_global():
             cmds = ["config global"] + cmds
-            self.send_commands(cmds, ignore_timeout=True, display=True,
-                               ignore_error=True, timeout=2, retry=1)
+        self.send_commands(cmds, retry=1, ignore_error=ignore_error)
 
         if file_type in ["image"]:
             self.wait_fortigate_bootup()
@@ -212,4 +228,10 @@ class FgtSsh(SshInteractiveConnection):
 
 
 if __name__ == "__main__":
-    FgtSsh("10.160.88.29", "admin", "admin", False)
+    ssh = FgtSsh("10.160.16.196", "admin", "fortinet")
+    ssh.connect()
+    ssh.restore_binary(
+        "510fbebf-cdca-4760-a8bc-d1ef5c645925/latestMalwareFile_04.338.pkg", "ips", "10.160.27.193",
+        "fortinet", "fortinet")
+    # ret = ssh.get_model_version()
+    # print(ret)

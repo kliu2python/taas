@@ -44,9 +44,8 @@ def _wait_task_lock(req_id, data):
             break
 
 
-def _handle_exception(req_id, e, data):
-    cache.set("status", "failed", req_id)
-    data["error"] = f"{e}"
+def _handle_exception(req_id, data):
+    cache.set("status", "fail", req_id)
     cache.set("task_data", data, req_id)
 
 
@@ -61,15 +60,18 @@ def do_update(req_id, data, wait):
             data = _prepare(req_id, data)
             cache.set("status", "in progress", req_id)
             cache.set("task_data", {"input": data}, req_id)
-            updater = get_updater(data.get("platform"))
+            updater = get_updater(data.get("platform", "fos"))
             access_info = data["device_access"]
-            result = updater(**access_info).update(req_id, data)
+            result, status = updater(**access_info).update(req_id, data)
             data.update(result)
-            cache.set("task_data", data, req_id)
-            cache.set("status", "completed", req_id)
-            break
-        except Exception as error:
-            _handle_exception(req_id, error, data)
+            if status:
+                cache.set("task_data", data, req_id)
+                cache.set("status", "completed", req_id)
+                break
+            raise Exception("task fail, please check result")
+        except Exception as e:
+            error = e
+            _handle_exception(req_id, data)
             retry -= 1
         finally:
             unlock_task_lock(data)
@@ -107,8 +109,7 @@ def check_wait(data):
     running_task = get_task_lock(data)
     if running_task:
         status = get_task_status(running_task)
-        if status in ["in progress", "pending"]:
-            return True
+        return status in ["in progress", "pending"]
     return False
 
 
@@ -128,9 +129,10 @@ def schedule(data):
         cache.set("task_id", task.id, req_id)
         cache.set("status", "pending", req_id)
     except Exception as e:
-        _handle_exception(req_id, e, data)
+        cache.set("status", "fail", req_id)
+        _handle_exception(req_id, data)
+        ret["error"] = f"Error when schedule job {req_id}: {str(e)}"
         logger.exception(f"Error when schedule job {req_id}", exc_info=e)
-        ret["error"] = e
     return ret
 
 
@@ -145,3 +147,7 @@ def get_result(req_id):
 def revoke_task(req_id):
     task_id = cache.get("task_id", req_id)
     celery.control.revoke(task_id)
+    data = cache.get("task_data", req_id)
+    cache.set("status", "cancelled", req_id)
+    ip = data["device_access"]["host"]
+    cache.delete("task_lock", ip)

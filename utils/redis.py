@@ -33,9 +33,9 @@ class DataStore:
                 self.redis.expire(key, self.default_expire)
         elif isinstance(expire, int):
             self.redis.expire(key, expire)
-        elif expire is not False:
+        else:
             raise ValueError(f"expire mast be None, int, "
-                             f"or False for set function")
+                             f"for set function")
 
     def get(self, key, identifier=None, default=None):
         dt = self.supported_keys.get(key)

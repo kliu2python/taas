@@ -1,1 +1,1 @@
-celery -A upgrade.task.celery worker --without-gossip --without-mingle -l INFO --concurrency=$CONCURRENT
+celery -A upgrade.task.celery worker $PARAMS -l INFO --concurrency=$CONCURRENT
