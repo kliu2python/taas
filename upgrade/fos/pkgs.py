@@ -38,7 +38,7 @@ PKGS = {
         "cmd_type": "av",
         "url": "ftp://172.16.100.71/"
                "home/Images/AVEngine/v{release}/images/build{build}",
-        "file_name": "{file_lower}-(.*)_ENG_ALL(.*).pkg",
+        "file_name": "{file_lower}-OS{version}_(.*)_ENG_ALL.pkg",
         "regex": True
     }
 }
