@@ -1,30 +1,13 @@
-import ftplib
-import io
-import os
 import re
 
+from utils.ftp import FtpClient
 from utils.logger import get_logger
 
 LOGGER = get_logger()
 
 
-class InfoSiteFtpClient:
+class InfoSiteFtpClient(FtpClient):
     IMAGE_PATH = "/home/Images/{repo}/{version}/images"
-
-    def __init__(self, ip, user, password):
-        self.ftp_client = ftplib.FTP(ip)
-        self._user = user
-        self._password = password
-
-    def login(self):
-        self.ftp_client.login(self._user, self._password)
-
-    def __enter__(self):
-        self.login()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.quit()
 
     def _download_build(self, path, file_regx, dst_dir, desired_build):
         build = 0
@@ -58,27 +41,13 @@ class InfoSiteFtpClient:
             for file in files:
                 if re.search(file_regx, file):
                     LOGGER.info(f"Downloading file: {file}")
-                    content = self._do_download(file, dst_dir)
+                    content = self.download_file(file, dst_dir)
                     ret.append(content)
             return ret
         except Exception as e:
             LOGGER.exception(
                 f"Error when download laetst build {path}", exc_info=e
             )
-
-    def _do_download(self, file_path, save_path):
-        file_name = os.path.basename(file_path)
-
-        if save_path:
-            target = open(os.path.join(save_path, file_name), "wb")
-        else:
-            target = io.BytesIO()
-
-        with target as BUF:
-            self.ftp_client.retrbinary(
-                f"RETR {file_path}", BUF.write
-            )
-            return file_name
 
     def download(
             self,
@@ -127,9 +96,6 @@ class InfoSiteFtpClient:
             path = f"{path}/NoMainBranch/{branch}"
         file = self._download_build(path, file_name, dst_dir, build)
         return file
-
-    def quit(self):
-        self.ftp_client.quit()
 
 
 if __name__ == "__main__":

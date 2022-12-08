@@ -7,8 +7,10 @@
       "datefmt": "%Y-%m-%d %H:%M:%S"
     },
     "cli": {
-      "format": "[%(asctime)s] (%(name)-7s) %(message)s",
-      "datefmt": "%Y-%m-%d %H:%M:%S"
+      "format": "%(message)s"
+    },
+    "clear": {
+      "format": "%(message)s"
     }
   },
   "handlers": {
@@ -23,6 +25,12 @@
       "stream": "ext://sys.stdout",
       "level": "INFO",
       "formatter": "cli"
+    },
+    "stdout_clear": {
+      "class": "logging.StreamHandler",
+      "stream": "ext://sys.stdout",
+      "level": "INFO",
+      "formatter": "clear"
     }
   },
   "loggers": {
@@ -36,6 +44,13 @@
     "cli": {
       "handlers": [
         "stdout_cli"
+      ],
+      "level": "INFO",
+      "propagate": false
+    },
+    "clear": {
+      "handlers": [
+        "stdout_clear"
       ],
       "level": "INFO",
       "propagate": false

@@ -1,11 +1,10 @@
+import re
 import socket
-from time import sleep
 
 import paramiko
 from paramiko_expect import SSHClientInteraction
 
 from utils.logger import get_logger
-from utils.threads import thread
 
 
 class CommandParseError(Exception):
@@ -29,182 +28,108 @@ class SshInteractiveConnection:
         self.timeout = timeout
         self.display = display
         self.disconnected = True
-        self.skip_exp = None
         self.con = None
+        self.client = None
 
     def connect(self):
-        client = paramiko.SSHClient()
+        self.client = paramiko.SSHClient()
         # Set SSH key parameters to auto accept unknown hosts
-        client.load_system_host_keys()
-        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        client.connect(
+        self.client.load_system_host_keys()
+        self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        self.client.connect(
             hostname=self.hostname,
             username=self.username,
             password=self.password
         )
         self.con = SSHClientInteraction(
-            client,
+            self.client,
             timeout=self.timeout,
             display=self.display,
-            tty_height=1000,
-            newline=''
+            tty_height=1000
         )
-        self.skip_exp = False
         self.disconnected = False
 
-    def extract_output(self, exp, timeout=None):
-        if not self.skip_exp:
-            if exp is False:
-                if timeout is None:
-                    sleep(2)
-                    exp = '.*'
-                else:
-                    sleep(timeout)
-            elif exp is None:
-                exp = r'.*\s#.*'
+    def clear_cache(self):
+        self.con.current_output = ""
 
-            self.con.expect(exp, timeout=timeout, default_match_prefix='.*')
-        return self.con.current_output
+    def handle_promote_cmd(self, command):
+        tailed_message = ""
+
+        cmd_list = command.split("...")
+        cmd = cmd_list[0]
+        response = cmd_list[1]
+        res = 0
+        self.con.send(cmd)
+        while res > -1:
+            res = self.con.expect(
+                ".*(y/n).*", output_callback=self.logger.info
+            )
+            if res > -1:
+                self.con.send(response, newline="")
+            tailed_message += self.con.current_output
+        return tailed_message
 
     def send_command(
             self,
             command=None,
             exp=None,
-            display=False,
-            new_line=True,
             timeout=None,
-            exp_output=None,
             ignore_error=False
     ):
         if self.disconnected:
             self.connect()
-        first_output = None
-
-        if self.skip_exp:
-            self.skip_exp = False
-        else:
-            self.extract_output(exp=exp, timeout=timeout)
-
+        if timeout is None:
+            timeout = self.timeout
+        if not exp:
+            exp = r".*\s#\s$"
         if command is not None:
-            if new_line:
-                command += '\r'
-            self.con.send(command)
-
-        if exp_output is not None:
-            first_output = self.con.current_output
-            self.extract_output(exp_output, timeout=timeout)
-            self.skip_exp = True
-
-        if display:
-            self.logger.info('PREVIOUSLY:')
-
-            if exp_output is None:
-                self.logger.info(self.con.current_output)
+            if "..." in command:
+                curr_output = self.handle_promote_cmd(command)
             else:
-                self.logger.info(first_output)
+                self.con.send(command)
+                self.con.expect(
+                    exp,
+                    timeout=timeout,
+                    output_callback=self.logger.info
+                )
+                curr_output = self.con.current_output
+            if not ignore_error:
+                if 'command parse error' in curr_output.lower():
+                    raise CommandParseError()
+                if "command fail" in curr_output.lower():
+                    raise CommandFailedError()
+                if "unknown action" in curr_output.lower():
+                    raise CommandUnknownActionError()
 
-            self.logger.info(f'SENT: {command}')
-
-            if exp_output is not None:
-                self.logger.info('CURRENT:')
-                self.logger.info(self.con.current_output)
-
-            self.logger.info(f"Last Command: {command}")
-
-        curr_output = self.con.current_output
-        if not ignore_error:
-            if 'command parse error' in curr_output.lower():
-                raise CommandParseError(curr_output)
-            if "command fail" in curr_output.lower():
-                raise CommandFailedError(curr_output)
-            if "unknown action" in curr_output.lower():
-                raise CommandUnknownActionError(curr_output)
-
-        return curr_output
+            return curr_output
 
     def send_commands(
             self,
             commands: list,
             exp=None,
-            display=True,
             timeout=None,
-            new_line=True,
             ignore_error=False
     ):
         if isinstance(commands, str):
             commands = [commands]
         output = []
-        cmd_len = len(commands)
-        for i, command in enumerate(commands):
-            if command in ["y", "n"]:
-                if (i + 1) == cmd_len:
-                    last_new_line = True
-                    last_is_yn = True
-                else:
-                    last_new_line = False
-                    last_is_yn = False
-            else:
-                last_is_yn = False
-                last_new_line = new_line
-            if (
-                    i + 1 < cmd_len
-                    and commands[i + 1] in ["y", "n"]
-                    and not last_is_yn
-            ):
-                out = self.send_command(
-                    command,
-                    exp,
-                    display=display,
-                    timeout=30,
-                    new_line=last_new_line,
-                    ignore_error=ignore_error,
-                    exp_output=r"n\)"
-                )
-            else:
-                out = self.send_command(
-                    command,
-                    exp,
-                    display=display,
-                    timeout=timeout,
-                    new_line=last_new_line,
-                    ignore_error=ignore_error
-                )
-            output.append(out)
-        if new_line:
-            output.append(
-                self.send_command(
-                    " ",
-                    exp,
-                    display=display,
-                    timeout=timeout,
-                    ignore_error=ignore_error
-                )
+        for command in commands:
+            out = self.send_command(
+                command,
+                exp,
+                timeout=timeout,
+                ignore_error=ignore_error
             )
+            output.append(out)
 
-        if len(output) == 1:
-            return output[0]
         return output
 
-    @thread
-    def send_commands_parallel(
-            self, commands: list,
-            exp=None,
-            display=True,
-            timeout=None,
-            new_line=True
-    ):
-        return self.send_commands(
-            commands, exp, display, timeout, new_line
-        )
-
-    def get_output(self):
-        return self.con.current_output
-
     def quit(self):
+        self.logger.info(self.con.current_output)
+        self.con.close()
+        self.client.close()
         self.disconnected = True
-        if self.con:
-            self.get_output()
-            self.con.close()
+        self.clear_cache()
 
     @staticmethod
     def is_in_output(value, output):

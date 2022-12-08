@@ -3,7 +3,7 @@ TYPE_MAPPING = {
 }
 PRODUCT_MAPPING = {
     "fortigate": "fgt",
-    "fortifirewall": "fwf"
+    "fortiwifi": "fwf"
 }
 TASK_CACHE_KEYS = {
     "status": str,
@@ -23,5 +23,6 @@ STATICS_CACHE_KEYS = {
     "build_get": int
 }
 IMAGE_CACHE_KEYS = {
-    "file": str
+    "file": str,
+    "pkg": dict
 }

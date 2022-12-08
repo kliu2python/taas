@@ -1,6 +1,6 @@
 celery:
-  broker_url: pyamqp://taas:taas@10.160.83.213:5672/upgrade
-  result_backend: rpc://taas:taas@10.160.83.213:5672/upgrade
+  broker_url: pyamqp://taas:taas@10.160.83.213:5672/dev
+  result_backend: rpc://taas:taas@10.160.83.213:5672/dev
   result_expires: 600
   task_track_started: True
   task_routes:
