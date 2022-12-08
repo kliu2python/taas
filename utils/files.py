@@ -48,7 +48,7 @@ def download(url, **kwargs):
             else:
                 file_path = uri.path
 
-            logger.info(f"Downloading file{file_path}")
+            logger.info(f"Downloading file {file_path}")
             if file_path:
                 FTP.download_file(file_path, dst)
                 dst_file = os.path.join(dst, file_name)

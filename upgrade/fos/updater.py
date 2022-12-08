@@ -150,9 +150,11 @@ class FosUpdater(Updater, FgtSsh):
                 "release": release,
                 "build": build,
                 "file_cap": file_type.upper(),
-                "file_lower": file_type.lower()
+                "file_lower": file_type.lower(),
+                "version": kwargs.get("version")
             }
             file_path = file_path_template.format(**file_info)
+            kwargs.pop("version")
             file = download(file_path, regex=pkg_def.get("regex"), **kwargs)
             return {"cmd_type": pkg_def["cmd_type"], "file": file}
         else:
@@ -219,7 +221,8 @@ class FosUpdater(Updater, FgtSsh):
                             logger.info("No Cached pkg found, now downloading")
                             file = self._download_pkg(
                                 pkg_type, file_type, release, build,
-                                dst=dst, **conf["infosite"]
+                                version=builds.get("version"), dst=dst,
+                                **conf["infosite"]
                             )
                             if file:
                                 file["file"] = self._get_upgrade_path(
@@ -258,39 +261,40 @@ if __name__ == "__main__":
         "build_info": {
             "type": "pkg",
             "pkgs": {
-                "avsig": {
-                    "release": "7.2.0",
-                    "builds": {
-                        "ETDB.High": "90.08471",
-                        "FLDB": "90.08471",
-                        "MMDB": "90.08471"
-                    }
-                },
+                # "avsig": {
+                #     "release": "7.2.0",
+                #     "builds": {
+                #         "ETDB.High": "90.08471",
+                #         "FLDB": "90.08471",
+                #         "MMDB": "90.08471"
+                #     }
+                # },
                 "aveng": {
-                    "release": "7.00",
+                    "release": "6.00",
+                    "version": "6.40",
                     "builds": {
-                        "vsigupdate": "0005"
+                        "vsigupdate": "0282"
                     }
                 },
-                "ipssig": {
-                    "release": "7.2.0",
-                    "builds": {
-                        "isdb": "22.00450",
-                        "nids": "22.00450",
-                        "apdb": "22.00448"
-                    }
-                },
-                "ipseng": {
-                    "release": "7.00",
-                    "builds": {
-                        "flen": "0300"
-                    }
-                },
-                "malware": {
-                    "builds": {
-                        "latestMalwareFile": "04.338"
-                    }
-                }
+                # "ipssig": {
+                #     "release": "7.2.0",
+                #     "builds": {
+                #         "isdb": "22.00450",
+                #         "nids": "22.00450",
+                #         "apdb": "22.00448"
+                #     }
+                # },
+                # "ipseng": {
+                #     "release": "7.00",
+                #     "builds": {
+                #         "flen": "0300"
+                #     }
+                # },
+                # "malware": {
+                #     "builds": {
+                #         "latestMalwareFile": "04.338"
+                #     }
+                # }
             },
             "verify": True,
             "force": True
