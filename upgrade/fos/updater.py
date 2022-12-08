@@ -164,7 +164,7 @@ class FosUpdater(Updater, FgtSsh):
         try:
             res["file"] = file["file"]
             self.restore_binary(
-                file["file"], file["cmd_type"], **conf["ftp"], ignore_error=True
+                file["file"], file["cmd_type"], **conf["ftp"]
             )
             res["status"] = "OK"
         except Exception as e:

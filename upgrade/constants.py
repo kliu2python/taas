@@ -10,7 +10,7 @@ TASK_CACHE_KEYS = {
     "task_id": str,
     "task_lock": str,
     "task_data": dict,
-    "infosite_builds": set
+    "task_type": str
 }
 INFOSITE_CACHE_KEYS = {
     "builds": set,
