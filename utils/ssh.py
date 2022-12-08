@@ -59,14 +59,14 @@ class SshInteractiveConnection:
         cmd = cmd_list[0]
         response = cmd_list[1]
         res = 0
-        self.con.send(cmd)
+        self.con.send(cmd + "\r")
         while res > -1:
             res = self.con.expect(
-                ".*(y/n).*", output_callback=self.logger.info
+                r".*\(y\/n\)", output_callback=self.logger.info
             )
-            if res > -1:
-                self.con.send(response, newline="")
             tailed_message += self.con.current_output
+            if res > -1:
+                self.con.send(response)
         return tailed_message
 
     def send_command(
@@ -86,7 +86,7 @@ class SshInteractiveConnection:
             if "..." in command:
                 curr_output = self.handle_promote_cmd(command)
             else:
-                self.con.send(command)
+                self.con.send(command + "\r")
                 self.con.expect(
                     exp,
                     timeout=timeout,

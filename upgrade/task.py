@@ -75,6 +75,7 @@ def do_update(req_id, data, wait):
             retry -= 1
         finally:
             unlock_task_lock(data)
+            unset_task_type(data)
             if error:
                 raise error
 
@@ -113,21 +114,52 @@ def check_wait(data):
     return False
 
 
+def get_task_type_key(data):
+    if "input" in data:
+        d = data["input"]
+    else:
+        d = data
+    task_type = d["build_info"]["type"]
+    ip = _get_host_ip(d)
+    return f"{task_type}_{ip}"
+
+
+def set_task_type(req_id, data):
+    key = get_task_type_key(data)
+    if cache.get("task_type", key):
+        return False
+    else:
+        cache.set("task_type", req_id, key)
+        return True
+
+
+def unset_task_type(data):
+    key = get_task_type_key(data)
+    cache.delete("task_type", key)
+
+
 def schedule(data):
     req_id = str(uuid.uuid4())
     ret = {"upgrade_id": req_id}
     try:
-        wait = False
-        if not data.get("force", False):
-            wait = check_wait(data)
-        if not wait:
-            set_task_lock(req_id, data)
-
-        data["time"] = str(datetime.datetime.now())
-        cache.set("task_data", data, req_id)
-        task = do_update.delay(req_id, data, wait)
-        cache.set("task_id", task.id, req_id)
-        cache.set("status", "pending", req_id)
+        should_schedule = set_task_type(req_id, data)
+        force = data.get("force", False)
+        if should_schedule or force:
+            if force:
+                curr_id = get_task_lock(data)
+                if curr_id:
+                    revoke_task(curr_id)
+                set_task_lock(req_id, data)
+                wait = False
+            else:
+                wait = check_wait(data)
+            cache.set("status", "pending", req_id)
+            data["time"] = str(datetime.datetime.now())
+            cache.set("task_data", data, req_id)
+            task = do_update.delay(req_id, data, wait)
+            cache.set("task_id", task.id, req_id)
+        else:
+            raise Exception(f"Same upgrade type is currently running")
     except Exception as e:
         cache.set("status", "fail", req_id)
         _handle_exception(req_id, data)
@@ -149,5 +181,7 @@ def revoke_task(req_id):
     celery.control.revoke(task_id)
     data = cache.get("task_data", req_id)
     cache.set("status", "cancelled", req_id)
-    ip = data["device_access"]["host"]
-    cache.delete("task_lock", ip)
+    unset_task_type(data)
+    locked_task_id = get_task_lock(data)
+    if locked_task_id in [req_id]:
+        unlock_task_lock(data)
