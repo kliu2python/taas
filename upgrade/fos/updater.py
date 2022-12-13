@@ -112,7 +112,7 @@ class FosUpdater(Updater, FgtSsh):
 
     @classmethod
     def _verify_image_upgrade(cls, build_info, version):
-        if build_info["build"] not in version:
+        if str(build_info["build"]) not in version:
             raise Exception(
                 f"Upgrade Failed! "
                 f"Expect build: Curr Version: {version}"

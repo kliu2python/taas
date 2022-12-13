@@ -17,10 +17,8 @@ INFOSITE_CACHE_KEYS = {
     "releases": list
 }
 STATICS_CACHE_KEYS = {
-    "update_get": int,
-    "update_post": int,
-    "update_delete": int,
-    "build_get": int
+    "total_upgrades": int,
+    "total_build_query": int
 }
 IMAGE_CACHE_KEYS = {
     "file": str,

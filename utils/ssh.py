@@ -72,14 +72,17 @@ class SshInteractiveConnection:
             command=None,
             exp=None,
             timeout=None,
-            ignore_error=False
+            ignore_error=False,
+            display=None
     ):
         if self.disconnected:
             self.connect()
+        if display is None:
+            display = self.display
         if timeout is None:
             timeout = self.timeout
         if not exp:
-            exp = r".*\s#.*"
+            exp = r".*\s#\s$"
         if command is not None:
             if "..." in command:
                 curr_output = self.handle_promote_cmd(command)
@@ -89,9 +92,9 @@ class SshInteractiveConnection:
                     exp,
                     timeout=timeout
                 )
-                curr_output = self.con.current_output_clean
-                if self.display:
-                    self.logger.info(self.con.current_output_clean)
+                curr_output = self.con.current_output
+                if display:
+                    self.logger.info(self.con.current_output)
             if not ignore_error:
                 if 'command parse error' in curr_output.lower():
                     raise CommandParseError()
@@ -107,7 +110,8 @@ class SshInteractiveConnection:
             commands: list,
             exp=None,
             timeout=None,
-            ignore_error=False
+            ignore_error=False,
+            display=None
     ):
         if isinstance(commands, str):
             commands = [commands]
@@ -117,7 +121,8 @@ class SshInteractiveConnection:
                 command,
                 exp,
                 timeout=timeout,
-                ignore_error=ignore_error
+                ignore_error=ignore_error,
+                display=display
             )
             output.append(out)
 
@@ -199,17 +204,36 @@ class SshNoneInteractiveConnection:
 
 
 if __name__ == "__main__":
-    ssh = SshInteractiveConnection("10.160.16.196", "admin", "fortinet")
-    ssh.send_commands(
+    ssh = SshInteractiveConnection("10.160.24.28", "admin", "fortinet")
+    out1 = ssh.send_commands(
         [
             "config vdom",
             "edit root",
             "config user local",
+            "delete testuser111"
+        ],
+        display=False,
+        ignore_error=True
+    )
+    out2 = ssh.send_commands(
+        [
+            # "config vdom",
+            # "edit root",
+            # "config user local",
+            # "delete testuser",
             "edit testuser",
             "set type password",
             "set passwd fortient",
             "set sms-phone +16509654543",
             "set email-to znie@fortinet.com",
             "end"
-        ]
+        ],
+        display=False
     )
+    for i, l in enumerate(out1):
+        print(f"----{i}----")
+        print(l)
+
+    for i, l in enumerate(out2):
+        print(f"----{i}----")
+        print(l)

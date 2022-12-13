@@ -6,6 +6,7 @@ from time import sleep
 from upgrade.conf import CONF
 from upgrade.caches import TaskCache
 from upgrade.constants import TYPE_MAPPING
+from upgrade.statics import update_total_upgrades
 from utils.celery import make_celery
 from utils.logger import get_logger
 
@@ -114,13 +115,16 @@ def check_wait(data):
     return False
 
 
-def get_task_type_key(data):
+def get_task_data(req_id):
+    data = cache.get("task_data", req_id)
     if "input" in data:
-        d = data["input"]
-    else:
-        d = data
-    task_type = d["build_info"]["type"]
-    ip = _get_host_ip(d)
+        data = data["input"]
+    return data
+
+
+def get_task_type_key(data):
+    task_type = data["build_info"]["type"]
+    ip = _get_host_ip(data)
     return f"{task_type}_{ip}"
 
 
@@ -142,6 +146,7 @@ def schedule(data):
     req_id = str(uuid.uuid4())
     ret = {"upgrade_id": req_id}
     try:
+        update_total_upgrades()
         should_schedule = set_task_type(req_id, data)
         force = data.get("force", False)
         if should_schedule or force:
@@ -172,14 +177,14 @@ def get_result(req_id):
     return {
         "status": cache.get("status", req_id),
         "upgrade_id": req_id,
-        "info": cache.get("task_data", req_id)
+        "info": get_task_data(req_id)
     }
 
 
 def revoke_task(req_id):
     task_id = cache.get("task_id", req_id)
     celery.control.revoke(task_id)
-    data = cache.get("task_data", req_id)
+    data = get_task_data(req_id)
     cache.set("status", "cancelled", req_id)
     unset_task_type(data)
     locked_task_id = get_task_lock(data)

@@ -6,7 +6,7 @@ PKGS = {
         #     "apdb"
         # ],
         "cmd_type": "ips",
-        "url": "http://172.16.100.71/avqa/ipsSignature/v{release}/",
+        "url": "http://172.16.100.71/avqa/ipsSignature/v{release}",
         "file_name": "{file_lower}_OS{release}_{build}.{file_cap}.pkg"
     },
     "avsig": {
@@ -16,13 +16,13 @@ PKGS = {
         #     "MMDB"
         # ],
         "cmd_type": "av",
-        "url": "http://172.16.100.71/avqa/avSignature/FortiGate/v{release}/",
+        "url": "http://172.16.100.71/avqa/avSignature/FortiGate/v{release}",
         "file_name": "vsigupdate-OS{release}_{build}.{file}.pkg"
     },
     "malware": {
         # "file": ["latestMalwareFile"],
         "cmd_type": "ips",
-        "url": "http://10.160.13.88:8889/sig_eng/ips_sig/malware/",
+        "url": "http://10.160.13.88:8889/sig_eng/ips_sig/malware",
         "file_name": "{file}_{build}.pkg"
     },
     "ipseng": {
