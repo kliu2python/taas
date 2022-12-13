@@ -4,6 +4,7 @@ from resources.ftc.user import User as FtcUser
 from resources.pool import ResourcePoolMixin
 from utils.logger import get_logger
 from utils.ssh import SshInteractiveConnection
+from utils.ssh import CommandFailedError
 
 logger = get_logger()
 
@@ -34,7 +35,7 @@ class User(FtcUser, ResourcePoolMixin):
                 f"delete {user_name}",
                 "end"
             ]
-            ssh_client.send_commands(commands)
+            ssh_client.send_commands(commands, ignore_error=True)
             commands = [
                 "config user local",
                 f"edit {user_name}"
@@ -66,13 +67,14 @@ class User(FtcUser, ResourcePoolMixin):
                 f"append member {user_name}",
                 "end"
             ]
-            out = ssh_client.send_commands(commands)
             no_error = True
-            for line in out:
-                if "Command fail" in line:
-                    failed_user.append(user_name)
-                    no_error = False
-                    break
+            try:
+                ssh_client.send_commands(commands)
+            except CommandFailedError as e:
+                failed_user.append(user_name)
+                logger.error(f"Creating user {user_name} failed."
+                             f"because of error {e}")
+                no_error = False
             if no_error:
                 created_user.append(user_name)
         ssh_client.quit()

@@ -12,7 +12,7 @@ class CreatePool(Resource):
     """
     Create a resource pool, note: custom resource should be same as standard
     resource structure.
-    http://localhost:8000/resourcesmanager/pool/create
+    http://localhost:8000/resourcesmanager/v1/pool/create
 
     Note: "ftc_cert", "ftc_key" are shared across all Dev Env, so we might
     not need in the post body yet. this will be in config
@@ -64,7 +64,7 @@ class CreatePool(Resource):
 class ListPool(Resource):
     """
     Show avaliable resrouce pools
-    http://localhost:8000/resourcesmanager/pool/list
+    http://localhost:8000/resourcesmanager/v1/pool/list
     """
     def get(self):
         results = manager.list_pool()
@@ -74,7 +74,7 @@ class ListPool(Resource):
 @rest.route("pool/statics/<string:pool_id>")
 class PoolStatics(Resource):
     """
-    localhost:8000/resourcesmanager/pool/statics/<pool_id>
+    localhost:8000/resourcesmanager/v1/pool/statics/<pool_id>
     """
     def get(self, pool_id):
         results = manager.get_pool_statics(pool_id)
@@ -84,7 +84,7 @@ class PoolStatics(Resource):
 @rest.route("pool/show/<string:pool_id>")
 class ShowPool(Resource):
     """
-    localhost:8000/resourcesmanager/pool/show/<pool_id>
+    localhost:8000/resourcesmanager/v1/pool/show/<pool_id>
     """
     def get(self, pool_id):
         results = manager.show_pool(pool_id)
@@ -95,7 +95,7 @@ class ShowPool(Resource):
 class DeletePool(Resource):
     """
     Show avaliable resrouce pools
-    localhost:8000/resourcesmanager/pool/delete/<pool_id>
+    localhost:8000/resourcesmanager/v1/pool/delete/<pool_id>
     """
     def delete(self, pool_id):
         results, status_code = manager.delete_pool(pool_id)
@@ -105,7 +105,7 @@ class DeletePool(Resource):
 @rest.route("res/request/<string:pool_id>")
 class GetResource(Resource):
     """
-    localhost:8000/resourcesmanager/res/request/<pool_id>
+    localhost:8000/resourcesmanager/v1/res/request/<pool_id>
     """
     def get(self, pool_id):
         results, status_code = manager.request_resource(pool_id)
@@ -115,7 +115,7 @@ class GetResource(Resource):
 @rest.route("res/otp/generate/<string:pool_id>/<string:resource_id>")
 class GenerateTotpCode(Resource):
     """
-    localhost:8000/resourcesmanager/res/opt/generate/<pool_id>/<resource_id>
+    localhost:8000/resourcesmanager/v1/res/opt/generate/<pool_id>/<resource_id>
     """
     def get(self, pool_id, resource_id):
         results, status_code = manager.generate_otp(pool_id, resource_id)
@@ -131,9 +131,10 @@ class RenewResource(Resource):
 @rest.route("res/recycle/<string:pool_id>/<string:res_id>")
 class RecycleResource(Resource):
     """
-    http://localhost:8000/resourcesmanager/res/recycle/<pool_id>>/<resource_id>
+    http://localhost:8000/resourcesmanager/v1
+    /res/recycle/<pool_id>>/<resource_id>
     e.g.
-    http://localhost:8000/resourcesmanager
+    http://localhost:8000/resourcesmanager/v1
     /res/recycle/10.160.16.50-pool/f632020b-9f8a-48d6-91fc-f4399760ba9d
     """
     def delete(self, pool_id, res_id):
@@ -145,7 +146,7 @@ class RecycleResource(Resource):
 class SetupConfiguration(Resource):
     """
     Automatic setup configuration of new deployed FGT
-    http://localhost:8000/resourcesmanager/fgt/setup
+    http://localhost:8000/resourcesmanager/v1/fgt/setup
     e.g.
     post body:
     {
