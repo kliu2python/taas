@@ -26,11 +26,7 @@ class InfositeCache(DataStore):
 class StaticsCache(DataStore):
     def __init__(self):
         redis_conn = REDIS_CONN
-        super().__init__(
-            constants.STATICS_CACHE_KEYS,
-            redis_conn,
-            identifier="__statics"
-        )
+        super().__init__(constants.STATICS_CACHE_KEYS, redis_conn)
 
 
 class ImageCache(DataStore):

@@ -1,21 +1,20 @@
-import re
-
 from upgrade.caches import StaticsCache
 from utils.logger import get_logger
 
 cache = StaticsCache()
-LOGGER = get_logger()
-KEY_FILTER = re.compile(r"\/(.*)\/v1\/(\w+)")
+logger = get_logger()
+PREFIX = "__sys__"
 
 
-def count_access(resp):
+def update_total_upgrades():
     try:
-        method = resp.json_module.request.method
-        matches = KEY_FILTER.search(resp.json_module.request.path)
-        if matches:
-            key = f"{matches.group(1)}_{matches.group(2)}_{method}"
-            cache.incr(key, 1)
+        cache.incr("total_upgrades", 1, PREFIX)
     except Exception as e:
-        LOGGER.debug("Error when counting access", exc_info=e)
+        logger.exception(f"ignoring error {e}")
 
-    return resp
+
+def update_total_build_query():
+    try:
+        cache.incr("total_build_query", 1, PREFIX)
+    except Exception as e:
+        logger.exception(f"ignoring error {e}")

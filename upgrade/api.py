@@ -3,13 +3,12 @@ from flask_restful import Resource
 from flask_restful import request
 
 from upgrade.infosite import get_release_cache
-from upgrade.statics import count_access
 from upgrade.task import get_result
 from upgrade.task import schedule
 from upgrade.task import revoke_task
 from rest import RestApi
 
-rest = RestApi(base_route="/upgrade/v1/", after_request=count_access)
+rest = RestApi(base_route="/upgrade/v1/")
 
 
 @rest.route("update/<string:upgrade_id>")

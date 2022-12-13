@@ -4,6 +4,7 @@ import re
 import requests
 
 from upgrade.caches import InfositeCache
+from upgrade.statics import update_total_build_query
 from utils.logger import get_logger
 
 cache = InfositeCache()
@@ -26,6 +27,7 @@ def get_build_cache(key):
 
 
 def get_release_cache():
+    update_total_build_query()
     return cache.get("releases", KEY_PREFIX)
 
 
