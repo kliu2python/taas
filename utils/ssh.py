@@ -44,7 +44,7 @@ class SshInteractiveConnection:
         self.con = SSHClientInteraction(
             self.client,
             timeout=self.timeout,
-            display=self.display,
+            display=False,
             tty_height=1000
         )
         self.disconnected = False
@@ -61,9 +61,7 @@ class SshInteractiveConnection:
         res = 0
         self.con.send(cmd + "\r")
         while res > -1:
-            res = self.con.expect(
-                r".*\(y\/n\)", output_callback=self.logger.info
-            )
+            res = self.con.expect(r".*\(y\/n\)")
             tailed_message += self.con.current_output
             if res > -1:
                 self.con.send(response)
@@ -81,7 +79,7 @@ class SshInteractiveConnection:
         if timeout is None:
             timeout = self.timeout
         if not exp:
-            exp = r".*\s#\s$"
+            exp = r".*\s#.*"
         if command is not None:
             if "..." in command:
                 curr_output = self.handle_promote_cmd(command)
@@ -89,10 +87,11 @@ class SshInteractiveConnection:
                 self.con.send(command + "\r")
                 self.con.expect(
                     exp,
-                    timeout=timeout,
-                    output_callback=self.logger.info
+                    timeout=timeout
                 )
-                curr_output = self.con.current_output
+                curr_output = self.con.current_output_clean
+                if self.display:
+                    self.logger.info(self.con.current_output_clean)
             if not ignore_error:
                 if 'command parse error' in curr_output.lower():
                     raise CommandParseError()
@@ -197,3 +196,20 @@ class SshNoneInteractiveConnection:
                     raise e
                 self.quit()
                 self.connect()
+
+
+if __name__ == "__main__":
+    ssh = SshInteractiveConnection("10.160.16.196", "admin", "fortinet")
+    ssh.send_commands(
+        [
+            "config vdom",
+            "edit root",
+            "config user local",
+            "edit testuser",
+            "set type password",
+            "set passwd fortient",
+            "set sms-phone +16509654543",
+            "set email-to znie@fortinet.com",
+            "end"
+        ]
+    )
