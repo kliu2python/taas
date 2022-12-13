@@ -101,7 +101,7 @@ def _create_resource(pool_data):
     )
     retry = 360
     while retry > 0:
-        pool_info = show_pool(pool_name)
+        pool_info = show_pool(pool_name).get(pool_name)
         if pool_info and pool_info.get("pool_status") == "Ready":
             break
         if retry // 6 == 0:
@@ -181,7 +181,7 @@ def create_resource():
         if not pool_name:
             raise Exception("pool id is required")
         PrintInColor.green(f"Checking if resource Pool {pool_name} Exists")
-        pool_info = show_pool(pool_name)
+        pool_info = show_pool(pool_name).get(pool_name)
         if pool_info:
             PrintInColor.yellow("Resource pool exists, now removing")
             delete_pool(pool_name)
