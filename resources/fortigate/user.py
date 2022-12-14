@@ -3,8 +3,8 @@ import requests
 from resources.ftc.user import User as FtcUser
 from resources.pool import ResourcePoolMixin
 from utils.logger import get_logger
-from utils.ssh import SshInteractiveConnection
-from utils.ssh import CommandFailedError
+from resources.ssh import SSHConnection
+from resources.ssh import CommandFailedError
 
 logger = get_logger()
 
@@ -15,7 +15,7 @@ class User(FtcUser, ResourcePoolMixin):
         created_user = []
         failed_user = []
         capacity = data.get("capacity")
-        ssh_client = SshInteractiveConnection(
+        ssh_client = SSHConnection(
             data.get("ip"), data.get("admin_user"), data.get("admin_password")
         )
         group = data.get("group")
@@ -135,7 +135,7 @@ class User(FtcUser, ResourcePoolMixin):
     def delete_user(cls, data):
         deleted = []
         capacity = data.get("capacity")
-        ssh_client = SshInteractiveConnection(
+        ssh_client = SSHConnection(
             data.get("ip"), data.get("admin_user"), data.get("admin_password")
         )
         vdom = data.get("vdom", "root")
