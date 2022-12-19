@@ -4,6 +4,7 @@ from copy import deepcopy
 
 from upgrade.caches import ImageCache
 from upgrade.conf import CONF
+from upgrade.constants import TaskStatusCode
 from upgrade.base import Updater
 from upgrade.fos.ssh import FgtSsh
 from upgrade.fos.pkgs import PKGS
@@ -168,9 +169,9 @@ class FosUpdater(Updater, FgtSsh):
             self.restore_binary(
                 file["file"], file["cmd_type"], **conf["ftp"]
             )
-            res["status"] = "OK"
+            res["status"] = TaskStatusCode.OK
         except Exception as e:
-            res["status"] = "ERROR"
+            res["status"] = TaskStatusCode.ERROR
             res["error"] = str(e)
             status = False
         return res, status
@@ -234,11 +235,11 @@ class FosUpdater(Updater, FgtSsh):
                         out, sta = self._upload_pkg(file, conf)
                         file_res["result"] = out
                         if sta:
-                            file_res["status"] = "completed"
+                            file_res["status"] = TaskStatusCode.COMPLETED
                         else:
                             raise Exception(f"Failed to upgrade")
                     except Exception as e:
-                        file_res["status"] = "failed"
+                        file_res["status"] = TaskStatusCode.FAILED
                         file_res["error"] = str(e)
                         status = False
                     finally:
