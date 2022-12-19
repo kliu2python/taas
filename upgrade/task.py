@@ -5,6 +5,7 @@ from time import sleep
 
 from upgrade.conf import CONF
 from upgrade.caches import TaskCache
+from upgrade.constants import TaskStatusCode
 from upgrade.constants import TYPE_MAPPING
 from upgrade.statics import update_total_upgrades
 from utils.celery import make_celery
@@ -46,7 +47,7 @@ def _wait_task_lock(req_id, data):
 
 
 def _handle_exception(req_id, data):
-    cache.set("status", "fail", req_id)
+    cache.set("status", TaskStatusCode.FAILED, req_id)
     cache.set("task_data", data, req_id)
 
 
@@ -111,7 +112,7 @@ def check_wait(data):
     running_task = get_task_lock(data)
     if running_task:
         status = get_task_status(running_task)
-        return status in ["in progress", "pending"]
+        return status in [TaskStatusCode.IN_PROGRESS, TaskStatusCode.PENDING]
     return False
 
 
@@ -158,7 +159,7 @@ def schedule(data):
                 wait = False
             else:
                 wait = check_wait(data)
-            cache.set("status", "pending", req_id)
+            cache.set("status", TaskStatusCode.PENDING, req_id)
             data["time"] = str(datetime.datetime.now())
             cache.set("task_data", data, req_id)
             task = do_update.delay(req_id, data, wait)
@@ -166,7 +167,7 @@ def schedule(data):
         else:
             raise Exception(f"Same upgrade type is currently running")
     except Exception as e:
-        cache.set("status", "fail", req_id)
+        cache.set("status", TaskStatusCode.FAILED, req_id)
         _handle_exception(req_id, data)
         ret["error"] = f"Error when schedule job {req_id}: {str(e)}"
         logger.exception(f"Error when schedule job {req_id}", exc_info=e)
@@ -185,7 +186,7 @@ def revoke_task(req_id):
     task_id = cache.get("task_id", req_id)
     celery.control.revoke(task_id)
     data = get_task_data(req_id)
-    cache.set("status", "cancelled", req_id)
+    cache.set("status", TaskStatusCode.CANCELLED, req_id)
     unset_task_type(data)
     locked_task_id = get_task_lock(data)
     if locked_task_id in [req_id]:
