@@ -23,6 +23,10 @@ class CommandExpectTimeoutError(Exception):
     pass
 
 
+class CommandCancelledError(Exception):
+    pass
+
+
 class SshInteractiveConnection:
     def __init__(self, hostname, username, password, timeout=30, display=True):
         self.hostname = hostname
@@ -49,7 +53,8 @@ class SshInteractiveConnection:
             self.client,
             timeout=self.timeout,
             display=True,
-            tty_height=1000
+            tty_height=1000,
+            newline=""
         )
         self.disconnected = False
 
@@ -67,7 +72,7 @@ class SshInteractiveConnection:
         cmd = cmd_list[0]
         response = cmd_list[1]
         res = 0
-        self.send(cmd)
+        self.send(cmd + "\r")
         first = True
         while res > -1:
             res = self.con.expect(r".*\(y\/n\)")
@@ -117,6 +122,8 @@ class SshInteractiveConnection:
                     raise CommandFailedError()
                 if "unknown action" in curr_output.lower():
                     raise CommandUnknownActionError()
+                if "command cancelled" in curr_output.lower():
+                    raise CommandCancelledError()
 
             return curr_output
 

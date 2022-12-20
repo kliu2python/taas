@@ -183,7 +183,9 @@ class FgtSsh(SshInteractiveConnection):
         ]
         if self.has_global():
             cmds = ["config global"] + cmds
-        self.send_commands(cmds, retry=1, ignore_error=ignore_error)
+        self.send_commands(
+            cmds, retry=1, ignore_error=ignore_error, ignore_timeout=False
+        )
 
         if file_type in ["image"]:
             self.wait_fortigate_bootup()
