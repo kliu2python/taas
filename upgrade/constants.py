@@ -1,6 +1,3 @@
-from enum import Enum
-
-
 TYPE_MAPPING = {
     "fos": "FosUpdater"
 }
@@ -29,7 +26,7 @@ IMAGE_CACHE_KEYS = {
 }
 
 
-class TaskStatusCode(Enum):
+class TaskStatusCode:
     COMPLETED = "completed"
     PENDING = "pending"
     IN_PROGRESS = "in progress"
