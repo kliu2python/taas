@@ -73,6 +73,7 @@ def do_update(req_id, data, wait):
             raise Exception("task fail, please check result")
         except Exception as e:
             error = e
+            data["error"] = str(error)
             _handle_exception(req_id, data)
             retry -= 1
         finally:
@@ -181,6 +182,7 @@ def get_result(req_id):
         "upgrade_id": req_id,
         "info": get_task_data(req_id)
     }
+
 
 def revoke_task(req_id):
     task_id = cache.get("task_id", req_id)
