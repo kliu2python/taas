@@ -231,7 +231,8 @@ if __name__ == "__main__":
     ssh = FgtSsh("10.160.16.196", "admin", "fortinet")
     ssh.connect()
     ssh.restore_binary(
-        "510fbebf-cdca-4760-a8bc-d1ef5c645925/latestMalwareFile_04.338.pkg", "ips", "10.160.27.193",
+        "ce8f1c66-b692-4512-b65d-da4d019e67c5/FGT_101E-v7.2.0.M-build1157-FORTINET.out",
+        "image", "10.160.27.193",
         "fortinet", "fortinet")
     # ret = ssh.get_model_version()
     # print(ret)

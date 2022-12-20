@@ -1,5 +1,5 @@
-import re
 import socket
+from time import sleep
 
 import paramiko
 from paramiko_expect import SSHClientInteraction
@@ -16,6 +16,10 @@ class CommandFailedError(Exception):
 
 
 class CommandUnknownActionError(Exception):
+    pass
+
+
+class CommandExpectTimeoutError(Exception):
     pass
 
 
@@ -44,13 +48,17 @@ class SshInteractiveConnection:
         self.con = SSHClientInteraction(
             self.client,
             timeout=self.timeout,
-            display=False,
+            display=True,
             tty_height=1000
         )
         self.disconnected = False
 
     def clear_cache(self):
         self.con.current_output = ""
+
+    def send(self, cmd):
+        self.con.send(cmd)
+        sleep(.5)
 
     def handle_promote_cmd(self, command):
         tailed_message = ""
@@ -59,12 +67,17 @@ class SshInteractiveConnection:
         cmd = cmd_list[0]
         response = cmd_list[1]
         res = 0
-        self.con.send(cmd + "\r")
+        self.send(cmd)
+        first = True
         while res > -1:
             res = self.con.expect(r".*\(y\/n\)")
+            if first:
+                if res == -1:
+                    raise CommandExpectTimeoutError()
+                first = False
             tailed_message += self.con.current_output
             if res > -1:
-                self.con.send(response)
+                self.send(response)
         return tailed_message
 
     def send_command(
@@ -82,16 +95,18 @@ class SshInteractiveConnection:
         if timeout is None:
             timeout = self.timeout
         if not exp:
-            exp = r".*\s#\s$"
+            exp = r".*\s#.*"
         if command is not None:
             if "..." in command:
                 curr_output = self.handle_promote_cmd(command)
             else:
-                self.con.send(command + "\r")
-                self.con.expect(
+                self.send(command + "\r")
+                exp_res = self.con.expect(
                     exp,
                     timeout=timeout
                 )
+                if exp and exp_res == -1 and not ignore_error:
+                    raise CommandExpectTimeoutError()
                 curr_output = self.con.current_output
                 if display:
                     self.logger.info(self.con.current_output)
