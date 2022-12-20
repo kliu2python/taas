@@ -168,6 +168,7 @@ def schedule(data):
             raise Exception(f"Same upgrade type is currently running")
     except Exception as e:
         cache.set("status", TaskStatusCode.FAILED, req_id)
+        data["error"] = str(e)
         _handle_exception(req_id, data)
         ret["error"] = f"Error when schedule job {req_id}: {str(e)}"
         logger.exception(f"Error when schedule job {req_id}", exc_info=e)
@@ -180,7 +181,6 @@ def get_result(req_id):
         "upgrade_id": req_id,
         "info": get_task_data(req_id)
     }
-
 
 def revoke_task(req_id):
     task_id = cache.get("task_id", req_id)

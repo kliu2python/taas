@@ -10,7 +10,7 @@ setup(
         'numpy==1.19.1',
         'opencv_python==4.2.0.34',
         'paramiko==2.7.1',
-        'paramiko-expect==0.2.8',
+        'paramiko-expect==0.3.2',
         'pytest==6.0.1',
         'pytest-dependency==0.5.1',
         'pytest-xdist==1.34.0',
