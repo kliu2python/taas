@@ -21,37 +21,38 @@ KEY_PREFIX = "__image"
 
 class FosUpdater(Updater, FgtSsh):
     @classmethod
-    def _get_image_cache_key(cls, build_info):
+    def _get_image_cache_key(cls, build_info, model):
         build_info = [
             KEY_PREFIX,
             build_info["repo"],
             build_info["version"],
             build_info["branch"],
-            str(build_info["build"])
+            str(build_info["build"]),
+            model
         ]
         return "_".join(build_info)
 
     @classmethod
-    def _update_image_cache(cls, build_info, file):
-        k = cls._get_image_cache_key(build_info)
+    def _update_image_cache(cls, build_info, file, model):
+        k = cls._get_image_cache_key(build_info, model)
         image_cache.set("file", file, k)
 
     @classmethod
-    def _get_image_from_cache(cls, build_info):
+    def _get_image_from_cache(cls, build_info, model):
         if build_info.get("use_cache", True):
-            k = cls._get_image_cache_key(build_info)
+            k = cls._get_image_cache_key(build_info, model)
             return image_cache.get("file", k)
 
     def _get_image(self, req_id, dst, build_info):
         infosite = CONF["infosite"]
-        repo, file_name = self._get_build_info(
+        repo, file_name, model = self._get_build_info(
             build_info.get("repo"),
             build_info.get("file_pattern"),
             build_info.get("debug", False)
         )
         build_info["repo"] = repo
         build_info = self._determin_build(build_info)
-        cached = self._get_image_from_cache(build_info)
+        cached = self._get_image_from_cache(build_info, model)
         if cached:
             logger.info(f"Found cached image: {cached}")
             file = cached
@@ -67,17 +68,17 @@ class FosUpdater(Updater, FgtSsh):
                 file = file_restore.split("/")[-1]
             else:
                 file_restore = os.path.join(req_id, file[-1])
-                self._update_image_cache(build_info, file_restore)
+                self._update_image_cache(build_info, file_restore, model)
             return file, file_restore
 
     def _get_build_info(self, repo, file_pattern=None, debug=False):
         if file_pattern:
             return repo, file_pattern
         else:
-            repo, file_pattern = self.get_device_info(repo)
+            repo, file_pattern, model = self.get_device_info(repo)
             if debug:
                 file_pattern = file_pattern.replace(".out", ".deb")
-            return repo, file_pattern
+            return repo, file_pattern, model
 
     @classmethod
     def _get_latest_build(cls, build_info, release):

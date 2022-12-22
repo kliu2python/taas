@@ -156,10 +156,11 @@ def schedule(data):
                 curr_id = get_task_lock(data)
                 if curr_id:
                     revoke_task(curr_id)
-                set_task_lock(req_id, data)
                 wait = False
             else:
                 wait = check_wait(data)
+            if not wait:
+                set_task_lock(req_id, data)
             cache.set("status", TaskStatusCode.PENDING, req_id)
             data["time"] = str(datetime.datetime.now())
             cache.set("task_data", data, req_id)
@@ -171,7 +172,7 @@ def schedule(data):
         cache.set("status", TaskStatusCode.FAILED, req_id)
         data["error"] = str(e)
         _handle_exception(req_id, data)
-        ret["error"] = f"Error when schedule job {req_id}: {str(e)}"
+        ret["error"] = str(e)
         logger.exception(f"Error when schedule job {req_id}", exc_info=e)
     return ret
 
