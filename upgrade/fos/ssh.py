@@ -226,7 +226,7 @@ class FgtSsh(SshInteractiveConnection):
             elif model_num >= 7000:
                 model = f"7000{model[-1]}"
         image_name = fr"{model}-(.*).out$"
-        return repo, image_name
+        return repo, image_name, model
 
 
 if __name__ == "__main__":
