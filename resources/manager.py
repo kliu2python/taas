@@ -162,21 +162,27 @@ def delete_pool(pool_id):
 
 def do_delete_pool(pool_id):
     if _is_pool_exist(pool_id):
-        if get_pool_statics(pool_id) not in ["Deleting"]:
-            _update_pool_status("Deleting", pool_id)
-            pool_type = datastore.get("pool_type", pool_id)
-            pool_data = datastore.get("pool_data", pool_id)
-            module = f"resources.{pool_type}"
-            class_name = TYPE_MAPPING.get(pool_type)
-            ret = __import__(module, fromlist=[class_name]).__getattribute__(
-                class_name)().clean(pool_data)
-            _clear_pool_data(pool_id)
-            update_pool_list(pool_id, remove=True)
-            pool_group = datastore.get("pool_member_of", pool_id)
-            if pool_group:
-                datastore.srem("pool_group", [pool_id], pool_group)
-            logger.info(f"Completed delete pool: {pool_id}")
-            return ret
+        try:
+            if get_pool_statics(pool_id) not in ["Deleting"]:
+                _update_pool_status("Deleting", pool_id)
+                pool_type = datastore.get("pool_type", pool_id)
+                pool_data = datastore.get("pool_data", pool_id)
+                module = f"resources.{pool_type}"
+                class_name = TYPE_MAPPING.get(pool_type)
+                ret = __import__(
+                    module, fromlist=[class_name]
+                ).__getattribute__(class_name)().clean(pool_data)
+                _clear_pool_data(pool_id)
+                update_pool_list(pool_id, remove=True)
+                pool_group = datastore.get("pool_member_of", pool_id)
+                if pool_group:
+                    datastore.srem("pool_group", [pool_id], pool_group)
+                logger.info(f"Completed delete pool: {pool_id}")
+                return ret
+        except Exception as e:
+            logger.error(f"Error when delete pool {pool_id}", exc_info=e)
+            _update_pool_status(f"error,{e}", pool_id)
+            raise e
 
 
 def request_resource(pool_id):
