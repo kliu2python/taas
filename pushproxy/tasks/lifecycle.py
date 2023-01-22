@@ -44,9 +44,9 @@ def _get_queue_job_name(job):
 
 
 def remove(job):
-    LOGGER.info(f"Removing job {job}")
     conn.delete(job)
-    job = job.lstrip(KEY_PREFIX)
+    job = job.replace(KEY_PREFIX, "")
+    LOGGER.info(f"Removing job {job}")
     _remove_push_gateway(PUSHGATEWAY, job)
 
 
