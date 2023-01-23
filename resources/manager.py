@@ -298,6 +298,8 @@ def show_pool(pool_id):
         pool_data = {}
         keys = datastore.keys("*", pool)
         for key in keys:
+            if key in ["pool_res_avaliable"]:
+                continue
             key = datastore.decraft_key(key, pool)
             data = datastore.get(key, pool)
             pool_data[key] = data
