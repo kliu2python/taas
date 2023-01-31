@@ -3,7 +3,7 @@ import re
 from utils.logger import get_logger
 
 LOGGER = get_logger("clear")
-RE_CPU = re.compile(r"nice\s(.*?)%\sidle")
+RE_CPU = re.compile(r"states:\s(\d+)%")
 RE_MEM = re.compile(r"used\s\((.*?)%\)")
 RE_BLADE_SLOTS_INFO = re.compile(r"(?:Slot:|Current slot:)\s(.*?)\s\s")
 RE_DATA_PLAN_INFO = re.compile(r"states:\s(.*?)%(\r)?$")
@@ -162,9 +162,7 @@ class FortigateParser:
                 if "CPU " in line:
                     d = {}
                     v_type = "cpu"
-                    v = str(100 - int(
-                        RE_CPU.search(line).group(1)
-                    ))
+                    v = str(int(RE_CPU.search(line).group(1)))
                     info_line = cmd_out[line_number - 1]
                     if (
                             info_line.startswith("Slot:")
