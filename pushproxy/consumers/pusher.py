@@ -40,7 +40,8 @@ def consume_data(message):
 
     time = data.pop("time")
     res = data.get("data")
+    timeout = data.get("timeout")
 
     upload_to_push_proxy(res, push_job_name, time)
 
-    register_alive(push_job_name)
+    register_alive(push_job_name, timeout)

@@ -1,0 +1,25 @@
+---
+amqp_runner: amqp://taas:taas@10.160.83.213:5672/faccloud
+amqp_pushproxy: amqp://taas:taas@10.160.83.213:5672/naas
+celery_time_delta: 1
+redis:
+  host: 10.160.13.11
+  port: 6379
+db:
+  customer_db:
+    db_ip: 10.160.55.96
+    db_user: root
+    db_pw: fortinet123
+    db_name: faccloud
+  celery_db:
+    db_ip: 10.160.55.96
+    db_user: root
+    db_pw: fortinet123
+    db_name: faccloud_schedule_qa_dr
+
+accounts:
+  - forticare_un: ftid.test2@outlook.com
+    forticare_pw: Fortinet01!
+    custom_data:
+      fac_admin: ftid.test2@outlook.com
+      fac_token: DoqnL9xYonAKnZ9QQ5Wrihp5VvHYD21Q2y6RZ4a1

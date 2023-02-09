@@ -11,4 +11,5 @@ service_config:
 #        - -k8s
 #        - bpproxy
 #        - bpmanager
-        - upgrade
+#        - upgrade
+        - datasync
