@@ -10,5 +10,6 @@ RESOURCE_MAPPING = {
     "bp_proxy": "bpproxy.api",
     "bp_manager": "bpmanager.api",
     "k8s": "k8s.api",
-    "upgrade": "upgrade.api"
+    "upgrade": "upgrade.api",
+    "datasync": "datasync.api"
 }

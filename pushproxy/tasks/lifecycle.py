@@ -1,4 +1,5 @@
 import datetime
+import os
 
 import prometheus_client
 import redis
@@ -20,7 +21,7 @@ conn = redis.Redis(
 )
 
 
-def register_alive(job):
+def register_alive(job, timeout=None):
     """
     tell server the target is still live, this should not raise exception on
     any condition.
@@ -28,6 +29,8 @@ def register_alive(job):
     try:
         conn.set(_get_queue_job_name(job), datetime.datetime.now().timestamp())
         conn.sadd(PUSH_PROXY_JOB_SET, job)
+        if timeout:
+            conn.set(f"{job}_timeout", timeout)
     except Exception as e:
         LOGGER.exception("Error when register alive", exc_info=e)
 
@@ -45,6 +48,7 @@ def _get_queue_job_name(job):
 
 def remove(job):
     conn.delete(job)
+    conn.delete(f"{job}_timeout")
     job = job.replace(KEY_PREFIX, "")
     LOGGER.info(f"Removing job {job}")
     _remove_push_gateway(PUSHGATEWAY, job)
@@ -60,7 +64,10 @@ def terminate(job):
 
 def _should_stop_job(job):
     ts = conn.get(job)
-    if ts and datetime.datetime.now().timestamp() - float(ts) > 60:
+    timeout = conn.get(f"{job}_timeout")
+    if not timeout:
+        timeout = 60
+    if ts and datetime.datetime.now().timestamp() - float(ts) > timeout:
         return True
     return False
 
