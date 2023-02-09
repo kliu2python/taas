@@ -195,7 +195,12 @@ class Controller:
         self.celery_db = FaccldCeleryDB(**CONF["db"]["celery_db"])
         self.celery_timedelta = CONF.get("celery_time_delta", 1)
         self.cache = TaskCache()
-        self.relay_jobs = []
+        self.ref_user = ""
+
+    def update_reference_user(self):
+        appendx = datetime.strftime(datetime.now(), "%m-%d-%Y_%H-%M-%S")
+        self.ref_user = f"ref_{appendx}"
+        LOGGER.info(f"Using User: {self.ref_user}")
 
     def push_controller_data(self, category, value):
         data = {
@@ -228,8 +233,10 @@ class Controller:
         for job in job_list:
             for _ in range(3):
                 try:
+                    job["target_un"] = self.ref_user
                     self.task_queue.publish(queue, job)
                     success += 1
+                    break
                 except (pika_ex.UnroutableError, pika_ex.NackError):
                     LOGGER.info("failed to publish, retrying")
         self.task_queue.close()
@@ -246,9 +253,8 @@ class Controller:
             self.cache.get("sync_failed_clients", default=0)
         )
 
-    def waiting_job(self, queue, timeout=300, ignore_error=False):
+    def waiting_job(self, queue, timeout=300):
         LOGGER.info("Waiting remote job done")
-        self.relay_jobs = []
         start_time = datetime.now()
         replies = 0
         while (datetime.now() - start_time).seconds < timeout:
@@ -275,8 +281,6 @@ class Controller:
                         constants.PUSHPROXYQueues.PUSHPROXY_GATEWAY.value,
                         result
                     )
-                if msg.pop("next_step", 0):
-                    self.relay_jobs.append(msg)
             else:
                 break
 
@@ -286,8 +290,6 @@ class Controller:
             sleep(10)
         self.push_queue.close()
         self.task_queue.close()
-        if not self.relay_jobs and not ignore_error:
-            raise Exception("No reply job")
 
     def check_sync(self):
         value = 0
@@ -345,7 +347,7 @@ class Controller:
         self.am.wait_data_sync(ready=True)
 
         ready_accounts = list(self.am.ready_accounts.values())
-
+        self.update_reference_user()
         self.dispatch_job(
             ready_accounts, constants.TASKQueues.DATASYNC_TASK_MAIN.value
         )
@@ -358,10 +360,10 @@ class Controller:
         self.am.wait_account_ready()
 
         self.dispatch_job(
-            self.relay_jobs, constants.TASKQueues.DATASYNC_TASK_DR.value
+            ready_accounts, constants.TASKQueues.DATASYNC_TASK_DR.value
         )
         self.waiting_job(
-            constants.TASKQueues.DATASYNC_TASK_DR_REPLY.value, ignore_error=True
+            constants.TASKQueues.DATASYNC_TASK_DR_REPLY.value,
         )
         self.push_sync_totals()
 
