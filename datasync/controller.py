@@ -161,6 +161,7 @@ class AccountManager:
             else:
                 if len(rebooted) == len(self.ready_accounts):
                     return True
+            elapsed += 10
             sleep(10)
         else:
             if rebooted:
@@ -268,7 +269,8 @@ class Controller:
                     if res["category"] in [
                         constants.PROMETHEUS_DATA_SYNC
                     ]:
-                        if res["values"] == float(1):
+                        if int(res["values"][0]) == 1:
+                            LOGGER.info(f"update {res['category']} total")
                             self.cache.incr(
                                 "sync_success_clients", 1
                             )
