@@ -308,7 +308,7 @@ class Controller:
                 key = "sync_success_tasks"
             else:
                 category = constants.PROMETHEUS_DATA_SYNC_TASKS_FAIL
-                key = "sync_fail_tasks"
+                key = "sync_failed_tasks"
             self.cache.incr(key, 1)
             value = self.cache.get(key)
             self.push_controller_data(category, value)
