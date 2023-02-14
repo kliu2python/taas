@@ -60,12 +60,14 @@ class User:
 
     @classmethod
     def _get_db_connection(cls, data):
-        return FtcDatabase(
+        db = FtcDatabase(
             db_ip=data.get("db_ip"),
             db_name=data.get("db_name"),
             db_user=data.get("db_user"),
             db_pw=data.get("db_pw")
         )
+        db.connect()
+        return db
 
     @staticmethod
     def _activate_token(user, ftc_data, db):
