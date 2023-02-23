@@ -91,14 +91,14 @@ class ShowPool(Resource):
         return jsonify(results)
 
 
-@rest.route("pool/delete/<string:pool_id>")
+@rest.route("pool/delete/<string:pool_id>/<int:force>")
 class DeletePool(Resource):
     """
     Show avaliable resrouce pools
     localhost:8000/resourcesmanager/v1/pool/delete/<pool_id>
     """
-    def delete(self, pool_id):
-        results, status_code = manager.delete_pool(pool_id)
+    def delete(self, pool_id, force=0):
+        results, status_code = manager.delete_pool(pool_id, force)
         return results, status_code
 
 

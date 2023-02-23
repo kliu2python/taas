@@ -14,7 +14,8 @@ DATASTORE_POOL_KEYS = {
     "pool_res_share": int,
     "pool_group": list,
     "pool_group_next_idx": int,
-    "pool_member_of": str
+    "pool_member_of": str,
+    "pool_delete_force": int
 }
 
 DATASTORE_RESOURCE_KEYS = {

@@ -138,7 +138,7 @@ def _clear_pool_data(pool_id):
         datastore.redis.delete(*keys)
 
 
-def delete_pool(pool_id):
+def delete_pool(pool_id, force=0):
     pool_ids = datastore.get("pool_group", pool_id)
     if not pool_ids:
         group = datastore.get("pool_member_of", pool_id)
@@ -151,6 +151,7 @@ def delete_pool(pool_id):
             datastore.set(
                 "pool_expiration", datetime.datetime.utcnow().timestamp(), pool
             )
+            datastore.set("pool_delete_force", force, pool)
             ret[pool] = "SCHEDULED"
         else:
             ret[pool] = f"POOL {pool_id} NOT EXISTS"
@@ -162,6 +163,9 @@ def delete_pool(pool_id):
 
 def do_delete_pool(pool_id):
     if _is_pool_exist(pool_id):
+        ex = None
+        ret = None
+        force = datastore.get("pool_delete_force", pool_id)
         try:
             if get_pool_statics(pool_id) not in ["Deleting"]:
                 _update_pool_status("Deleting", pool_id)
@@ -172,17 +176,20 @@ def do_delete_pool(pool_id):
                 ret = __import__(
                     module, fromlist=[class_name]
                 ).__getattribute__(class_name)().clean(pool_data)
-                _clear_pool_data(pool_id)
-                update_pool_list(pool_id, remove=True)
-                pool_group = datastore.get("pool_member_of", pool_id)
-                if pool_group:
-                    datastore.srem("pool_group", [pool_id], pool_group)
-                logger.info(f"Completed delete pool: {pool_id}")
-                return ret
         except Exception as e:
             logger.error(f"Error when delete pool {pool_id}", exc_info=e)
-            _update_pool_status(f"error,{e}", pool_id)
-            raise e
+            ex = e
+        finally:
+            if ex and not force:
+                _update_pool_status(f"error,{ex}", pool_id)
+                raise ex
+            _clear_pool_data(pool_id)
+            update_pool_list(pool_id, remove=True)
+            pool_group = datastore.get("pool_member_of", pool_id)
+            if pool_group:
+                datastore.srem("pool_group", [pool_id], pool_group)
+            logger.info(f"Completed delete pool: {pool_id}")
+            return ret
 
 
 def request_resource(pool_id):
