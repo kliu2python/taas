@@ -108,10 +108,17 @@ class InfoSiteClient:
 
         branches = self.ftp_client.nlst(f"{path}/NoMainBranch")
         for branch in branches:
-            branch_name = branch.split("/")[-1]
-            self._download_latest_build(
-                product, version, branch_name, branch
-            )
+            retry = 3
+            while retry > 0:
+                try:
+                    branch_name = branch.split("/")[-1]
+                    self._download_latest_build(
+                        product, version, branch_name, branch
+                    )
+                    break
+                except EOFError:
+                    self.ftp_client.login()
+                    retry -= 1
 
         return ret
 
