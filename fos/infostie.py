@@ -116,7 +116,10 @@ class InfoSiteClient:
         return ret
 
     def quit(self):
-        self.ftp_client.quit()
+        try:
+            self.ftp_client.quit()
+        except EOFError:
+            LOGGER.warning("EOF error for closing FTP client!")
 
 
 if __name__ == "__main__":
