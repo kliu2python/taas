@@ -29,7 +29,10 @@ class Worker:
 
         conn = pika.BlockingConnection(pika.URLParameters(con_url))
         self.channel = conn.channel()
-        self.channel.queue_declare(QUEUE_NAME)
+        self.channel.queue_declare(
+            QUEUE_NAME,
+            arguments={"x-message-ttl": CONF.get("amqp_msg_ttl_ms", 30000)}
+        )
         self.channel.basic_qos(prefetch_count=1)
 
     # pylint: disable=unused-argument
