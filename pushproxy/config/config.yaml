@@ -2,6 +2,7 @@
 rabbitmq: amqp://taas:taas@10.160.83.213:5672/faccloud
 amqp_msg_ttl_ms: 30000
 push_gateway: 10.160.83.213:9091
+push_job_ttl_seconds: 86400
 redis:
   server: 10.160.13.11
   port: 6379

@@ -12,6 +12,7 @@ LOGGER = get_logger()
 KEY_PREFIX = "pushproxy__"
 PUSHGATEWAY = CONF.get("push_gateway")
 PUSH_PROXY_JOB_SET = f"__PUSH_PROXY__jobs"
+PUSH_PROXY_JOB_TTL = CONF.get("push_job_ttl_seconds", 86400)
 
 redis_conf = CONF.get("redis", {})
 conn = redis.Redis(
@@ -66,7 +67,7 @@ def _should_stop_job(job):
     ts = conn.get(job)
     timeout = conn.get(f"{job}_timeout")
     if not timeout:
-        timeout = 60
+        timeout = PUSH_PROXY_JOB_TTL
     if ts and datetime.datetime.now().timestamp() - float(ts) > timeout:
         return True
     return False
