@@ -3,7 +3,7 @@ import re
 from utils.logger import get_logger
 
 LOGGER = get_logger("clear")
-RE_CPU = re.compile(r"states:\s(\d+)%")
+RE_CPU = re.compile(r"\b(\d+)%\s+idle")
 RE_MEM = re.compile(r"used\s\((.*?)%\)")
 RE_BLADE_SLOTS_INFO = re.compile(r"(?:Slot:|Current slot:)\s(.*?)\s\s")
 RE_DATA_PLAN_INFO = re.compile(r"states:\s(.*?)%(\r)?$")
