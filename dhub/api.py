@@ -1,12 +1,14 @@
 # pylint: disable=no-name-in-module
 import os
 
+from flask import jsonify
 from flask_restful import Resource, request
 
 import utils.android as android_lib
 import dhub.manager as device_hub_lib
 from args import parser
 from dhub.manager import init_device_hub
+from dhub.manager import launch_emulator
 from rest import RestApi
 
 rest = RestApi(base_route="/")
@@ -81,3 +83,19 @@ class DeviceOperation(Resource):
         request_id = args['request_id']
         op_data = request.json
         return device_hub_lib.option_device(avd_name, request_id, **op_data)
+
+
+@rest.route("getemulator")
+class LaunchEmulator(Resource):
+    """
+    post body:
+    {
+        "os": "android",
+        "version: "14",
+        "dns": None
+    }
+    """
+    def post(self):
+        data = request.json
+        results = launch_emulator(data)
+        return jsonify({"results": results})

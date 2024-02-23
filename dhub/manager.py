@@ -11,6 +11,7 @@ import dhub.device.factory as device_factory
 
 from dhub.config import get_config
 from dhub.hosts.host import get_host
+from dhub.emulator.android import AndroidEmulator as android
 
 _host = None
 _device_slots = {}
@@ -206,3 +207,15 @@ def option_device(device_name, session_id, op_method, **kwargs):
         device_obj = device_assignment.get("device_obj")
         return device_obj.option_device(op_method, **kwargs)
     return "Error: Device does not exist"
+
+
+def launch_emulator(data: dict):
+    if data.get("os") == "android":
+        session = android(data.get("version"), data.get("dns"))
+    else:
+        session = None
+
+    name = session.create_pod()
+    ports = session.get_ports()
+    res = {"name": name, "vnc_port": ports[0], "adb_port": ports[1]}
+    return res

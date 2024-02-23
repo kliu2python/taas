@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: emulator-cloud-android12-1
+  namespace: emulator-cloud
+  labels:
+    app: emulator-cloud-android12-1
+spec:
+    containers:
+      - name: emulator-service
+        image: 10.160.16.60/emulator-cloud/emulator_cloud:1.0.32
+        securityContext:
+          privileged: true
+        ports:
+          - name: novnc-port
+            containerPort: 6901
+          - name: appium-port
+            containerPort: 4723
+        volumeMounts:
+          - name: apk-volume
+            mountPath: /home/fortinet/apk
+    volumes:
+      - name: apk-volume
+        hostPath:
+          path: /home/fortinet/apk
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: emulator-service12
+  namespace: emulator-cloud
+spec:
+  selector:
+    app: emulator-cloud-android12-1
+  ports:
+    - name: novnc-port
+      port: 6901
+      targetPort: 6901
+    - name: appium-port
+      port: 4723
+      targetPort: 4723
+  type: NodePort

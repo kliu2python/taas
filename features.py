@@ -11,5 +11,6 @@ RESOURCE_MAPPING = {
     "bp_manager": "bpmanager.api",
     "k8s": "k8s.api",
     "upgrade": "upgrade.api",
-    "datasync": "datasync.api"
+    "datasync": "datasync.api",
+    "dhub": "dhub.api"
 }
