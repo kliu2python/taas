@@ -85,7 +85,7 @@ class DeviceOperation(Resource):
         return device_hub_lib.option_device(avd_name, request_id, **op_data)
 
 
-@rest.route("getemulator")
+@rest.route("/getemulator")
 class LaunchEmulator(Resource):
     """
     post body:

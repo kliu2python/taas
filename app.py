@@ -17,7 +17,7 @@ load_api_resource(api)
 
 if __name__ == "__main__":
     enable_debug = os.environ.get("DEBUG", "False") == "True"
-    port = int(os.environ.get("LISTEN_PORT", 8000))
+    port = int(os.environ.get("LISTEN_PORT", 8309))
     if enable_debug:
         app.run(debug=True, port=port, host="0.0.0.0")
     else:
