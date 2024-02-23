@@ -11,7 +11,7 @@ from dhub.manager import init_device_hub
 from dhub.manager import launch_emulator
 from rest import RestApi
 
-rest = RestApi(base_route="/")
+rest = RestApi(base_route="/dhub")
 init_device_hub()
 
 
