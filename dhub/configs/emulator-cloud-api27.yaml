@@ -6,9 +6,11 @@ metadata:
   labels:
     app: emulator-cloud-android8_1
 spec:
+    restartPolicy: Never
     containers:
       - name: emulator-service
         image: 10.160.16.60/emulator-cloud/emulator_cloud:1.0.27
+        imagePullPolicy: Always
         securityContext:
           privileged: true
         ports:

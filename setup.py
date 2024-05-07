@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    author='Automation Team, Zheng Nie',
+    author='Automation Team, Jiahao Liu',
     description='Test As A Service',
     install_requires=[
         'Appium-Python-Client==3.1.1',
@@ -20,8 +20,9 @@ setup(
         'singleton_decorator==1.0.0',
         'selenium==4.17.2',
         'pyscreenshot==2.2',
-        'flask==1.1.2',
-        'flask_restful==0.3.8',
+        'flask==2.2.2',
+        'Werkzeug>=2.2,<3.0',
+        'flask_restful==0.3.9',
         'PyYAML==6.0.0',
         'jsonschema==3.2.0',
         'pycryptodome==3.20.0',
