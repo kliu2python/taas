@@ -12,7 +12,9 @@ import dhub.device.factory as device_factory
 from dhub.config import get_config
 from dhub.hosts.host import get_host
 from dhub.emulator.android import AndroidEmulator as android
+from utils.logger import get_logger
 
+logger = get_logger()
 _host = None
 _device_slots = {}
 _global_lock = threading.Lock()
@@ -218,4 +220,28 @@ def launch_emulator(data: dict):
     name = session.create_pod()
     ports = session.get_ports()
     res = {"name": name, "vnc_port": ports[0], "adb_port": ports[1]}
+    return res
+
+
+def delete_emulator(data: dict):
+    if not data.get("pod_name"):
+        return {"res": "not pod_name attached, check it again."}
+    pod_name = data.get("pod_name")
+    session = android(pod_name=pod_name)
+    res = session.delete_pod()
+    logger.info(f"The res of delete pod {pod_name} is {res}")
+    return res
+
+
+def check_emulator(data: dict):
+    if not data.get("pod_name"):
+        return {"res": "not pod_name attached, check it again."}
+    pod_name = data.get("pod_name")
+    session = android(pod_name=pod_name)
+    pod_status = session.check_pod()
+    if pod_status not in ["deleted", "unknown"]:
+        ports = session.get_ports(pod_name)
+        res = {"name": pod_name, "status": pod_status, "vnc_port": ports[0], "adb_port": ports[1]}
+    else:
+        res = {"name": pod_name, "status": pod_status}
     return res

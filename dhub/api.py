@@ -7,8 +7,12 @@ from flask_restful import Resource, request
 import utils.android as android_lib
 import dhub.manager as device_hub_lib
 from args import parser
-from dhub.manager import init_device_hub
-from dhub.manager import launch_emulator
+from dhub.manager import (
+    init_device_hub,
+    launch_emulator,
+    delete_emulator,
+    check_emulator
+)
 from rest import RestApi
 
 rest = RestApi(base_route="/dhub")
@@ -85,7 +89,7 @@ class DeviceOperation(Resource):
         return device_hub_lib.option_device(avd_name, request_id, **op_data)
 
 
-@rest.route("/getemulator")
+@rest.route("/emulator/create")
 class LaunchEmulator(Resource):
     """
     post body:
@@ -98,4 +102,32 @@ class LaunchEmulator(Resource):
     def post(self):
         data = request.json
         results = launch_emulator(data)
+        return jsonify({"results": results})
+
+
+@rest.route("/emulator/delete")
+class DeleteEmulator(Resource):
+    """
+    post body:
+    {
+        "pod_name": "xxxxxx"
+    }
+    """
+    def post(self):
+        data = request.json
+        results = delete_emulator(data)
+        return jsonify({"results": results})
+
+
+@rest.route("/emulator/check")
+class CheckEmulator(Resource):
+    """
+    post body:
+    {
+        "pod_name": "xxxxxx"
+    }
+    """
+    def post(self):
+        data = request.json
+        results = check_emulator(data)
         return jsonify({"results": results})
