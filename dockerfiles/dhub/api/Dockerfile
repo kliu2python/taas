@@ -1,10 +1,9 @@
-FROM python:3.10.14
+FROM python:3.8.19
 
 COPY . /taas
 
 WORKDIR /taas
 
-RUN apt reinstall python3-requests \
-    && pip3 install --no-cache-dir -r requirements
+RUN pip3 install --no-cache-dir -r requirements
 
 CMD ["sh", "docker_run.sh"]
