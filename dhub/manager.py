@@ -245,3 +245,9 @@ def check_emulator(data: dict):
     else:
         res = {"name": pod_name, "status": pod_status}
     return res
+
+
+def list_emulators():
+    session = android(pod_name="all")
+    pods = session.list_all_pods()
+    return pods

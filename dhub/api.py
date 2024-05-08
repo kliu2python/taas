@@ -11,7 +11,8 @@ from dhub.manager import (
     init_device_hub,
     launch_emulator,
     delete_emulator,
-    check_emulator
+    check_emulator,
+    list_emulators
 )
 from rest import RestApi
 
@@ -131,3 +132,11 @@ class CheckEmulator(Resource):
         data = request.json
         results = check_emulator(data)
         return jsonify({"results": results})
+
+
+@rest.route("/emulator/list")
+class ListAllEmulator(Resource):
+    def get(self):
+        results = list_emulators()
+        return jsonify(({"results": results}))
+

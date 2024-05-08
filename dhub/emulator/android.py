@@ -141,5 +141,16 @@ class AndroidEmulator:
                     return "Failed"
             sleep(3)
 
-
+    def list_all_pods(self):
+        pods = []
+        pod_list = self.api_client.list_namespaced_pod(namespace=NAMESPACE)
+        for pod in pod_list.items:
+            status = pod.status.phase
+            name = pod.metadata.name
+            if status in ["Pending", "Running"]:
+                ports = self.get_ports(name)
+                pods.append({"name": name, "status": status, "vnc_port": ports[0], "adb_port": ports[1]})
+            else:
+                pods.append({"name": name, "status": status})
+        return pods
 
