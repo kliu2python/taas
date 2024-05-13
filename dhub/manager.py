@@ -12,6 +12,9 @@ import dhub.device.factory as device_factory
 from dhub.config import get_config
 from dhub.hosts.host import get_host
 from dhub.emulator.android import AndroidEmulator as android
+from dhub.selenium.node import (
+    get_nodes
+)
 from utils.logger import get_logger
 
 logger = get_logger()
@@ -239,9 +242,11 @@ def check_emulator(data: dict):
     pod_name = data.get("pod_name")
     session = android(pod_name=pod_name)
     pod_status = session.check_pod()
+    android_version = pod_name.split("-")[0]
     if pod_status not in ["deleted", "unknown"]:
         ports = session.get_ports(pod_name)
-        res = {"name": pod_name, "status": pod_status, "vnc_port": ports[0], "adb_port": ports[1]}
+        res = {"name": pod_name, "android_version": android_version,
+               "status": pod_status, "vnc_port": ports[0], "adb_port": ports[1]}
     else:
         res = {"name": pod_name, "status": pod_status}
     return res
@@ -251,3 +256,7 @@ def list_emulators():
     session = android(pod_name="all")
     pods = session.list_all_pods()
     return pods
+
+
+def list_node():
+    return get_nodes()

@@ -12,7 +12,8 @@ from dhub.manager import (
     launch_emulator,
     delete_emulator,
     check_emulator,
-    list_emulators
+    list_emulators,
+    list_node
 )
 from rest import RestApi
 
@@ -119,7 +120,6 @@ class DeleteEmulator(Resource):
         results = delete_emulator(data)
         return jsonify({"results": results})
 
-
 @rest.route("/emulator/check")
 class CheckEmulator(Resource):
     """
@@ -138,5 +138,12 @@ class CheckEmulator(Resource):
 class ListAllEmulator(Resource):
     def get(self):
         results = list_emulators()
-        return jsonify(({"results": results}))
+        return jsonify({"results": results})
+
+
+@rest.route("/node/list")
+class ListAllSeleniumNode(Resource):
+    def get(self):
+        results = list_node()
+        return jsonify({"count": len(results), "results": results})
 

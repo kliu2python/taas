@@ -41,7 +41,8 @@ setup(
         'cryptography',
         'urllib3',
         'beautifulsoup4',
-        'kubernetes==29.0.0'
+        'kubernetes==29.0.0',
+        'flask-cors==1.10.3'
     ],
     packages=[],
     name='taas',

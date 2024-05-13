@@ -147,10 +147,11 @@ class AndroidEmulator:
         for pod in pod_list.items:
             status = pod.status.phase
             name = pod.metadata.name
+            version = name.split("-")[0]
             if status in ["Pending", "Running"]:
                 ports = self.get_ports(name)
-                pods.append({"name": name, "status": status, "vnc_port": ports[0], "adb_port": ports[1]})
+                pods.append({"name": name, "version": version, "status": status, "vnc_port": ports[0], "adb_port": ports[1]})
             else:
-                pods.append({"name": name, "status": status})
+                pods.append({"name": name, "version:": version, "status": status})
         return pods
 
