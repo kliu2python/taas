@@ -1,21 +1,23 @@
 # pylint: disable=global-statement
-
-
 import datetime
 import json
 import threading
 import time
 import uuid
+import os
+
+import redis
 
 import dhub.device.factory as device_factory
-
 from dhub.config import get_config
+from utils.config import Config
 from dhub.hosts.host import get_host
 from dhub.emulator.android import AndroidEmulator as android
 from dhub.selenium.node import (
     get_nodes
 )
 from utils.logger import get_logger
+from .datastore import ResourceDataStore
 
 logger = get_logger()
 _host = None
@@ -26,6 +28,17 @@ host_config = get_config("host")
 global_device_configs = device_config.get_global_configs()
 platform_device_configs = device_config.get_platform_configs()
 host_config = host_config.get_host_configs()
+config_path = os.path.join(os.path.dirname(__file__), "config.yaml")
+config = Config(config_path).config
+redis_server = config.get("redis").get("server")
+redis_port = config.get("redis").get("port")
+datastore = ResourceDataStore(
+    redis.Redis(
+        host=redis_server,
+        port=redis_port,
+        decode_responses=True
+    )
+)
 
 
 def _get_device_slot(platform_id):
@@ -221,41 +234,59 @@ def launch_emulator(data: dict):
         session = None
 
     name = session.create_pod()
-    ports = session.get_ports()
-    res = {"name": name, "vnc_port": ports[0], "adb_port": ports[1]}
-    return res
+    creator = data.get("creator")
+    datastore.set("user_pool", [name], identifier=creator)
+    logger.info(f"going to create emulator {str(data)}")
+    return name
 
 
 def delete_emulator(data: dict):
     if not data.get("pod_name"):
         return {"res": "not pod_name attached, check it again."}
+    if not data.get("creator"):
+        return {"res": "not creator attached, check it again."}
     pod_name = data.get("pod_name")
+    creator = data.get("creator")
     session = android(pod_name=pod_name)
+    datastore.srem("user_pool", [pod_name], identifier=creator)
     res = session.delete_pod()
     logger.info(f"The res of delete pod {pod_name} is {res}")
     return res
 
 
-def check_emulator(data: dict):
-    if not data.get("pod_name"):
+def check_emulator(pod_name):
+    if not pod_name:
         return {"res": "not pod_name attached, check it again."}
-    pod_name = data.get("pod_name")
     session = android(pod_name=pod_name)
     pod_status = session.check_pod()
     android_version = pod_name.split("-")[0]
     if pod_status not in ["deleted", "unknown"]:
         ports = session.get_ports(pod_name)
-        res = {"name": pod_name, "android_version": android_version,
+        res = {"name": pod_name, "version": android_version,
                "status": pod_status, "vnc_port": ports[0], "adb_port": ports[1]}
     else:
         res = {"name": pod_name, "status": pod_status}
     return res
 
 
-def list_emulators():
-    session = android(pod_name="all")
-    pods = session.list_all_pods()
-    return pods
+def list_emulators(user):
+    res = []
+    pods_str = datastore.get("user_pool", identifier=user)
+    if pods_str:
+        for pod_name in pods_str:
+            pod_details = check_emulator(pod_name)
+            res.append(pod_details)
+    else:
+        res.append(f"No resource for user {user}")
+    return res
+
+
+def _does_emulator_exist(name):
+    all_emulators = list_emulators()
+    for emulator in all_emulators:
+        if name == emulator.get("name"):
+            return True
+    return False
 
 
 def list_node():

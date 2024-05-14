@@ -104,7 +104,7 @@ class LaunchEmulator(Resource):
     def post(self):
         data = request.json
         results = launch_emulator(data)
-        return jsonify({"results": results})
+        return jsonify({"pod_name": results})
 
 
 @rest.route("/emulator/delete")
@@ -120,7 +120,7 @@ class DeleteEmulator(Resource):
         results = delete_emulator(data)
         return jsonify({"results": results})
 
-@rest.route("/emulator/check")
+@rest.route("/emulator/check/<string:pod_name>")
 class CheckEmulator(Resource):
     """
     post body:
@@ -128,16 +128,15 @@ class CheckEmulator(Resource):
         "pod_name": "xxxxxx"
     }
     """
-    def post(self):
-        data = request.json
-        results = check_emulator(data)
+    def get(self, pod_name):
+        results = check_emulator(pod_name)
         return jsonify({"results": results})
 
 
-@rest.route("/emulator/list")
+@rest.route("/emulator/list/<string:user>")
 class ListAllEmulator(Resource):
-    def get(self):
-        results = list_emulators()
+    def get(self, user):
+        results = list_emulators(user)
         return jsonify({"results": results})
 
 
@@ -146,4 +145,5 @@ class ListAllSeleniumNode(Resource):
     def get(self):
         results = list_node()
         return jsonify({"count": len(results), "results": results})
+
 
