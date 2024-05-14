@@ -7,3 +7,4 @@ Werkzeug>=2.2,<3.0
 flask_restful==0.3.9
 eventlet==0.36.1
 flask-cors==1.10.3
+singleton_decorator==1.0.0
