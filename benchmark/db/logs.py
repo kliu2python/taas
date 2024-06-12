@@ -5,7 +5,7 @@ from cassandra.cqlengine.models import Model
 from benchmark.common.conf import DATACENTER
 
 __keyspace__ = "benchmark"
-__dc_replication_map__ = {DATACENTER: 1}
+__dc_replication_map__ = {DATACENTER: 3}
 
 
 class Result(Model):
