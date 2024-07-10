@@ -276,8 +276,6 @@ def list_emulators(user):
         for pod_name in pods_str:
             pod_details = check_emulator(pod_name)
             res.append(pod_details)
-    else:
-        res.append(f"No resource for user {user}")
     return res
 
 
