@@ -70,7 +70,7 @@ class AndroidEmulator:
         pod = yaml.safe_load(contents[0])
         pod["metadata"]["name"] = self.unique_name
         pod["metadata"]["labels"]["app"] = self.unique_name
-        pod["spec"]["containers"]["image"] = image
+        pod["spec"]["containers"][0]["image"] = image
         service = yaml.safe_load(contents[1])
         service["metadata"]["name"] = self.unique_name
         service["spec"]["selector"]["app"] = self.unique_name
