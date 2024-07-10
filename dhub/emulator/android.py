@@ -50,9 +50,9 @@ class AndroidEmulator:
         self.config = os.path.join(WORK_DIC, "dhub", "configs", config_file)
 
     def _generate_model_path(self):
-        base_name = "emulator-cloud-api"
-        self.model_name = f"{base_name}{android_api_to_version[f'{self.version}']}.yaml"
-        self.model_location = os.path.join(WORK_DIC, "dhub", "configs", self.model_name)
+        self.model_name = "emulator-cloud-template.yaml"
+        self.model_location = os.path.join(WORK_DIC, "dhub", "configs",
+                                           self.model_name)
 
     def _load_config_file(self):
         config.load_kube_config(config_file=self.config)
@@ -60,12 +60,17 @@ class AndroidEmulator:
 
     def create_pod(self):
         # Read the YAML file
+        api_level = android_api_to_version[f'{self.version}']
+        image = f"10.160.16.60/emulator-cloud/emulator_cloud:1.0.{api_level}"
+        logger.info(f"going to use image {image}")
+
         with open(self.model_location) as f:
             contents = f.read().split('---')
 
         pod = yaml.safe_load(contents[0])
         pod["metadata"]["name"] = self.unique_name
         pod["metadata"]["labels"]["app"] = self.unique_name
+        pod["spec"]["containers"]["image"] = image
         service = yaml.safe_load(contents[1])
         service["metadata"]["name"] = self.unique_name
         service["spec"]["selector"]["app"] = self.unique_name

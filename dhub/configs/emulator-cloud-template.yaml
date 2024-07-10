@@ -25,6 +25,8 @@ spec:
       - name: apk-volume
         hostPath:
           path: /home/fortinet/apk
+    nodeSelector:
+      platform: gpu
 ---
 apiVersion: v1
 kind: Service
