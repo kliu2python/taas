@@ -6,27 +6,30 @@ metadata:
   labels:
     app: emulator-cloud-android7
 spec:
-    restartPolicy: Never
-    containers:
-      - name: emulator-service
-        image: 10.160.16.60/emulator-cloud/emulator_cloud:1.0.24
-        imagePullPolicy: Always
-        securityContext:
-          privileged: true
-        ports:
-          - name: novnc-port
-            containerPort: 6901
-          - name: appium-port
-            containerPort: 4723
-        volumeMounts:
-          - name: apk-volume
-            mountPath: /home/fortinet/apk
-    volumes:
-      - name: apk-volume
-        hostPath:
-          path: /home/fortinet/apk
-    nodeSelector:
-      platform: gpu
+  restartPolicy: Never
+  containers:
+    - name: emulator-service
+      image: 10.160.16.60/emulator-cloud/emulator_cloud:latest
+      imagePullPolicy: Always
+      securityContext:
+        privileged: true
+      ports:
+        - name: novnc-port
+          containerPort: 6901
+        - name: appium-port
+          containerPort: 4723
+      volumeMounts:
+        - name: apk-volume
+          mountPath: /home/fortinet/apk
+      env:
+        - name: PATH
+          value: "/opt/android-sdk/emulator:/opt/android-sdk/cmdline-tools/latest/bin:/opt/android-sdk/cmdline-tools/tools/bin:/opt/android-sdk/platform-tools:/usr/local/bin:/usr/bin:/bin"
+  volumes:
+    - name: apk-volume
+      hostPath:
+        path: /home/fortinet/apk
+  nodeSelector:
+    platform: gpu
 ---
 apiVersion: v1
 kind: Service

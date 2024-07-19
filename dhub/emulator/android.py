@@ -10,7 +10,9 @@ from kubernetes import (
     config
 )
 
-from dhub.resources.api_level_comparison_table import android_api_to_version
+from dhub.resources.api_level_comparison_table import (
+    android_api_to_version
+)
 from utils.logger import get_logger
 
 logger = get_logger()
@@ -42,7 +44,8 @@ class AndroidEmulator:
             self._generate_unique_name()
 
     def _generate_unique_name(self):
-        self.unique_name = f"android{self.version}-{str(uuid.uuid1()).split('-')[0]}"
+        self.unique_name = (f"android{self.version}"
+                            f"-{str(uuid.uuid1()).split('-')[0]}")
 
     def _generate_k8s_config(self, config_file=None):
         if not config_file:
@@ -90,7 +93,8 @@ class AndroidEmulator:
 
     def check_pod(self):
         try:
-            resp = self.api_client.read_namespaced_pod_status(self.pod_name, NAMESPACE)
+            resp = self.api_client.read_namespaced_pod_status(
+                self.pod_name, NAMESPACE)
             status = resp.status.phase
         except client.ApiException as e:
             if e.status == 404:
@@ -104,7 +108,8 @@ class AndroidEmulator:
     def get_ports(self, unique_name: str = None):
         if unique_name:
             self.unique_name = unique_name
-        res = self.api_client.read_namespaced_service(self.unique_name, NAMESPACE)
+        res = self.api_client.read_namespaced_service(
+            self.unique_name, NAMESPACE)
         for port in res.spec.ports:
             if port.port == VNC_PORT:
                 self.vnc_node_port = port.node_port
@@ -116,33 +121,51 @@ class AndroidEmulator:
         try:
             self.api_client.delete_namespaced_pod(
                 self.pod_name, namespace=NAMESPACE,
-                body=client.V1DeleteOptions(propagation_policy='Foreground', grace_period_seconds=5))
+                body=client.V1DeleteOptions(propagation_policy='Foreground',
+                                            grace_period_seconds=5))
         except client.ApiException as e:
             if e.status == 404:
                 logger.info('Has been deleted already...')
                 return "Deleted"
             else:
-                logger.error('Delete pod "%s" failed, the detail error msg is :"%s"', traceback.format_exc())
+                logger.error(
+                    'Delete pod "%s" failed, the detail error msg is :"%s"',
+                    traceback.format_exc()
+                )
                 return "Failed"
         while True:
             try:
-                resp = self.api_client.read_namespaced_pod_status(self.pod_name, namespace=NAMESPACE)
-                logger.info(f"pod {self.pod_name} current status is {resp.status.phase}")
+                resp = self.api_client.read_namespaced_pod_status(
+                    self.pod_name, namespace=NAMESPACE
+                )
+                logger.info(f"pod {self.pod_name} current"
+                            f" status is {resp.status.phase}")
             except client.ApiException as e:
                 if e.status == 404:
-                    logger.info(f'Pod {self.pod_name} has been deleted successfully...')
-                    self.api_client.delete_namespaced_service(self.pod_name, namespace=NAMESPACE)
+                    logger.info(
+                        f'Pod {self.pod_name} has been deleted successfully...'
+                    )
+                    self.api_client.delete_namespaced_service(
+                        self.pod_name, namespace=NAMESPACE
+                    )
                     while True:
                         try:
-                            self.api_client.read_namespaced_service_status(self.pod_name, namespace=NAMESPACE)
+                            self.api_client.read_namespaced_service_status(
+                                self.pod_name, namespace=NAMESPACE
+                            )
                         except client.ApiException as e:
                             if e.status == 404:
-                                logger.info(f'Service {self.pod_name} has been deleted successfully...')
+                                logger.info(f'Service {self.pod_name}'
+                                            f' has been deleted successfully...'
+                                            )
                                 return "Deleted"
                             else:
                                 return "Failed"
                 else:
-                    logger.error('Delete pod %s failed, the detail error msg is :"%s"', traceback.format_exc())
+                    logger.error(
+                        'Delete pod %s failed, the detail error msg is :"%s"',
+                        traceback.format_exc()
+                    )
                     return "Failed"
             sleep(3)
 
@@ -155,8 +178,11 @@ class AndroidEmulator:
             version = name.split("-")[0]
             if status in ["Pending", "Running"]:
                 ports = self.get_ports(name)
-                pods.append({"name": name, "version": version, "status": status, "vnc_port": ports[0], "adb_port": ports[1]})
+                pods.append({"name": name, "version": version,
+                             "status": status, "vnc_port": ports[0],
+                             "adb_port": ports[1]})
             else:
-                pods.append({"name": name, "version:": version, "status": status})
+                pods.append({"name": name, "version:": version,
+                             "status": status})
         return pods
 
