@@ -13,9 +13,8 @@ from dhub.config import get_config
 from utils.config import Config
 from dhub.hosts.host import get_host
 from dhub.emulator.android import AndroidEmulator as android
-from dhub.selenium.node import (
-    get_nodes
-)
+from dhub.selenium.node import Node as node
+
 from utils.logger import get_logger
 from .datastore import ResourceDataStore
 
@@ -279,13 +278,24 @@ def list_emulators(user):
     return res
 
 
-def _does_emulator_exist(name):
-    all_emulators = list_emulators()
-    for emulator in all_emulators:
-        if name == emulator.get("name"):
-            return True
-    return False
+def launch_selenium_node(data: dict):
+    session = node(node_name=data.get("node_name"), browser=data.get("browser"),
+                   version=data.get("version"), portal_ip=data.get("portal_ip"))
+
+    name = session.create_pod()
+    logger.info(f"going to create emulator {str(data)}")
+    return name
 
 
-def list_node():
-    return get_nodes()
+def delete_selenium_node(pod_name: str):
+    session = node(pod_name)
+    res = session.delete_pod()
+    logger.info(f"The res of delete pod {pod_name} is {res}")
+    return res
+
+
+def check_selenium_node(pod_name: str):
+    session = node(pod_name)
+    res = session.check_selenium_node_status()
+    logger.info(f"The res of delete pod {pod_name} is {res}")
+    return res

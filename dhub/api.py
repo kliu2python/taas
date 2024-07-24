@@ -13,7 +13,9 @@ from dhub.manager import (
     delete_emulator,
     check_emulator,
     list_emulators,
-    list_node
+    launch_selenium_node,
+    delete_selenium_node,
+    check_selenium_node
 )
 from rest import RestApi
 
@@ -140,10 +142,33 @@ class ListAllEmulator(Resource):
         return jsonify({"results": results})
 
 
-@rest.route("/node/list")
-class ListAllSeleniumNode(Resource):
-    def get(self):
-        results = list_node()
-        return jsonify({"count": len(results), "results": results})
+@rest.route("/selenium/create")
+class LaunchSeleniumNode(Resource):
+    """
+    post body:
+    {
+        "browser": "chrome",
+        "version: "125.0",
+        "node_name": "chrome-1234",
+        "portal_ip": [{'10.160.83.140', 'ftc.fortinet.com'}]
+    }
+    """
+    def post(self):
+        data = request.json
+        results = launch_selenium_node(data)
+        return jsonify({"pod_name": results})
 
+
+@rest.route("/selenium/delete/<string:pod_name>")
+class DeleteSeleniumNode(Resource):
+    def post(self, pod_name):
+        results = delete_selenium_node(pod_name)
+        return jsonify({"results": results})
+
+
+@rest.route("/selenium/check/<string:pod_name>")
+class CheckSeleniumNodeStatus(Resource):
+    def get(self, pod_name):
+        results = check_selenium_node(pod_name)
+        return jsonify({"results": results})
 

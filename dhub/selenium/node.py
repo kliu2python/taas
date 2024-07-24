@@ -1,35 +1,196 @@
+import os
 import requests
+import traceback
+from time import sleep
+
+import yaml
+from kubernetes import (
+    client,
+    config
+)
 
 from utils.logger import get_logger
 
-URL = "http://10.160.24.17:32609/status"
+URL = "http://10.160.24.17:31590/status"
 logger = get_logger()
+WORK_DIC = os.getcwd()
+NAMESPACE = "selenium-grid"
 
 
 class Node:
-    def __init__(self, os: dict = None, availability: str = None, browser: dict = None):
-        self.os = os
-        self.availability = availability
+    def __init__(self,  node_name: str, browser: str = None,
+                 version: str = None, portal_ip: list = None):
+        self.availability = "Down"
         self.browser = browser
+        self.node_name = node_name
+        self.version = version
+        self.portal_ip = portal_ip
+        self.session_id = None
+        self.pod_config = None
+        self.model_location = None
+        self.__enter__()
 
+    def __enter__(self):
+        self._generate_k8s_config()
+        self._load_config_file()
+        self._generate_model_path()
 
-def _call_api_client():
-    node_list = []
-    try:
-        response = requests.get(URL)
-        if response.status_code == 200:
-            # Successful GET request
-            logger.info("The fetch data of selenium node successfully.")
-            res = response.json()
-            for node in res.get("value").get("nodes"):
-                cur_node = {"os": node.get("osInfo"), "status": node.get("availability"), "browser_info": node.get("slots")[0].get("stereotype")}
-                node_list.append(cur_node)
-            return node_list
+    def _generate_k8s_config(self):
+        self.config = os.path.join(WORK_DIC, "dhub", "configs", "config")
+
+    def _generate_model_path(self):
+        self.model_location = os.path.join(WORK_DIC, "dhub", "configs",
+                                           "browser-cloud-template.yaml")
+
+    def _load_config_file(self):
+        config.load_kube_config(config_file=self.config)
+        self.api_client = client.CoreV1Api()
+
+    def create_pod(self):
+        res = self.check_pod()
+        if res in ["Running", "Pending"]:
+            return f"{self.node_name} exists already"
+        elif res in ["Completed"]:
+            self.delete_pod()
+            logger.info(f"Deleted Completed pod {self.node_name}, recreate..")
+        # Read the YAML file
+        image = f"selenium/node-{self.browser}:{self.version}"
+        logger.info(f"going to use image {image}")
+
+        with open(self.model_location) as f:
+            contents = f.read().split('---')
+
+        if self.browser == 'chrome':
+            options = "goog:chromeOptions"
+            driver_path = "/usr/bin/google-chrome"
+        elif self.browser == 'firefox':
+            options = "moz:firefoxOptions"
+            driver_path = "/usr/bin/firefox"
+        elif self.browser == 'edge':
+            options = "ms:edgeOptions"
+            driver_path = "/usr/bin/microsoft-edge"
         else:
-            print(f"Failed to fetch data. Status code: {response.status_code}")
-    except requests.exceptions.RequestException as e:
-        print(f"Error occurred: {e}")
+            raise NameError(f"{self.browser} is not correct input")
 
+        pod = yaml.safe_load(contents[0])
+        pod["metadata"]["name"] = self.node_name
+        pod["spec"]["containers"][0]["image"] = image
+        if self.portal_ip:
+            if len(self.portal_ip) > 0:
+                pod["spec"]["hostAliases"] = []
+                for portal_ip in self.portal_ip:
+                    for ip, hostname in portal_ip.items():
+                        host_alias_entry = {
+                            "ip": ip,
+                            "hostnames": [hostname]
+                        }
+                        pod["spec"]["hostAliases"].append(host_alias_entry)
+        new_stereotype = (
+            "{\"browserName\":\"newBrowserName\","
+            "\"browserVersion\":\"newBrowserVersion\","
+            "\"nodename:applicationName\":\"newNodeName\","
+            "\"platformName\": \"Linux\","
+            "\"newOptions\": {\"binary\": \"newPath\"}}"
+        )
+        new_stereotype = new_stereotype.replace(
+            "newBrowserName", self.browser
+        ).replace(
+            "newBrowserVersion", self.version
+        ).replace(
+            "newNodeName", self.node_name
+        ).replace(
+            "newOptions", options
+        ).replace(
+            "newPath", driver_path
+        )
+        pod["spec"]["containers"][0]["env"][5]["value"] = new_stereotype
 
-def get_nodes():
-    return _call_api_client()
+        # Create the pod using the YAML manifest
+        self.api_client.create_namespaced_pod(
+            body=pod,
+            namespace=NAMESPACE
+        )
+
+        return self.node_name
+
+    def check_pod(self):
+        try:
+            resp = self.api_client.read_namespaced_pod_status(
+                self.node_name, NAMESPACE
+            )
+            status = resp.status.phase
+        except client.ApiException as e:
+            if e.status == 404:
+                logger.info(f'Pod {self.node_name} has been deleted already')
+                status = "deleted"
+            else:
+                status = "unknown"
+
+        return status
+
+    def delete_pod(self):
+        try:
+            self.api_client.delete_namespaced_pod(
+                self.node_name, namespace=NAMESPACE,
+                body=client.V1DeleteOptions(propagation_policy='Foreground',
+                                            grace_period_seconds=5))
+        except client.ApiException as e:
+            if e.status == 404:
+                logger.info('Has been deleted already...')
+                return "Deleted"
+            else:
+                logger.error(
+                    'Delete pod "%s" failed, the detail error msg is :"%s"',
+                    traceback.format_exc()
+                )
+                return "Failed"
+        while True:
+            try:
+                resp = self.api_client.read_namespaced_pod_status(
+                    self.node_name, namespace=NAMESPACE
+                )
+                logger.info(f"pod {self.node_name} current"
+                            f" status is {resp.status.phase}")
+            except client.ApiException as e:
+                if e.status == 404:
+                    logger.info(
+                        f'Pod {self.node_name} has been deleted successfully.'
+                    )
+                    break
+                else:
+                    logger.error(
+                        'Delete pod %s failed, the detail error msg is :"%s"',
+                        traceback.format_exc()
+                    )
+                    return "Failed"
+            sleep(3)
+        return "Deleted"
+
+    def check_selenium_node_status(self):
+        try:
+            response = requests.get(URL)
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as errh:
+            print(f"Http Error: {errh}")
+            return None
+        except requests.exceptions.ConnectionError as errc:
+            print(f"Error Connecting: {errc}")
+            return None
+        except requests.exceptions.Timeout as errt:
+            print(f"Timeout Error: {errt}")
+            return None
+        except requests.exceptions.RequestException as err:
+            print(f"OOps: Something Else: {err}")
+            return None
+
+        status_data = response.json()
+        nodes = status_data['value']['nodes']
+        for node in nodes:
+            for slots in node.get('slots', []):
+                if 'nodename:applicationName' in slots['stereotype']:
+                    name = slots['stereotype']['nodename:applicationName']
+                    if name != self.node_name:
+                        break
+                    self.availability = node.get('availability')
+                    return self.availability
+        return self.availability

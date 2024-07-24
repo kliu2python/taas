@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: selenium-node-chrome-121
+  namespace: selenium-grid
+spec:
+  volumes:
+  - name: dshm
+    emptyDir:
+      medium: Memory
+  nodeSelector:
+    platform: no-gpu
+  containers:
+  - name: selenium-node-chrome-121
+    image: selenium/node-chrome:121.0
+    ports:
+      - containerPort: 5555
+    volumeMounts:
+      - mountPath: /dev/shm
+        name: dshm
+    env:
+      - name: SE_EVENT_BUS_HOST
+        value: "selenium-hub"
+      - name: SE_EVENT_BUS_SUBSCRIBE_PORT
+        value: "4443"
+      - name: SE_EVENT_BUS_PUBLISH_PORT
+        value: "4442"
+      - name: SE_NODE_BROWSER_NAME
+        value: "chrome"
+      - name: SE_NODE_BROWSER_VERSION
+        value: "119.0"
+      - name: SE_NODE_STEREOTYPE
+        value: "{\"browserName\":\"${SE_NODE_BROWSER_NAME}\",\"browserVersion\":\"${SE_NODE_BROWSER_VERSION}\",\"platformName\": \"Linux\"}"
+
+    resources:
+      limits:
+        memory: "1000Mi"
+        cpu: ".5"
