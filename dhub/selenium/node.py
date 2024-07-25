@@ -60,7 +60,7 @@ class Node:
         with open(self.model_location) as f:
             contents = f.read().split('---')
 
-        if self.browser == 'chrome':
+        if self.browser in ['chrome', 'googlechrome']:
             options = "goog:chromeOptions"
             driver_path = "/usr/bin/google-chrome"
         elif self.browser == 'firefox':
