@@ -239,12 +239,12 @@ def launch_emulator(data: dict):
     if data.get("expiration_time") and creator != "automation":
         data_expiration = data.get("expiration_time")
         if data_expiration == -1:
-            expiration_time = current_time + datetime.timedelta(days=15)
+            expiration_time = current_time + datetime.timedelta(days=30)
         elif 0 <= data_expiration <= 3:
             expiration_time = (current_time +
                                datetime.timedelta(days=data_expiration))
         else:
-            return ("Please setup the expiration to -1 (max is 15 days) or "
+            return ("Please setup the expiration to -1 (max is 30 days) or "
                     "between 0 to 3 days, or remove expiration_time param "
                     "from body (default is 3 days)")
     elif creator == "automation":
@@ -255,7 +255,7 @@ def launch_emulator(data: dict):
                   expiration_time.strftime('%Y-%m-%d %H:%M:%S'),
                   identifier=name)
     datastore.set("pools", [json.dumps({
-        "pod_id": name,
+        "pod_name": name,
         "creator": creator
     })])
     logger.info(f"going to create emulator {str(data)}")
@@ -267,9 +267,9 @@ def do_fetch_pools():
 
 
 def delete_emulator_worker(data: dict):
+    datastore.set("worker_data", [json.dumps(data)])
     pod_name = data.get("pod_name")
     creator = data.get("creator")
-    datastore.set("worker_data", [json.dumps(data)])
     datastore.srem("user_pool", [pod_name], identifier=creator)
     return "working on progress"
 
@@ -284,6 +284,7 @@ def delete_emulator(data: dict):
     res = session.delete_pod()
     datastore.delete("pod_info", identifier=pod_name)
     datastore.delete("expiration_time", identifier=pod_name)
+    datastore.srem("pools", [json.dumps(data)])
     logger.info(f"The res of delete pod {pod_name} is {res}")
     return res
 
@@ -309,7 +310,9 @@ def list_emulators(user):
     if pods_str:
         for pod_name in pods_str:
             pod_details = datastore.get("pod_info", identifier=pod_name)
-            if not pod_details or pod_details['status'] not in ['Running']:
+            if not pod_details or pod_details['status'] not in ['Running',
+                                                                'Deleted',
+                                                                'deleted']:
                 # If the key doesn't exist, fetch the details
                 pod_details = check_emulator(pod_name)
                 # Store the fetched details in the datastore

@@ -22,7 +22,7 @@ def pool_worker():
             if pod_pool:
                 for pod in pod_pool:
                     pod_data = json.loads(pod)
-                    pod_id = pod_data["pod_id"]
+                    pod_id = pod_data["pod_name"]
                     expiration_time = manager.datastore.get(
                         "expiration_time", pod_id)
                     current_time = datetime.datetime.utcnow()
