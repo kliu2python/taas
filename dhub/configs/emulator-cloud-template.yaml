@@ -22,6 +22,8 @@ spec:
         - name: apk-volume
           mountPath: /home/fortinet/apk
       env:
+        - name: ANDROID_SDK_ROOT
+          value: "/opt/android-sdk"
         - name: PATH
           value: "/opt/android-sdk/emulator:/opt/android-sdk/cmdline-tools/latest/bin:/opt/android-sdk/cmdline-tools/tools/bin:/opt/android-sdk/platform-tools:/usr/local/bin:/usr/bin:/bin"
   volumes:
