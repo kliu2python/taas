@@ -10,7 +10,7 @@ from args import parser
 from dhub.manager import (
     init_device_hub,
     launch_emulator,
-    delete_emulator,
+    delete_emulator_worker,
     check_emulator,
     list_emulators,
     launch_selenium_node,
@@ -119,8 +119,9 @@ class DeleteEmulator(Resource):
     """
     def post(self):
         data = request.json
-        results = delete_emulator(data)
+        results = delete_emulator_worker(data)
         return jsonify({"results": results})
+
 
 @rest.route("/emulator/check/<string:pod_name>")
 class CheckEmulator(Resource):

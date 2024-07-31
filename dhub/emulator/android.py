@@ -50,7 +50,10 @@ class AndroidEmulator:
     def _generate_k8s_config(self, config_file=None):
         if not config_file:
             config_file = "config"
-        self.config = os.path.join(WORK_DIC, "dhub", "configs", config_file)
+        if "dhub" in WORK_DIC:
+            self.config = os.path.join(WORK_DIC, "configs", config_file)
+        else:
+            self.config = os.path.join(WORK_DIC, "dhub", "configs", config_file)
 
     def _generate_model_path(self):
         self.model_name = "emulator-cloud-template.yaml"

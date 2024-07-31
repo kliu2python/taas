@@ -235,8 +235,43 @@ def launch_emulator(data: dict):
     name = session.create_pod()
     creator = data.get("creator")
     datastore.set("user_pool", [name], identifier=creator)
+    current_time = datetime.datetime.utcnow()
+    if data.get("expiration_time") and creator != "automation":
+        data_expiration = data.get("expiration_time")
+        if data_expiration == -1:
+            expiration_time = current_time + datetime.timedelta(days=15)
+        elif 0 <= data_expiration <= 3:
+            expiration_time = (current_time +
+                               datetime.timedelta(days=data_expiration))
+        else:
+            return ("Please setup the expiration to -1 (max is 15 days) or "
+                    "between 0 to 3 days, or remove expiration_time param "
+                    "from body (default is 3 days)")
+    elif creator == "automation":
+        expiration_time = current_time + datetime.timedelta(hours=2)
+    else:
+        expiration_time = current_time + datetime.timedelta(days=3)
+    datastore.set("expiration_time",
+                  expiration_time.strftime('%Y-%m-%d %H:%M:%S'),
+                  identifier=name)
+    datastore.set("pools", [json.dumps({
+        "pod_id": name,
+        "creator": creator
+    })])
     logger.info(f"going to create emulator {str(data)}")
     return name
+
+
+def do_fetch_pools():
+    return datastore.get("pools")
+
+
+def delete_emulator_worker(data: dict):
+    pod_name = data.get("pod_name")
+    creator = data.get("creator")
+    datastore.set("worker_data", [json.dumps(data)])
+    datastore.srem("user_pool", [pod_name], identifier=creator)
+    return "working on progress"
 
 
 def delete_emulator(data: dict):
@@ -245,10 +280,10 @@ def delete_emulator(data: dict):
     if not data.get("creator"):
         return {"res": "not creator attached, check it again."}
     pod_name = data.get("pod_name")
-    creator = data.get("creator")
     session = android(pod_name=pod_name)
-    datastore.srem("user_pool", [pod_name], identifier=creator)
     res = session.delete_pod()
+    datastore.delete("pod_info", identifier=pod_name)
+    datastore.delete("expiration_time", identifier=pod_name)
     logger.info(f"The res of delete pod {pod_name} is {res}")
     return res
 
@@ -273,7 +308,12 @@ def list_emulators(user):
     pods_str = datastore.get("user_pool", identifier=user)
     if pods_str:
         for pod_name in pods_str:
-            pod_details = check_emulator(pod_name)
+            pod_details = datastore.get("pod_info", identifier=pod_name)
+            if not pod_details or pod_details['status'] not in ['Running']:
+                # If the key doesn't exist, fetch the details
+                pod_details = check_emulator(pod_name)
+                # Store the fetched details in the datastore
+                datastore.set("pod_info", pod_details, identifier=pod_name)
             res.append(pod_details)
     return res
 
