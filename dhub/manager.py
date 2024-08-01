@@ -342,3 +342,10 @@ def check_selenium_node(pod_name: str):
     res = session.check_selenium_node_status()
     logger.info(f"The res of delete pod {pod_name} is {res}")
     return res
+
+
+def check_selenium_host_point(pod_name: str, data: dict):
+    session = node(pod_name)
+    commands = data.get("commands")
+    res = session.check_selenium_hostname_point(commands)
+    return res

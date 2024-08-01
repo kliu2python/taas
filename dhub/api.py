@@ -15,7 +15,8 @@ from dhub.manager import (
     list_emulators,
     launch_selenium_node,
     delete_selenium_node,
-    check_selenium_node
+    check_selenium_node,
+    check_selenium_host_point
 )
 from rest import RestApi
 
@@ -173,3 +174,10 @@ class CheckSeleniumNodeStatus(Resource):
         results = check_selenium_node(pod_name)
         return jsonify({"results": results})
 
+
+@rest.route("/selenium/check/<string:pod_name>")
+class CheckHostPoint(Resource):
+    def post(self, pod_name):
+        data = request.json
+        results = check_selenium_host_point(pod_name, data)
+        return jsonify({"results": results})

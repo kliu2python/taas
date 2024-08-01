@@ -1,4 +1,5 @@
 import os
+import json
 import requests
 import traceback
 from time import sleep
@@ -8,6 +9,7 @@ from kubernetes import (
     client,
     config
 )
+from kubernetes import stream
 
 from utils.logger import get_logger
 
@@ -194,3 +196,22 @@ class Node:
                     self.availability = node.get('availability')
                     return self.availability
         return self.availability
+
+    def check_selenium_hostname_point(self, commands: str):
+        exec_command = []
+        try:
+            command_list = commands.split(" ")
+            for command in command_list:
+                exec_command.append(command)
+            resp = stream.stream(
+                self.api_client.connect_get_namespaced_pod_exec,
+                self.node_name, NAMESPACE, command=exec_command, stderr=True,
+                stdin=False, stdout=True, tty=False)
+            if "https://ftc.fortinet.com/version" in exec_command:
+                resp = resp.split("\n")[-2]
+                resp = json.loads(resp)
+            logger.info(f"Response: {resp}")
+            return resp
+        except client.exceptions.ApiException as e:
+            logger.info(f"Exception when calling {e}")
+
