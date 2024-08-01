@@ -199,19 +199,23 @@ class Node:
 
     def check_selenium_hostname_point(self, commands: str):
         exec_command = []
-        try:
-            command_list = commands.split(" ")
-            for command in command_list:
-                exec_command.append(command)
-            resp = stream.stream(
-                self.api_client.connect_get_namespaced_pod_exec,
-                self.node_name, NAMESPACE, command=exec_command, stderr=True,
-                stdin=False, stdout=True, tty=False)
-            if "https://ftc.fortinet.com/version" in exec_command:
-                resp = resp.split("\n")[-2]
-                resp = json.loads(resp)
-            logger.info(f"Response: {resp}")
-            return resp
-        except client.exceptions.ApiException as e:
-            logger.info(f"Exception when calling {e}")
+        count = 3
+        while count > 0:
+            try:
+                command_list = commands.split(" ")
+                for command in command_list:
+                    exec_command.append(command)
+                resp = stream.stream(
+                    self.api_client.connect_get_namespaced_pod_exec,
+                    self.node_name, NAMESPACE, command=exec_command, stderr=True,
+                    stdin=False, stdout=True, tty=False)
+                if resp.status_code < 300:
+                    if "https://ftc.fortinet.com/version" in exec_command:
+                        resp = resp.split("\n")[-2]
+                        resp = json.loads(resp)
+                    logger.info(f"Response: {resp}")
+                    return resp
+                count -= 1
+            except client.exceptions.ApiException as e:
+                logger.info(f"Exception when calling {e}")
 
