@@ -209,7 +209,7 @@ class Node:
                     self.api_client.connect_get_namespaced_pod_exec,
                     self.node_name, NAMESPACE, command=exec_command, stderr=True,
                     stdin=False, stdout=True, tty=False)
-                if resp.status_code < 300:
+                if 'Connected' in resp:
                     if "https://ftc.fortinet.com/version" in exec_command:
                         resp = resp.split("\n")[-2]
                         resp = json.loads(resp)
