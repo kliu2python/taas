@@ -63,12 +63,15 @@ class Node:
             contents = f.read().split('---')
 
         if self.browser in ['chrome', 'googlechrome']:
+            browser_name = 'chrome'
             options = "goog:chromeOptions"
             driver_path = "/usr/bin/google-chrome"
         elif self.browser == 'firefox':
+            browser_name = 'firefox'
             options = "moz:firefoxOptions"
             driver_path = "/usr/bin/firefox"
         elif self.browser == 'edge':
+            browser_name = 'MicrosoftEdge'
             options = "ms:edgeOptions"
             driver_path = "/usr/bin/microsoft-edge"
         else:
@@ -95,7 +98,7 @@ class Node:
             "\"newOptions\": {\"binary\": \"newPath\"}}"
         )
         new_stereotype = new_stereotype.replace(
-            "newBrowserName", self.browser
+            "newBrowserName", browser_name
         ).replace(
             "newBrowserVersion", self.version
         ).replace(
