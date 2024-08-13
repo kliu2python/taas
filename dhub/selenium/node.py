@@ -38,7 +38,10 @@ class Node:
         self._generate_model_path()
 
     def _generate_k8s_config(self):
-        self.config = os.path.join(WORK_DIC, "dhub", "configs", "config")
+        if "dhub" not in WORK_DIC:
+            self.config = os.path.join(WORK_DIC, "dhub", "configs", "config")
+        else:
+            self.config = os.path.join(WORK_DIC, "configs", "config")
 
     def _generate_model_path(self):
         self.model_location = os.path.join(WORK_DIC, "dhub", "configs",
@@ -55,27 +58,31 @@ class Node:
         elif res in ["Completed"]:
             self.delete_pod()
             logger.info(f"Deleted Completed pod {self.node_name}, recreate..")
-        # Read the YAML file
-        image = f"selenium/node-{self.browser}:{self.version}"
-        logger.info(f"going to use image {image}")
 
         with open(self.model_location) as f:
             contents = f.read().split('---')
 
         if self.browser in ['chrome', 'googlechrome']:
             browser_name = 'chrome'
+            image_name = 'chrome'
             options = "goog:chromeOptions"
             driver_path = "/usr/bin/google-chrome"
         elif self.browser == 'firefox':
             browser_name = 'firefox'
+            image_name = 'firefox'
             options = "moz:firefoxOptions"
             driver_path = "/usr/bin/firefox"
         elif self.browser == 'edge':
             browser_name = 'MicrosoftEdge'
+            image_name = 'edge'
             options = "ms:edgeOptions"
             driver_path = "/usr/bin/microsoft-edge"
         else:
             raise NameError(f"{self.browser} is not correct input")
+
+        # Read the YAML file
+        image = f"selenium/node-{image_name}:{self.version}"
+        logger.info(f"going to use image {image}")
 
         pod = yaml.safe_load(contents[0])
         pod["metadata"]["name"] = self.node_name

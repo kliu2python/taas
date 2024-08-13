@@ -10,15 +10,27 @@ logger = get_logger()
 
 def pool_worker():
     logger.info("Starting Pool Worker")
-    emulator_info = None
+    device_info = None
+    emulator_data = None
+    selenium_name = None
+    pod_pool = None
     while True:
         try:
-            emulator_info = manager.datastore.spop("worker_data")
-            pod_pool = manager.do_fetch_pools()
+            if not device_info:
+                device_info = manager.datastore.spop("worker_data")
+                pod_pool = manager.do_fetch_pools()
 
-            if emulator_info:
-                emulator_data = json.loads(emulator_info[-1])
-                manager.delete_emulator(emulator_data)
+            if device_info:
+                for device in device_info:
+                    if '{' in device:
+                        emulator_data = json.loads(device)
+                        manager.delete_emulator(emulator_data)
+                        emulator_data = None
+                    else:
+                        selenium_name = device
+                        manager.do_delete_selenium_node(selenium_name)
+                        selenium_name = None
+                    device_info.remove(device)
             if pod_pool:
                 for pod in pod_pool:
                     pod_data = json.loads(pod)
@@ -35,8 +47,12 @@ def pool_worker():
                             manager.delete_emulator(pod_data)
 
         except Exception as e:
+            if selenium_name:
+                device_info.append(selenium_name)
+            if emulator_data:
+                device_info.append(emulator_data)
             logger.exception(
-                f"Error with data {emulator_info}", exc_info=e
+                f"Error with data {device_info}", exc_info=e
             )
         sleep(5)
 

@@ -331,6 +331,11 @@ def launch_selenium_node(data: dict):
 
 
 def delete_selenium_node(pod_name: str):
+    datastore.set("worker_data", [pod_name])
+    return "working on progress"
+
+
+def do_delete_selenium_node(pod_name: str):
     session = node(pod_name)
     res = session.delete_pod()
     logger.info(f"The res of delete pod {pod_name} is {res}")
