@@ -44,7 +44,10 @@ def pool_worker():
                         )
                         if current_time > exp_time:
                             logger.info(f"Deleting Pool {pod_id}")
-                            manager.delete_emulator(pod_data)
+                            if len(pod_data) > 1:
+                                manager.delete_emulator(pod_data)
+                            else:
+                                manager.delete_selenium_node(pod_id)
 
         except Exception as e:
             if selenium_name:

@@ -13,7 +13,7 @@ from kubernetes import stream
 
 from utils.logger import get_logger
 
-URL = "http://10.160.24.17:31590/status"
+URL = "http://10.160.24.88:31590/status"
 logger = get_logger()
 WORK_DIC = os.getcwd()
 NAMESPACE = "selenium-grid"

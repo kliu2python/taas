@@ -326,6 +326,26 @@ def launch_selenium_node(data: dict):
                    version=data.get("version"), portal_ip=data.get("portal_ip"))
 
     name = session.create_pod()
+    current_time = datetime.datetime.utcnow()
+    if data.get("expiration_time"):
+        data_expiration = data.get("expiration_time")
+        if data_expiration == -1:
+            expiration_time = current_time + datetime.timedelta(days=30)
+        elif 0 <= data_expiration <= 3:
+            expiration_time = (current_time +
+                               datetime.timedelta(days=data_expiration))
+        else:
+            return ("Please setup the expiration to -1 (max is 30 days) or "
+                    "between 0 to 3 days, or remove expiration_time param "
+                    "from body (default is 3 days)")
+    else:
+        expiration_time = current_time + datetime.timedelta(hours=3)
+    datastore.set("expiration_time",
+                  expiration_time.strftime('%Y-%m-%d %H:%M:%S'),
+                  identifier=name)
+    datastore.set("pools", [json.dumps({
+        "pod_name": name
+    })])
     logger.info(f"going to create emulator {str(data)}")
     return name
 
