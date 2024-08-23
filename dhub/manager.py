@@ -284,7 +284,11 @@ def delete_emulator(data: dict):
     res = session.delete_pod()
     datastore.delete("pod_info", identifier=pod_name)
     datastore.delete("expiration_time", identifier=pod_name)
-    datastore.srem("pools", [json.dumps(data)])
+    srem_res = datastore.srem("pools", [json.dumps(data)])
+    if srem_res == 1:
+        logger.info(f"The pod {pod_name} removed from cache")
+    else:
+        logger.info(f"The pod {pod_name} removed from cache failed")
     logger.info(f"The res of delete pod {pod_name} is {res}")
     return res
 
@@ -358,6 +362,13 @@ def delete_selenium_node(pod_name: str):
 def do_delete_selenium_node(pod_name: str):
     session = node(pod_name)
     res = session.delete_pod()
+    cache_value = {"pod_name": f"{pod_name}"}
+    datastore.delete("expiration_time", identifier=pod_name)
+    srem_res = datastore.srem("pools", [json.dumps(cache_value)])
+    if srem_res == 1:
+        logger.info(f"The pod {pod_name} removed from cache")
+    else:
+        logger.info(f"The pod {pod_name} removed from cache failed")
     logger.info(f"The res of delete pod {pod_name} is {res}")
     return res
 
