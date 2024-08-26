@@ -42,7 +42,7 @@ setup(
         'urllib3',
         'beautifulsoup4',
         'kubernetes==29.0.0',
-        'flask-cors==1.10.3'
+        'flask-cors==3.0.9'
     ],
     packages=[],
     name='taas',

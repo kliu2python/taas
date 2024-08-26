@@ -24,6 +24,18 @@ rest = RestApi(base_route="/dhub")
 init_device_hub()
 
 
+@rest.route("/ready")
+class Readiness(Resource):
+    def get(self):
+        return "Ready"
+
+
+@rest.route("/healthz")
+class Liveness(Resource):
+    def get(self):
+        return "Healthy"
+
+
 @rest.route("cleandevice")
 class CleanEmulatorAndroidUserDataApi(Resource):
     def get(self):
