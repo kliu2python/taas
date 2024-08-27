@@ -44,7 +44,11 @@ class AndroidEmulator:
             self._generate_unique_name()
 
     def _generate_unique_name(self):
-        self.unique_name = (f"android{self.version}"
+        if "." in self.version:
+            version = self.version.replace(".", "-")
+        else:
+            version = self.version
+        self.unique_name = (f"android{version}"
                             f"-{str(uuid.uuid1()).split('-')[0]}")
 
     def _generate_k8s_config(self, config_file=None):
