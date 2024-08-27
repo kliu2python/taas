@@ -74,8 +74,10 @@ class AndroidEmulator:
         image = f"10.160.16.60/emulator-cloud/emulator_cloud:1.0.{api_level}"
         logger.info(f"going to use image {image}")
 
+        logger.info(f"going to open files {self.model_location}")
         with open(self.model_location) as f:
             contents = f.read().split('---')
+        logger.info(f"read the contents of model file")
 
         pod = yaml.safe_load(contents[0])
         pod["metadata"]["name"] = self.unique_name
