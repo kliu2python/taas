@@ -61,8 +61,12 @@ class AndroidEmulator:
 
     def _generate_model_path(self):
         self.model_name = "emulator-cloud-template.yaml"
-        self.model_location = os.path.join(WORK_DIC, "dhub", "configs",
-                                           self.model_name)
+        if "dhub" in WORK_DIC:
+            self.model_location = os.path.join(WORK_DIC, "configs",
+                                               self.model_name)
+        else:
+            self.model_location = os.path.join(WORK_DIC, "dhub", "configs",
+                                               self.model_name)
 
     def _load_config_file(self):
         config.load_kube_config(config_file=self.config)

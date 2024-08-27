@@ -44,8 +44,12 @@ class Node:
             self.config = os.path.join(WORK_DIC, "configs", "config")
 
     def _generate_model_path(self):
-        self.model_location = os.path.join(WORK_DIC, "dhub", "configs",
-                                           "browser-cloud-template.yaml")
+        if "dhub" not in WORK_DIC:
+            self.model_location = os.path.join(WORK_DIC, "dhub", "configs",
+                                               "browser-cloud-template.yaml")
+        else:
+            self.model_location = os.path.join(WORK_DIC, "configs",
+                                               "browser-cloud-template.yaml")
 
     def _load_config_file(self):
         config.load_kube_config(config_file=self.config)
