@@ -4,7 +4,7 @@ service_config:
 #        - resource_manager
 #        - image_classifier
 #        - scale_controller
-#        - benchmark
+        - benchmark
 #        - monitor
 #        - qr_display
 #        - fos
@@ -12,4 +12,4 @@ service_config:
 #        - bpproxy
 #        - bpmanager
 #        - upgrade
-        - datasync
+#        - datasync

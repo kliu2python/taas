@@ -1,79 +1,107 @@
 from flask import jsonify
-from flask_restful import Resource, request
+from flask_restx import Resource, fields, Namespace
+from flask_restful import request
 
 import benchmark.services.reporting as service
 from benchmark.tasks.lifecycle import check_job_status
 from rest import RestApi
 
+# Initialize RestApi with base_route
 rest = RestApi(base_route="/benchmark/v1/")
 
+# Create 'Result' namespace for Result DB operations
+ns_result = Namespace('benchmark/v1/', description='Benchmark DB operations')
 
-@rest.route("result/<string:job_name>/<string:build_id>")
+# Define models under the 'ns_result' namespace
+result_model = ns_result.model('Result', {
+    'job_name': fields.String(required=True, description='Jenkins job name'),
+    'build_id': fields.String(required=True, description='Jenkins build number'),
+    'platform': fields.String(required=True, description='DUT Model / Platform'),
+    'version': fields.String(required=True, description='FOS Version on DUT'),
+    'user': fields.String(required=True, description='Trigger / Test Owner'),
+    'test': fields.String(required=True, description='Test Case Name'),
+    'settings': fields.String(description='Settings / Comments'),
+    'start_time': fields.String(description='Run start time'),
+    'end_time': fields.String(description='Run end time'),
+})
+
+# Additional models can be defined similarly
+counter_model = ns_result.model('Counter', {
+    'job_name': fields.String(required=True, description='Jenkins job name'),
+    'build_id': fields.String(required=True, description='Jenkins build number'),
+    'idx': fields.String(required=True, description='Device/platform/Index'),
+    'counter': fields.String(required=True, description='Perf counter (e.g., cpu, memory, bw)'),
+    'datetime': fields.String(description='Datetime of the record'),
+    'value': fields.String(required=True, description='Value of the counter (TEXT)')
+})
+
+log_model = ns_result.model('Log', {
+    'job_name': fields.String(required=True, description='Jenkins job name'),
+    'build_id': fields.String(required=True, description='Jenkins build number'),
+    'platform': fields.String(required=True, description='DUT Model / Platform'),
+    'version': fields.String(required=True, description='FOS Version on DUT'),
+    'timestamp': fields.String(description='Optional timestamp'),
+    'test': fields.String(description='Test case name (optional)'),
+    'log': fields.String(required=True, description='Log content')
+})
+
+# Register the namespace with 'rest'
+rest.add_namespace(ns_result)
+
+
+# Define Result API endpoint under the 'ns_result' namespace
+@ns_result.route("/result/<string:job_name>/<string:build_id>")
 class Result(Resource):
+    @ns_result.doc('get_result', params={'job_name': 'Jenkins job name', 'build_id': 'Jenkins build number'})
     def get(self, job_name, build_id):
-        msg = service.ResultApi.read_all(
-            job_name=job_name, build_id=build_id
-        )
-        return msg
+        """Get result by job_name and build_id"""
+        msg = service.ResultApi.read_all(job_name=job_name, build_id=build_id)
+        return jsonify(msg)
 
+    @ns_result.expect(result_model)
+    @ns_result.doc('create_result')
     def post(self):
-        """
-        post data example:
-        {
-            "job_name": "BLSM-FGT7040E",         # Jenkins job name
-            "build_id": "1234",                  # Jenkins build number
-            "platform": "FGT-7040E",             # DUT Model / Platform
-            "version": "V6.4.2GA",               # FOS Version on DUT
-            "user": "znie",                      # Trigger / Test Owner
-            "test": "HTTPCPS_Bidir_V1_0",        # Test Case Name
-            "settings": "xxxx",                  # Settings / Comments
-            "start_time": "xxxx",                # Run start time
-            "end_time": "xxx"                    # Case End Time
-        }
-
-        **Schema validation skipped**
-
-        """
+        """Create a new result"""
         data = request.json
         msg, code = service.ResultApi.create(data)
         return msg, code
 
+    @ns_result.expect(result_model)
+    @ns_result.doc('update_result', params={
+        'job_name': 'Jenkins job name',
+        'build_id': 'Jenkins build number'
+    })
     def put(self, job_name, build_id):
-        """
-        post data example:
-        {
-            "platform": "FGT-7040E",             # DUT Model / Platform
-            "version": "V6.4.2GA",               # FOS Version on DUT
-            "user": "znie",                      # Trigger / Test Owner
-            "test": "HTTPCPS_Bidir_V1_0",        # Test Case Name
-            "policy_setting": "xxxx",            # Policy Setting / Comments
-            "start_time": "xxxx",                # Run start time
-            "end_time": "xxx",                   # Case End Time
-        }
-
-        **Schema validation skipped**
-
-        Put can be any number of all supported fields.
-        """
+        """Update an existing result"""
         data = request.json
-        msg, code = service.ResultApi.update_one(
-            data, job_name=job_name, build_id=build_id
-        )
+        msg, code = service.ResultApi.update_one(data,
+                                                 job_name=job_name,
+                                                 build_id=build_id)
         return msg, code
 
+    @ns_result.doc('delete_result', params={
+        'job_name': 'Jenkins job name',
+        'build_id': 'Jenkins build number'
+    })
     def delete(self, job_name, build_id):
-        msg, code = service.ResultApi.delete(
-            job_name=job_name, build_id=build_id
-        )
+        """Delete a result"""
+        msg, code = service.ResultApi.delete(job_name=job_name,
+                                             build_id=build_id)
         return msg, code
 
 
-@rest.route(
-    "/log/counter/<string:job_name>/<string:build_id>/<string:case_name>"
-    "/<string:counter>"
-)
+# Define Counter API endpoint under the 'ns_result' namespace
+@ns_result.route("/log/counter/<string:job_name>/<string:build_id>"
+                 "/<string:case_name>/<string:counter>")
 class Counter(Resource):
+    @ns_result.doc('get_counter', params={
+        'job_name': 'Jenkins job name',
+        'build_id': 'Jenkins build number',
+        'case_name': 'Test case name',
+        'counter': 'Performance counter'
+    })
     def get(self, job_name, build_id, counter, case_name):
+        """Get counter log by job_name, build_id, counter, and case_name"""
         msg = service.CounterApi.read_all(
             job_name=job_name,
             build_id=build_id,
@@ -82,26 +110,10 @@ class Counter(Resource):
         )
         return jsonify(msg)
 
+    @ns_result.expect(counter_model)
+    @ns_result.doc('create_counter')
     def post(self):
-        """
-        {"data":
-            [
-                {
-                    "job_name": "BLSM-FGT7040E",         # Jenkins job name
-                    "build_id": "1234",                  # Jenkins build number
-                    "idx": "FGT113",                     # device/platform/indx
-                    "counter": "cpu",  "memory", "bw"    # Perf counter
-                    "datetime": "xxxx"                  # FOS Version on DUT
-                    "value": "TEXT VALUE",               # Trigger / Test Owner
-                }
-            ]
-        }
-
-        **Schema validation skipped**
-
-        "value" field is TEXT, please covert if you need other types.
-
-        """
+        """Create a new counter log"""
         data = request.json
         status_code = 201
         resp_msg = None
@@ -112,55 +124,62 @@ class Counter(Resource):
                 resp_msg = msg
         return resp_msg, status_code
 
+    @ns_result.doc('delete_counter', params={
+        'job_name': 'Jenkins job name',
+        'build_id': 'Jenkins build number'
+    })
     def delete(self, job_name, build_id):
-        msg, code = service.CounterApi.delete(
-            job_name=job_name, build_id=build_id
-        )
+        """Delete a counter log"""
+        msg, code = service.CounterApi.delete(job_name=job_name, build_id=build_id)
         return msg, code
 
 
-@rest.route("log/crash/<string:job_name>/<string:build_id>/<string:case_name>")
+# Define CrashLog API endpoint under the 'ns_result' namespace
+@ns_result.route("/log/crash/<string:job_name>"
+                 "/<string:build_id>/<string:case_name>")
 class CrashLog(Resource):
+    @ns_result.doc('get_crash_log', params={
+        'job_name': 'Jenkins job name',
+        'build_id': 'Jenkins build number',
+        'case_name': 'Test case name'
+    })
     def get(self, job_name, build_id, case_name):
-        msg = service.CrashLogApi.read_all(
-            job_name=job_name,
-            build_id=build_id,
-            case_name=case_name
-        )
+        """Get crash log by job_name, build_id, and case_name"""
+        msg = service.CrashLogApi.read_all(job_name=job_name,
+                                           build_id=build_id,
+                                           case_name=case_name
+                                           )
         return jsonify(msg)
 
+    @ns_result.expect(log_model)
+    @ns_result.doc('create_crash_log')
     def post(self):
-        """
-        post data example:
-        {
-            "job_name": "BLSM-FGT7040E",         # Jenkins job name
-            "build_id": "1234",                  # Jenkins build number
-            "platform": "FGT-7040E",             # DUT Model / Platform
-            "version": "V6.4.2GA",               # FOS Version on DUT
-            "timestamp": "xxx", (Optional)       # Trigger / Test Owner
-            "test": "test name" (not required)   # Test Case Name
-            "log": "xxxx",                       # Crash log content
-        }
-
-        **Schema validation skipped**
-
-        """
+        """Create a new crash log"""
         data = request.json
         msg, code = service.CrashLogApi.create(data)
         return msg, code
 
+    @ns_result.doc('delete_crash_log', params={
+        'job_name': 'Jenkins job name',
+        'build_id': 'Jenkins build number'
+    })
     def delete(self, job_name, build_id):
-        msg, code = service.CrashLogApi.delete(
-            job_name=job_name, build_id=build_id
-        )
+        """Delete a crash log"""
+        msg, code = service.CrashLogApi.delete(job_name=job_name, build_id=build_id)
         return msg, code
 
 
-@rest.route(
-    "log/console/<string:job_name>/<string:build_id>/<string:case_name>"
-)
+# Define ConsoleLog API endpoint under the 'ns_result' namespace
+@ns_result.route("/log/console/<string:job_name>"
+                 "/<string:build_id>/<string:case_name>")
 class ConsoleLog(Resource):
+    @ns_result.doc('get_console_log', params={
+        'job_name': 'Jenkins job name',
+        'build_id': 'Jenkins build number',
+        'case_name': 'Test case name'
+    })
     def get(self, job_name, build_id, case_name):
+        """Get console log by job_name, build_id, and case_name"""
         msg = service.ConsoleLogApi.read_all(
             job_name=job_name,
             build_id=build_id,
@@ -168,73 +187,67 @@ class ConsoleLog(Resource):
         )
         return jsonify(msg)
 
+    @ns_result.expect(log_model)
+    @ns_result.doc('create_console_log')
     def post(self):
-        """
-        post data example:
-        {
-            "job_name": "BLSM-FGT7040E",         # Jenkins job name
-            "build_id": "1234",                  # Jenkins build number
-            "platform": "FGT-7040E",             # DUT Model / Platform
-            "version": "V6.4.2GA",               # FOS Version on DUT
-            "timestamp": "xxx", (Optional)       # Trigger / Test Owner
-            "test": "test name" (not required)   # Test Case Name
-            "log": "xxxx",                       # Crash log content
-        }
-
-        **Schema validation skipped**
-        """
+        """Create a new console log"""
         data = request.json
         msg, code = service.ConsoleLogApi.create(data)
         return msg, code
 
+    @ns_result.doc('delete_console_log', params={
+        'job_name': 'Jenkins job name',
+        'build_id': 'Jenkins build number'
+    })
     def delete(self, job_name, build_id):
+        """Delete a console log"""
         msg, code = service.ConsoleLogApi.delete(
             job_name=job_name, build_id=build_id
         )
         return msg, code
 
 
-@rest.route(
-    "log/command/<string:job_name>/<string:build_id>/<string:case_name>"
-)
+# Define CommandLog API endpoint under the 'ns_result' namespace
+@ns_result.route("/log/command/<string:job_name>"
+                 "/<string:build_id>/<string:case_name>")
 class CommandLog(Resource):
+    @ns_result.doc('get_command_log', params={
+        'job_name': 'Jenkins job name',
+        'build_id': 'Jenkins build number',
+        'case_name': 'Test case name'
+    })
     def get(self, job_name, build_id, case_name):
+        """Get command log by job_name, build_id, and case_name"""
         msg = service.CommandLogApi.read_all(
-            job_name=job_name,
-            build_id=build_id,
-            case_name=case_name
+            job_name=job_name, build_id=build_id, case_name=case_name
         )
         return jsonify(msg)
 
+    @ns_result.expect(log_model)
+    @ns_result.doc('create_command_log')
     def post(self):
-        """
-        post data example:
-        {
-            "job_name": "BLSM-FGT7040E",         # Jenkins job name
-            "build_id": "1234",                  # Jenkins build number
-            "timestamp": "xxx", (Optional)       # Trigger / Test Owner
-            "command": "test name"               # commands
-            "log": "xxxx",                       # command log content
-        }
-
-        **Schema validation skipped**
-
-        """
+        """Create a new command log"""
         data = request.json
         msg, code = service.CommandLogApi.create(data)
         return msg, code
 
+    @ns_result.doc('delete_command_log', params={
+        'job_name': 'Jenkins job name',
+        'build_id': 'Jenkins build number'
+    })
     def delete(self, job_name, build_id):
+        """Delete a command log"""
         msg, code = service.CommandLogApi.delete(
             job_name=job_name, build_id=build_id
         )
         return msg, code
 
 
-@rest.route(
-    "task/<string:job_name>"
-)
+# Define Task API endpoint under the 'ns_result' namespace
+@ns_result.route("/task/<string:job_name>")
 class Task(Resource):
+    @ns_result.doc('get_task_status', params={'job_name': 'Jenkins job name'})
     def get(self, job_name):
+        """Get task status by job_name"""
         msg = check_job_status(job_name)
-        return None, 200 if msg else 404
+        return jsonify(msg), 200 if msg else 404
