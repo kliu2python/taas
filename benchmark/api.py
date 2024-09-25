@@ -52,12 +52,18 @@ rest.add_namespace(ns_result)
 # Define Result API endpoint under the 'ns_result' namespace
 @ns_result.route("/result/<string:job_name>/<string:build_id>")
 class Result(Resource):
-    @ns_result.doc('get_result', params={'job_name': 'Jenkins job name', 'build_id': 'Jenkins build number'})
+    @ns_result.doc('get_result', params={
+        'job_name': 'Jenkins job name',
+        'build_id': 'Jenkins build number'}
+                   )
     def get(self, job_name, build_id):
         """Get result by job_name and build_id"""
         msg = service.ResultApi.read_all(job_name=job_name, build_id=build_id)
         return jsonify(msg)
 
+
+@ns_result.route("/result")
+class ResultPost(Resource):
     @ns_result.expect(result_model)
     @ns_result.doc('create_result')
     def post(self):
@@ -66,6 +72,9 @@ class Result(Resource):
         msg, code = service.ResultApi.create(data)
         return msg, code
 
+
+@ns_result.route("/result/<string:job_name>/<string:build_id>")
+class ResultDelete(Resource):
     @ns_result.expect(result_model)
     @ns_result.doc('update_result', params={
         'job_name': 'Jenkins job name',
@@ -110,6 +119,9 @@ class Counter(Resource):
         )
         return jsonify(msg)
 
+
+@ns_result.route("/log/counter")
+class CounterPost(Resource):
     @ns_result.expect(counter_model)
     @ns_result.doc('create_counter')
     def post(self):
@@ -124,13 +136,18 @@ class Counter(Resource):
                 resp_msg = msg
         return resp_msg, status_code
 
+
+@ns_result.route("/log/counter/<string:job_name>/<string:build_id>")
+class CounterDelete(Resource):
     @ns_result.doc('delete_counter', params={
         'job_name': 'Jenkins job name',
         'build_id': 'Jenkins build number'
     })
     def delete(self, job_name, build_id):
         """Delete a counter log"""
-        msg, code = service.CounterApi.delete(job_name=job_name, build_id=build_id)
+        msg, code = service.CounterApi.delete(
+            job_name=job_name,
+            build_id=build_id)
         return msg, code
 
 
@@ -145,12 +162,16 @@ class CrashLog(Resource):
     })
     def get(self, job_name, build_id, case_name):
         """Get crash log by job_name, build_id, and case_name"""
-        msg = service.CrashLogApi.read_all(job_name=job_name,
-                                           build_id=build_id,
-                                           case_name=case_name
-                                           )
+        msg = service.CrashLogApi.read_all(
+            job_name=job_name,
+            build_id=build_id,
+            case_name=case_name
+        )
         return jsonify(msg)
 
+
+@ns_result.route("/log/crash")
+class CrashLogPost(Resource):
     @ns_result.expect(log_model)
     @ns_result.doc('create_crash_log')
     def post(self):
@@ -159,6 +180,9 @@ class CrashLog(Resource):
         msg, code = service.CrashLogApi.create(data)
         return msg, code
 
+
+@ns_result.route("/log/crash/<string:job_name>/<string:build_id>")
+class CrashLogPost(Resource):
     @ns_result.doc('delete_crash_log', params={
         'job_name': 'Jenkins job name',
         'build_id': 'Jenkins build number'
@@ -187,6 +211,9 @@ class ConsoleLog(Resource):
         )
         return jsonify(msg)
 
+
+@ns_result.route("/log/console")
+class ConsoleLogPost(Resource):
     @ns_result.expect(log_model)
     @ns_result.doc('create_console_log')
     def post(self):
@@ -195,6 +222,9 @@ class ConsoleLog(Resource):
         msg, code = service.ConsoleLogApi.create(data)
         return msg, code
 
+
+@ns_result.route("/log/console/<string:job_name>/<string:build_id>")
+class ConsoleLogDelete(Resource):
     @ns_result.doc('delete_console_log', params={
         'job_name': 'Jenkins job name',
         'build_id': 'Jenkins build number'
@@ -219,27 +249,35 @@ class CommandLog(Resource):
     def get(self, job_name, build_id, case_name):
         """Get command log by job_name, build_id, and case_name"""
         msg = service.CommandLogApi.read_all(
-            job_name=job_name, build_id=build_id, case_name=case_name
+            job_name=job_name,
+            build_id=build_id,
+            case_name=case_name
         )
         return jsonify(msg)
 
+
+@ns_result.route("/log/command/<string:job_name>/<string:build_id>")
+class CommandLogDelete(Resource):
+    @ns_result.doc('delete_command_log', params={
+        'job_name': 'Jenkins job name',
+        'build_id': 'Jenkins build number'})
+    def delete(self, job_name, build_id):
+        """Delete a command log"""
+        msg, code = service.CommandLogApi.delete(
+            job_name=job_name,
+            build_id=build_id
+        )
+        return msg, code
+
+
+@ns_result.route("/log/command")
+class CommandLogPost(Resource):
     @ns_result.expect(log_model)
     @ns_result.doc('create_command_log')
     def post(self):
         """Create a new command log"""
         data = request.json
         msg, code = service.CommandLogApi.create(data)
-        return msg, code
-
-    @ns_result.doc('delete_command_log', params={
-        'job_name': 'Jenkins job name',
-        'build_id': 'Jenkins build number'
-    })
-    def delete(self, job_name, build_id):
-        """Delete a command log"""
-        msg, code = service.CommandLogApi.delete(
-            job_name=job_name, build_id=build_id
-        )
         return msg, code
 
 

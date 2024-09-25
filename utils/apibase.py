@@ -3,6 +3,7 @@ import datetime
 import json
 import uuid
 
+import cassandra
 from cassandra.cqlengine import ValidationError
 
 from utils.logger import get_logger
@@ -186,6 +187,10 @@ class ApiBase:
             **filters
         ).all().allow_filtering().order_by(*order_by).limit(limit)
         ret = []
-        for item in items:
-            ret.append(dict(zip(item.keys(), item.values())))
-        return ret
+        try:
+            for item in items:
+                ret.append(dict(zip(item.keys(), item.values())))
+        except cassandra.ReadFailure as e:
+            logger.info('fetch data failed and timeout')
+        finally:
+            return ret
