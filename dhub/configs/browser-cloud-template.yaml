@@ -41,9 +41,6 @@ spec:
         value: "74"
 
     resources:
-      limits:
-        memory: "8Gi"
-        cpu: "1"
       requests:
         memory: "8Gi"
         cpu: "1"
