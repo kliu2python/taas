@@ -42,8 +42,8 @@ spec:
 
     resources:
       limits:
-        memory: "1Gi"
+        memory: "8Gi"
         cpu: "1"
       requests:
-        memory: "1Gi"
+        memory: "8Gi"
         cpu: "1"
