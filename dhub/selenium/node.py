@@ -23,12 +23,13 @@ NAMESPACE = "selenium-grid"
 class Node:
     def __init__(self,  node_name: str, browser: str = None,
                  version: str = None, portal_ip: list = None,
-                 resolutions_value: str = '1920x1080'):
+                 resolutions_value: str = '1920x1080', ram: str = '8Gi'):
         self.availability = "Down"
         self.browser = browser
         self.node_name = node_name
         self.version = version
         self.portal_ip = portal_ip
+        self.ram = ram
         self.session_id = None
         self.pod_config = None
         self.model_location = None
@@ -130,6 +131,9 @@ class Node:
         pod["spec"]["containers"][0]["env"][6]["value"] = width
         pod["spec"]["containers"][0]["env"][7]["value"] = height
         pod["spec"]["containers"][0]["env"][9]["value"] = dpi
+
+        # setup the RAM
+        pod["spec"]["resources"]["requests"]["memory"] = self.ram
 
         # Create the pod using the YAML manifest
         self.api_client.create_namespaced_pod(
