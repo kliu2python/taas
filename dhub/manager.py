@@ -327,7 +327,9 @@ def list_emulators(user):
 
 def launch_selenium_node(data: dict):
     session = node(node_name=data.get("node_name"), browser=data.get("browser"),
-                   version=data.get("version"), portal_ip=data.get("portal_ip"))
+                   version=data.get("version"), portal_ip=data.get("portal_ip"),
+                   resolutions_value=data.get("resolutions")
+                   )
 
     name = session.create_pod()
     current_time = datetime.datetime.utcnow()

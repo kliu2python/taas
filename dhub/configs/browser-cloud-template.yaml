@@ -31,6 +31,14 @@ spec:
         value: "119.0"
       - name: SE_NODE_STEREOTYPE
         value: "{\"browserName\":\"${SE_NODE_BROWSER_NAME}\",\"browserVersion\":\"${SE_NODE_BROWSER_VERSION}\",\"platformName\": \"Linux\"}"
+      - name: SE_SCREEN_WIDTH
+        value: "1366"
+      - name: SE_SCREEN_HEIGHT
+        value: "768"
+      - name: SE_SCREEN_DEPTH
+        value: "24"
+      - name: SE_SCREEN_DPI
+        value: "74"
 
     resources:
       limits:

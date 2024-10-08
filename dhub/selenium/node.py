@@ -12,6 +12,7 @@ from kubernetes import (
 from kubernetes import stream
 
 from utils.logger import get_logger
+from dhub.constants import DPI_VALUE_MAP
 
 URL = "http://10.160.24.88:31590/status"
 logger = get_logger()
@@ -21,7 +22,8 @@ NAMESPACE = "selenium-grid"
 
 class Node:
     def __init__(self,  node_name: str, browser: str = None,
-                 version: str = None, portal_ip: list = None):
+                 version: str = None, portal_ip: list = None,
+                 resolutions_value: str = '1920x1080'):
         self.availability = "Down"
         self.browser = browser
         self.node_name = node_name
@@ -30,6 +32,7 @@ class Node:
         self.session_id = None
         self.pod_config = None
         self.model_location = None
+        self.resolutions_value = resolutions_value
         self.__enter__()
 
     def __enter__(self):
@@ -120,6 +123,13 @@ class Node:
             "newPath", driver_path
         )
         pod["spec"]["containers"][0]["env"][5]["value"] = new_stereotype
+
+        # setup the resolutions
+        dpi = DPI_VALUE_MAP.get(self.resolutions_value)
+        width, height = self.resolutions_value.split("x")
+        pod["spec"]["containers"][0]["env"][6]["value"] = width
+        pod["spec"]["containers"][0]["env"][7]["value"] = height
+        pod["spec"]["containers"][0]["env"][9]["value"] = dpi
 
         # Create the pod using the YAML manifest
         self.api_client.create_namespaced_pod(
