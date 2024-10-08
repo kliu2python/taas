@@ -133,8 +133,8 @@ class Node:
         pod["spec"]["containers"][0]["env"][9]["value"] = dpi
 
         # setup the RAM
-        pod["spec"]["resources"]["requests"]["memory"] = self.ram
-        pod["spec"]["resources"]["limits"]["memory"] = self.ram
+        pod["spec"]["containers"][0]["resources"]["requests"]["memory"] = self.ram
+        pod["spec"]["containers"][0]["resources"]["limits"]["memory"] = self.ram
 
         # Create the pod using the YAML manifest
         self.api_client.create_namespaced_pod(
