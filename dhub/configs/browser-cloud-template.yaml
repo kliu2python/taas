@@ -44,3 +44,6 @@ spec:
       requests:
         memory: "8Gi"
         cpu: "1"
+      limits:
+        memory: "8Gi"
+        cpu: "1"
