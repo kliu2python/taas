@@ -16,7 +16,8 @@ from dhub.manager import (
     launch_selenium_node,
     delete_selenium_node,
     check_selenium_node,
-    check_selenium_host_point
+    check_selenium_host_point,
+    check_android_status
 )
 from rest import RestApi
 
@@ -138,14 +139,15 @@ class DeleteEmulator(Resource):
 
 @rest.route("/emulator/check/<string:pod_name>")
 class CheckEmulator(Resource):
-    """
-    post body:
-    {
-        "pod_name": "xxxxxx"
-    }
-    """
     def get(self, pod_name):
         results = check_emulator(pod_name)
+        return jsonify({"results": results})
+
+
+@rest.route("/emulator/device/check/<string:pod_name>")
+class CheckAndroidStatus(Resource):
+    def get(self, pod_name):
+        results = check_android_status(pod_name)
         return jsonify({"results": results})
 
 

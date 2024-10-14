@@ -308,6 +308,20 @@ def check_emulator(pod_name):
     return res
 
 
+def check_android_status(pod_name):
+    if not pod_name:
+        return {"res": "not pod_name attached, check it again."}
+    session = android(pod_name=pod_name)
+    pod_status = session.check_android_status()
+    android_version = pod_name.split("-")[0]
+    if pod_status in ["1"]:
+        res = {"name": pod_name, "version": android_version,
+               "status": "ready"}
+    else:
+        res = {"name": pod_name, "status": "not ready"}
+    return res
+
+
 def list_emulators(user):
     res = []
     pods_str = datastore.get("user_pool", identifier=user)
