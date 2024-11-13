@@ -2,6 +2,7 @@ import os
 import traceback
 import uuid
 from time import sleep
+import telnetlib
 
 import yaml
 
@@ -153,6 +154,19 @@ class AndroidEmulator:
             elif port.port == ABD_PORT:
                 self.adb_node_port = port.node_port
         return self.vnc_node_port, self.adb_node_port
+
+    def check_adb_port(self):
+        try:
+            # Try to establish a telnet connection
+            with telnetlib.Telnet(
+                    '10.160.24.88',
+                    self.adb_node_port,
+                    timeout=3):
+                logger.info(f"the adb port {self.adb_node_port} is ready")
+                return True
+        except Exception:
+            return False
+
 
     def delete_pod(self):
         try:

@@ -315,8 +315,11 @@ def check_android_status(pod_name):
     pod_status = session.check_android_status()
     android_version = pod_name.split("-")[0]
     if pod_status in ["1"]:
-        res = {"name": pod_name, "version": android_version,
-               "status": "ready"}
+        if session.check_adb_port():
+            res = {"name": pod_name, "version": android_version,
+                   "status": "ready"}
+        else:
+            res = {"name": pod_name, "status": "not ready"}
     else:
         res = {"name": pod_name, "status": "not ready"}
     return res
