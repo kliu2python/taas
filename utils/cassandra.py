@@ -25,7 +25,6 @@ def register_connection(
     auth = PlainTextAuthProvider(username=username, password=password)
     if isinstance(cluster_ips, str):
         cluster_ips = [cluster_ips]
-    print(f"IP of cluster is {cluster_ips}, and auth is {username}/{password}")
     cluster = Cluster(
         cluster_ips,
         auth_provider=auth,
