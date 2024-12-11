@@ -166,6 +166,52 @@ class AndroidEmulator:
         except Exception as e:
             logger.info(f"adb command input text {text} done failed: {e}")
 
+    def launch_emulator_command(self, dns=None, emulator_name="google_api"):
+        try:
+            command = f"emulator -avd {emulator_name} -gpu host -read-only"
+            if dns:
+                command += f" -dns-server {dns}"
+
+            # Run the command in the background and save its PID
+            exec_command = ["sh", "-c", f"{command} > /dev/null 2>&1 & echo $!"]
+
+            # Capture the response (which includes the PID)
+            resp = stream(
+                self.api_client.connect_get_namespaced_pod_exec,
+                self.pod_name, NAMESPACE, command=exec_command, stderr=True,
+                stdin=False, stdout=True,  # Capture the PID
+                tty=False)
+
+            # Parse the PID from the response
+            pid = resp.strip()
+            if pid.isdigit():
+                logger.info(f"Emulator launched with PID: {pid}")
+                # Save the PID for later termination
+                self.emulator_pid = pid
+                return pid
+            else:
+                logger.warning("Failed to capture emulator PID.")
+
+        except Exception as e:
+            logger.error(f"Failed to launch emulator: {e}")
+
+    def terminate_emulator(self, pid=None):
+        try:
+            if not pid:
+                process_id = self.emulator_pid
+            else:
+                process_id = pid
+            # Use the saved PID to terminate the process
+            kill_command = ["sh", "-c", f"kill -9 {process_id}"]
+            stream(
+                self.api_client.connect_get_namespaced_pod_exec,
+                self.pod_name, NAMESPACE, command=kill_command,
+                stderr=True, stdin=False, stdout=False, tty=False)
+            logger.info(
+                f"Terminated emulator with PID: {process_id}")
+        except Exception as e:
+            logger.error(f"Failed to terminate emulator: {e}")
+
     def get_ports(self, unique_name: str = None):
         if unique_name:
             self.unique_name = unique_name

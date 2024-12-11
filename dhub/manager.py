@@ -330,6 +330,23 @@ def send_adb_command(pod_name, input_text):
     session.enter_adb_command(input_text)
 
 
+def launch_emulator_command(data):
+    pod_name = data.get("pod_name")
+    dns = None
+    emulator_name = None
+    if data.get("dns"):
+        dns = data.get("dns")
+    if data.get("emulator_name"):
+        emulator_name = data.get("emulator_name")
+    session = android(pod_name=pod_name)
+    pid = session.launch_emulator_command(dns, emulator_name)
+    return pid
+
+def terminal_emulator_command(pod_name, pid=None):
+    session = android(pod_name=pod_name)
+    session.terminate_emulator(pid)
+
+
 def list_emulators(user):
     res = []
     pods_str = datastore.get("user_pool", identifier=user)

@@ -18,7 +18,9 @@ from dhub.manager import (
     check_selenium_node,
     check_selenium_host_point,
     check_android_status,
-    send_adb_command
+    send_adb_command,
+    launch_emulator_command,
+    terminal_emulator_command
 )
 from rest import RestApi
 
@@ -156,6 +158,29 @@ class CheckAndroidStatus(Resource):
 class EnterADBCommandLine(Resource):
     def post(self, pod_name, input_text):
         results = send_adb_command(pod_name, input_text)
+        return jsonify({"results": results})
+
+
+@rest.route("/emulator/launch")
+class LaunchEmulatorCommandLine(Resource):
+    """
+        post body:
+        {
+            "pod_name": "xxxxxx",
+            "dns": "10.160.41.22",
+            "emulator_name": "google_api"
+        }
+        """
+    def post(self):
+        data = request.json
+        results = launch_emulator_command(data)
+        return jsonify({"pid": results})
+
+
+@rest.route("/emulator/terminal/<string:pod_name>/<string:pid>")
+class TerminalEmulatorCommandLine(Resource):
+    def post(self, pod_name, pid):
+        results = terminal_emulator_command(pod_name, pid)
         return jsonify({"results": results})
 
 
