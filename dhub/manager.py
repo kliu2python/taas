@@ -325,6 +325,11 @@ def check_android_status(pod_name):
     return res
 
 
+def send_adb_command(pod_name, input_text):
+    session = android(pod_name=pod_name)
+    session.enter_adb_command(input_text)
+
+
 def list_emulators(user):
     res = []
     pods_str = datastore.get("user_pool", identifier=user)

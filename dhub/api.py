@@ -17,7 +17,8 @@ from dhub.manager import (
     delete_selenium_node,
     check_selenium_node,
     check_selenium_host_point,
-    check_android_status
+    check_android_status,
+    send_adb_command
 )
 from rest import RestApi
 
@@ -148,6 +149,13 @@ class CheckEmulator(Resource):
 class CheckAndroidStatus(Resource):
     def get(self, pod_name):
         results = check_android_status(pod_name)
+        return jsonify({"results": results})
+
+
+@rest.route("/emulator/adb/<string:pod_name>/<string:input_text>")
+class EnterADBCommandLine(Resource):
+    def post(self, pod_name, input_text):
+        results = send_adb_command(pod_name, input_text)
         return jsonify({"results": results})
 
 

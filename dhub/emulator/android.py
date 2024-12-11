@@ -12,6 +12,7 @@ from kubernetes import (
 )
 from kubernetes.stream import stream
 
+from dhub.constants import ADB_KEYCODES
 from dhub.resources.api_level_comparison_table import (
     android_api_to_version
 )
@@ -142,6 +143,28 @@ class AndroidEmulator:
             return resp
         except Exception as e:
             print(f"Error while checking Android boot status: {e}")
+
+    def enter_adb_command(self, text):
+        try:
+            if text.isdigit():
+                exec_command = ['adb', 'shell', 'input', 'keyevent', text]
+            else:
+                exec_command = ['adb', 'shell', 'input', 'text', text]
+            resp = stream(
+                self.api_client.connect_get_namespaced_pod_exec,
+                self.pod_name,
+                NAMESPACE,
+                command=exec_command,
+                stderr=True,
+                stdin=False,
+                stdout=True,
+                tty=False
+            )
+            # Check if Android has booted
+            if resp.strip() == '':
+                logger.info(f"adb command input text {text} done")
+        except Exception as e:
+            logger.info(f"adb command input text {text} done failed: {e}")
 
     def get_ports(self, unique_name: str = None):
         if unique_name:
