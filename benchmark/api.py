@@ -51,7 +51,7 @@ rest.add_namespace(ns_result)
 
 # Define Result API endpoint under the 'ns_result' namespace
 @ns_result.route("/result/<string:job_name>/<string:build_id>")
-class Result(Resource):
+class ResultAll(Resource):
     @ns_result.doc('get_result', params={
         'job_name': 'Jenkins job name',
         'build_id': 'Jenkins build number'}
@@ -59,6 +59,22 @@ class Result(Resource):
     def get(self, job_name, build_id):
         """Get result by job_name and build_id"""
         msg = service.ResultApi.read_all(job_name=job_name, build_id=build_id)
+        return jsonify(msg)
+
+
+@ns_result.route("/result/<string:job_name>/<string:build_id>/<string"
+                 ":case_name>")
+class ResultOne(Resource):
+    @ns_result.doc('get_result', params={
+        'job_name': 'Jenkins job name',
+        'build_id': 'Jenkins build number',
+        'case_name': 'Jenkins test case name'
+    }
+    )
+    def get(self, job_name, build_id, case_name):
+        """Get result by job_name and build_id"""
+        msg = service.ResultApi.read_all(job_name=job_name,
+                                         build_id=build_id, case_name=case_name)
         return jsonify(msg)
 
 
@@ -74,7 +90,7 @@ class ResultPost(Resource):
 
 
 @ns_result.route("/result/<string:job_name>/<string:build_id>")
-class ResultDelete(Resource):
+class ResultDeleteAll(Resource):
     @ns_result.expect(result_model)
     @ns_result.doc('update_result', params={
         'job_name': 'Jenkins job name',
@@ -96,6 +112,35 @@ class ResultDelete(Resource):
         """Delete a result"""
         msg, code = service.ResultApi.delete(job_name=job_name,
                                              build_id=build_id)
+        return msg, code
+
+
+@ns_result.route("/result/<string:job_name>/<string:build_id>/<string"
+                 ":case_name>")
+class ResultDeleteOne(Resource):
+    @ns_result.expect(result_model)
+    @ns_result.doc('update_result', params={
+        'job_name': 'Jenkins job name',
+        'build_id': 'Jenkins build number'
+    })
+    def put(self, job_name, build_id, case_name):
+        """Update an existing result"""
+        data = request.json
+        msg, code = service.ResultApi.update_one(data,
+                                                 job_name=job_name,
+                                                 build_id=build_id,
+                                                 case_name=case_name)
+        return msg, code
+
+    @ns_result.doc('delete_result', params={
+        'job_name': 'Jenkins job name',
+        'build_id': 'Jenkins build number'
+    })
+    def delete(self, job_name, build_id, case_name):
+        """Delete a result"""
+        msg, code = service.ResultApi.delete(job_name=job_name,
+                                             build_id=build_id,
+                                             case_name=case_name)
         return msg, code
 
 

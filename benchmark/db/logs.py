@@ -15,6 +15,7 @@ class Result(Model):
 
     job_name = columns.Text(primary_key=True, partition_key=True)
     build_id = columns.Text(primary_key=True, partition_key=True)
+    case_name = columns.Text(primary_key=True, partition_key=True)
     test = columns.Text()
     platform = columns.Text()
     version = columns.Text()
@@ -23,6 +24,7 @@ class Result(Model):
     start_time = columns.DateTime()
     end_time = columns.DateTime()
     result = columns.Text()
+    average = columns.Text()
 
 
 class CaseInfo(Model):
