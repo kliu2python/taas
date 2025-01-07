@@ -288,7 +288,4 @@ class Task(Resource):
     def get(self, job_name):
         """Get task status by job_name"""
         msg = check_job_status(job_name)
-        if msg:
-            return jsonify(msg), 200
-        else:
-            return msg, 404
+        return msg, 200 if msg else 404
