@@ -16,15 +16,14 @@ class Result(Model):
     job_name = columns.Text(primary_key=True, partition_key=True)
     build_id = columns.Text(primary_key=True, partition_key=True)
     case_name = columns.Text(primary_key=True, partition_key=True)
-    test = columns.Text()
     platform = columns.Text()
     version = columns.Text()
-    user = columns.Text()
     settings = columns.Text()
     start_time = columns.DateTime()
     end_time = columns.DateTime()
     result = columns.Text()
     average = columns.Text()
+    cpu_max = columns.Text()
 
 
 class CaseInfo(Model):
