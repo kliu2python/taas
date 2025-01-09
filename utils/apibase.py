@@ -69,6 +69,15 @@ class ApiBase:
                 else:
                     raise ItemExistsError
             else:
+                if "end_time" in data or "start_time" in data:
+                    if isinstance(data["end_time"], str):
+                        data["end_time"] = datetime.datetime.fromisoformat(
+                            data["end_time"]
+                        )
+                    if isinstance(data["start_time"], str):
+                        data["start_time"] = datetime.datetime.fromisoformat(
+                            data["start_time"]
+                        )
                 cls.__db_model__.create(**data)
         except ValidationError as e:
             ret_msg = f"Validation Error, please check your input data, {e}"
