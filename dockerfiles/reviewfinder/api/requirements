@@ -6,7 +6,6 @@ flask_restful==0.3.9
 eventlet==0.36.1
 flask-cors==3.0.9
 singleton_decorator==1.0.0
-urllib3==2.2.2
 flask-restx==1.3.0
 aiohttp==3.11.11
 google_play_scraper==1.2.7
