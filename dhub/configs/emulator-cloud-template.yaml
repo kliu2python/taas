@@ -21,6 +21,9 @@ spec:
       volumeMounts:
         - name: apk-volume
           mountPath: /home/fortinet/apk
+        - name: log-volume
+          mountPath: /home/fortinet/appium.log
+          subPath: appium.log  # Mount the specific log file
       env:
         - name: ANDROID_SDK_ROOT
           value: "/opt/android-sdk"
@@ -30,6 +33,9 @@ spec:
     - name: apk-volume
       hostPath:
         path: /home/fortinet/apk
+    - name: log-volume
+      hostPath:
+        path: /var/log/emulator-cloud  # Host directory for storing the log file
   nodeSelector:
     platform: gpu
 ---
