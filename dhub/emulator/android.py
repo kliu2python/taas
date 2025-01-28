@@ -87,12 +87,14 @@ class AndroidEmulator:
         logger.info(f"read the contents of model file")
 
         pod = yaml.safe_load(contents[0])
-        pod["metadata"]["name"] = self.unique_name
-        pod["metadata"]["labels"]["app"] = self.unique_name
+        unique_name = self.unique_name
+        pod["metadata"]["name"] = unique_name
+        pod["metadata"]["labels"]["app"] = unique_name
         pod["spec"]["containers"][0]["image"] = image
+        pod["spec"]["containers"][0]["volumeMounts"][1]["subPath"] = unique_name
         service = yaml.safe_load(contents[1])
-        service["metadata"]["name"] = self.unique_name
-        service["spec"]["selector"]["app"] = self.unique_name
+        service["metadata"]["name"] = unique_name
+        service["spec"]["selector"]["app"] = unique_name
 
         # Create the pod using the YAML manifest
         self.api_client.create_namespaced_pod(

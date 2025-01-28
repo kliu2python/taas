@@ -22,7 +22,7 @@ spec:
         - name: apk-volume
           mountPath: /home/fortinet/apk
         - name: log-volume
-          mountPath: /home/fortinet/appium.log
+          mountPath: /home/fortinet/appium_log
           subPath: appium.log  # Mount the specific log file
       env:
         - name: ANDROID_SDK_ROOT
@@ -35,7 +35,8 @@ spec:
         path: /home/fortinet/apk
     - name: log-volume
       hostPath:
-        path: /var/log/emulator-cloud  # Host directory for storing the log file
+        path: /home/fortinet/appium_log
+        type: DirectoryOrCreate
   nodeSelector:
     platform: gpu
 ---
@@ -46,7 +47,7 @@ metadata:
   namespace: emulator-cloud
 spec:
   selector:
-    app: emulator-cloud-android7
+    app: emulator-cloud-android11
   ports:
     - name: novnc-port
       port: 6901
