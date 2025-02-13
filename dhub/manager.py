@@ -206,3 +206,211 @@ def option_device(device_name, session_id, op_method, **kwargs):
         device_obj = device_assignment.get("device_obj")
         return device_obj.option_device(op_method, **kwargs)
     return "Error: Device does not exist"
+<<<<<<< Updated upstream
+=======
+
+
+def launch_emulator(data: dict):
+    if data.get("os") == "android":
+        session = android(data.get("version"), data.get("dns"))
+    else:
+        session = None
+
+    name = session.create_pod()
+    creator = data.get("creator")
+    datastore.set("user_pool", [name], identifier=creator)
+    current_time = datetime.datetime.utcnow()
+    if data.get("expiration_time") and creator != "automation":
+        data_expiration = data.get("expiration_time")
+        if data_expiration == -1:
+            expiration_time = current_time + datetime.timedelta(days=30)
+        elif 0 <= data_expiration <= 3:
+            expiration_time = (current_time +
+                               datetime.timedelta(days=data_expiration))
+        else:
+            return ("Please setup the expiration to -1 (max is 30 days) or "
+                    "between 0 to 3 days, or remove expiration_time param "
+                    "from body (default is 3 days)")
+    elif creator == "automation":
+        expiration_time = current_time + datetime.timedelta(hours=2)
+    elif creator == "prod":
+        expiration_time = current_time + datetime.timedelta(days=300)
+    else:
+        expiration_time = current_time + datetime.timedelta(days=3)
+    datastore.set("expiration_time",
+                  expiration_time.strftime('%Y-%m-%d %H:%M:%S'),
+                  identifier=name)
+    datastore.set("pools", [json.dumps({
+        "pod_name": name,
+        "creator": creator
+    })])
+    logger.info(f"going to create emulator {str(data)}")
+    return name
+
+
+def do_fetch_pools():
+    return datastore.get("pools")
+
+
+def delete_emulator_worker(data: dict):
+    datastore.set("worker_data", [json.dumps(data)])
+    pod_name = data.get("pod_name")
+    creator = data.get("creator")
+    datastore.srem("user_pool", [pod_name], identifier=creator)
+    return "working on progress"
+
+
+def delete_emulator(data: dict):
+    if not data.get("pod_name"):
+        return {"res": "not pod_name attached, check it again."}
+    if not data.get("creator"):
+        return {"res": "not creator attached, check it again."}
+    pod_name = data.get("pod_name")
+    session = android(pod_name=pod_name)
+    res = session.delete_pod()
+    datastore.delete("pod_info", identifier=pod_name)
+    datastore.delete("expiration_time", identifier=pod_name)
+    srem_res = datastore.srem("pools", [json.dumps(data)])
+    if srem_res == 1:
+        logger.info(f"The pod {pod_name} removed from cache")
+    else:
+        logger.info(f"The pod {pod_name} removed from cache failed")
+    logger.info(f"The res of delete pod {pod_name} is {res}")
+    return res
+
+
+def check_emulator(pod_name):
+    if not pod_name:
+        return {"res": "not pod_name attached, check it again."}
+    session = android(pod_name=pod_name)
+    pod_status = session.check_pod()
+    android_version = pod_name.split("-")[0]
+    if pod_status not in ["deleted", "unknown"]:
+        ports = session.get_ports(pod_name)
+        res = {"name": pod_name, "version": android_version,
+               "status": pod_status, "vnc_port": ports[0], "adb_port": ports[1]}
+    else:
+        res = {"name": pod_name, "status": pod_status}
+    return res
+
+
+def check_android_status(pod_name):
+    if not pod_name:
+        return {"res": "not pod_name attached, check it again."}
+    session = android(pod_name=pod_name)
+    pod_status = session.check_android_status()
+    android_version = pod_name.split("-")[0]
+    if pod_status in ["1"]:
+        if session.check_adb_port():
+            res = {"name": pod_name, "version": android_version,
+                   "status": "ready"}
+        else:
+            res = {"name": pod_name, "status": "not ready"}
+    else:
+        res = {"name": pod_name, "status": "not ready"}
+    return res
+
+
+def send_adb_command(pod_name, input_text):
+    session = android(pod_name=pod_name)
+    session.enter_adb_command(input_text)
+
+
+def launch_emulator_command(data):
+    pod_name = data.get("pod_name")
+    dns = None
+    emulator_name = None
+    if data.get("dns"):
+        dns = data.get("dns")
+    if data.get("emulator_name"):
+        emulator_name = data.get("emulator_name")
+    session = android(pod_name=pod_name)
+    pid = session.launch_emulator_command(dns, emulator_name)
+    return pid
+
+def terminal_emulator_command(pod_name, pid=None):
+    session = android(pod_name=pod_name)
+    session.terminate_emulator(pid)
+
+
+def list_emulators(user):
+    res = []
+    pods_str = datastore.get("user_pool", identifier=user)
+    if pods_str:
+        for pod_name in pods_str:
+            pod_details = datastore.get("pod_info", identifier=pod_name)
+            if not pod_details or pod_details['status'] not in ['Running',
+                                                                'Deleted',
+                                                                'deleted']:
+                # If the key doesn't exist, fetch the details
+                pod_details = check_emulator(pod_name)
+                # Store the fetched details in the datastore
+                datastore.set("pod_info", pod_details, identifier=pod_name)
+            res.append(pod_details)
+    return res
+
+
+def launch_selenium_node(data: dict):
+    session = node(node_name=data.get("node_name"), browser=data.get("browser"),
+                   version=data.get("version"), portal_ip=data.get("portal_ip"),
+                   resolutions_value=data.get("resolutions"),
+                   ram=data.get("ram")
+                   )
+
+    name = session.create_pod()
+    current_time = datetime.datetime.utcnow()
+    if data.get("expiration_time"):
+        data_expiration = data.get("expiration_time")
+        if data_expiration == -1:
+            expiration_time = current_time + datetime.timedelta(days=30)
+        elif 0 <= data_expiration <= 3:
+            expiration_time = (current_time +
+                               datetime.timedelta(days=data_expiration))
+        else:
+            return ("Please setup the expiration to -1 (max is 30 days) or "
+                    "between 0 to 3 days, or remove expiration_time param "
+                    "from body (default is 3 days)")
+    else:
+        expiration_time = current_time + datetime.timedelta(hours=3)
+    datastore.set("expiration_time",
+                  expiration_time.strftime('%Y-%m-%d %H:%M:%S'),
+                  identifier=name)
+    datastore.set("pools", [json.dumps({
+        "pod_name": name
+    })])
+    logger.info(f"going to create emulator {str(data)}")
+    return name
+
+
+def delete_selenium_node(pod_name: str):
+    datastore.set("worker_data", [pod_name])
+    return "working on progress"
+
+
+def do_delete_selenium_node(pod_name: str):
+    session = node(pod_name)
+    res = session.delete_pod()
+    cache_value = {"pod_name": f"{pod_name}"}
+    datastore.delete("expiration_time", identifier=pod_name)
+    srem_res = datastore.srem("pools", [json.dumps(cache_value)])
+    if srem_res == 1:
+        logger.info(f"The pod {pod_name} removed from cache")
+    else:
+        logger.info(f"The pod {pod_name} removed from cache failed")
+    logger.info(f"The res of delete pod {pod_name} is {res}")
+    return res
+
+
+def check_selenium_node(pod_name: str):
+    session = node(pod_name)
+    res = session.check_selenium_node_status()
+    logger.info(f"The res of delete pod {pod_name} is {res}")
+    return res
+
+
+def check_selenium_host_point(pod_name: str, data: dict):
+    session = node(pod_name)
+    commands = data.get("commands")
+    res = session.check_selenium_hostname_point(commands)
+    return res
+>>>>>>> Stashed changes

@@ -1,8 +1,7 @@
 import os
-
 import yaml
-
 import features
+from flask_restx import Namespace  # Import Flask-RESTX Namespace
 
 _api = None
 _load_resource = __import__
@@ -21,11 +20,13 @@ class RestApi:
         self.register_callbacks()
 
     def register_callbacks(self):
+        # Register Flask app callbacks
         for k, v in self.callbacks.items():
             getattr(_api.app, k)(v)
 
     def route(self, route_path):
         def wrap(func):
+            # Create routes for the given path
             routes = []
             for base_route in self.base_routes:
                 route = f"{base_route}{route_path}"
@@ -39,27 +40,41 @@ class RestApi:
                         routes.append(last_route.rstrip("/"))
             _api.add_resource(func, *routes)
             return func
+
         return wrap
+
+    def add_namespace(self, namespace, path=None):
+        """
+        Registers a namespace to the API at a specified path.
+
+        :param namespace: Flask-RESTPlus Namespace object
+        :param path: The URL path to register the namespace at. If None, the namespace's default path is used.
+        """
+        if not isinstance(namespace, Namespace):
+            raise Exception("Provided object is not a valid Namespace instance")
+
+        # If no path is provided, use the namespace's default path
+        namespace_path = path or namespace.path
+
+        # Register the namespace with the Flask-RESTPlus API
+        _api.add_namespace(namespace, path=namespace_path)
 
 
 def load_api_resource(api):
     global _api
     _api = api
     config_path = os.path.join(
-        os.path.join(
-            os.path.dirname(__file__),
-            "service_config.yml"
-        )
-    )
+        os.path.join(os.path.dirname(__file__), "service_config.yml"))
     with open(config_path) as FILE:
         service_config = yaml.safe_load(FILE)
     if service_config:
         enabled_features = (
-            service_config.get("service_config", {}).get("services", [])
-        )
+            service_config.get("service_config", {}).get("services", []))
     else:
         raise Exception("Failed to load service_config")
+
     _load_resource("welcome")
+
     for feature in enabled_features:
         print(f"Loading Feature: {feature}")
         _loaded_api.append(feature)
@@ -67,7 +82,8 @@ def load_api_resource(api):
         if feature_config is not None:
             _load_resource(feature_config)
         else:
-            print(f"!!!Feature is not exists for {feature}!!!")
+            print(f"!!!Feature does not exist for {feature}!!!")
+
     return _api
 
 

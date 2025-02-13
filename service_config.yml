@@ -12,4 +12,7 @@ service_config:
 #        - bpproxy
 #        - bpmanager
 #        - upgrade
-        - datasync
+#        - datasync
+#        - pool
+#        - jenkins
+        - mongodb

@@ -1,10 +1,10 @@
-FROM python:3.10.15-slim-bullseye
+FROM public.ecr.aws/sam/build-python3.8:latest
 
-COPY . /taas
+COPY . /pool
 
-WORKDIR /taas
+WORKDIR /pool
 
 RUN pip3 install --no-cache-dir -r baserequirements \
     && pip3 install --no-cache-dir -r requirements
 
-CMD ["sh", "docker_run.sh"]
+CMD ["bash", "docker_run.sh"]
