@@ -1,8 +1,8 @@
-FROM python:3.6.12-buster
+FROM public.ecr.aws/sam/build-python3.8:latest
 
-COPY . /test_assistant_rest_api
+COPY . /mongodb
 
-WORKDIR /test_assistant_rest_api
+WORKDIR /mongodb
 
 RUN pip3 install --no-cache-dir -r baserequirements \
     && pip3 install --no-cache-dir -r requirements

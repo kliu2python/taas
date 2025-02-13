@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: emulator-cloud-android7
+  namespace: emulator-cloud
+  labels:
+    app: emulator-cloud-android7
+spec:
+  restartPolicy: Never
+  containers:
+    - name: emulator-service
+      image: 10.160.16.60/emulator-cloud/emulator_cloud:latest
+      imagePullPolicy: Always
+      securityContext:
+        privileged: true
+      ports:
+        - name: novnc-port
+          containerPort: 6901
+        - name: appium-port
+          containerPort: 4723
+      volumeMounts:
+        - name: apk-volume
+          mountPath: /home/fortinet/apk
+        - name: log-volume
+          mountPath: /home/fortinet/logs
+      env:
+        - name: ANDROID_SDK_ROOT
+          value: "/opt/android-sdk"
+        - name: PATH
+          value: "/opt/android-sdk/emulator:/opt/android-sdk/cmdline-tools/latest/bin:/opt/android-sdk/cmdline-tools/tools/bin:/opt/android-sdk/platform-tools:/usr/local/bin:/usr/bin:/bin"
+  volumes:
+    - name: apk-volume
+      hostPath:
+        path: /home/fortinet/apk
+    - name: log-volume
+      hostPath:
+        path: /home/fortinet/logs
+        type: DirectoryOrCreate
+  nodeSelector:
+    platform: gpu
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: emulator-service
+  namespace: emulator-cloud
+spec:
+  selector:
+    app: emulator-cloud-android11
+  ports:
+    - name: novnc-port
+      port: 6901
+      targetPort: 6901
+    - name: appium-port
+      port: 4723
+      targetPort: 4723
+  type: NodePort

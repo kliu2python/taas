@@ -3,6 +3,7 @@ import os
 import eventlet
 from eventlet import wsgi
 from flask import Flask
+from flask_cors import CORS
 from flask_restful import Api
 
 from rest import load_api_resource
@@ -13,11 +14,16 @@ logger = get_logger()
 
 app = Flask("TAAS")
 api = Api(app)
+CORS(app,
+     resources={r"/*": {"origins": "*"}},
+     methods=['GET', 'HEAD', 'POST', 'OPTIONS'],
+     allow_headers=["Content-Type"]
+     )
 load_api_resource(api)
 
 if __name__ == "__main__":
     enable_debug = os.environ.get("DEBUG", "False") == "True"
-    port = int(os.environ.get("LISTEN_PORT", 8000))
+    port = int(os.environ.get("LISTEN_PORT", 8080))
     if enable_debug:
         app.run(debug=True, port=port, host="0.0.0.0")
     else:

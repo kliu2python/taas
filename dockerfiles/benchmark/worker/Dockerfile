@@ -1,4 +1,4 @@
-FROM python:3.6.12-slim-buster
+FROM python:3.10.15-slim-bullseye
 
 COPY . /taas
 

@@ -1,4 +1,5 @@
 import pika
+from time import sleep
 
 from benchmark.common.conf import CONF
 from utils.logger import get_logger
@@ -45,13 +46,28 @@ class Worker:
             # To provent the queue too long
             ch.basic_ack(delivery_tag=method.delivery_tag)
 
+    def _ensure_channel_open(self):
+        try:
+            if self.channel.is_closed:
+                print("Channel is closed. Reconnecting...")
+                self.init_message_queue()  # Reinitialize connection and channel
+        except AttributeError:
+            print("Channel not initialized. Reinitializing...")
+            self.init_message_queue()
+
     def consume_message(self):
         while True:
             try:
+                self._ensure_channel_open()
                 self.channel.basic_consume(
                     queue=QUEUE_NAME,
                     on_message_callback=self._consume_call_back
                 )
+                LOGGER.info("Starting consumption...")
                 self.channel.start_consuming()
-            except Exception as e:
-                LOGGER.exception("Error when consume message", exc_info=e)
+            except pika.exceptions.ChannelWrongStateError:
+                LOGGER.exception("Channel error. Reinitializing...")
+                self.init_message_queue()
+            except pika.exceptions.AMQPConnectionError:
+                LOGGER.exception("Connection error. Retrying in 5 seconds...")
+                sleep(5)
