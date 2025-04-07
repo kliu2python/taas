@@ -6,7 +6,7 @@ redis:
   port: 6379
 db:
   cluster_ips:
-    - 10.43.88.151
+    - 10.160.13.60
   username: taas
   password: taas
   dc: dc1

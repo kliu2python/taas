@@ -26,3 +26,4 @@ if __name__ == "__main__":
         app.run(debug=True, port=port, host="0.0.0.0")
     else:
         wsgi.server(eventlet.listen(("0.0.0.0", port)), app, log=logger)
+    logger.info(f"start the server on port {port}")
