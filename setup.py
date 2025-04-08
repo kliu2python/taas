@@ -38,7 +38,9 @@ setup(
         'google_play_scraper==1.2.7',
         'app_store_scraper==0.3.5',
         'google-api-python-client==2.159.0',
-        'pydantic'
+        'pydantic',
+        'pytz',
+        'asyncpraw'
     ],
     packages=[],
     name='taas',
