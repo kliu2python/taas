@@ -6,9 +6,9 @@ from typing import Dict, Any, List
 
 from utils.logger import get_logger
 
-logger = get_logger(__name__)
+logger = get_logger()
 
-MONGODB_API_BASE = "http://10.160.24.17:31742/api/v1/mongodb"
+MONGODB_API_BASE = "http://10.160.24.88:31742/api/v1/mongodb"
 DB_NAME = "reviewfinder"
 
 
@@ -16,13 +16,13 @@ class RedditSubscriptionService:
     """Service for managing Reddit topic subscriptions."""
 
     @staticmethod
-    def subscribe(email: str, topic: str) -> Dict[str, Any]:
+    def subscribe(email: str, topic: list) -> Dict[str, Any]:
         """
         Subscribe a user to a topic.
 
         Args:
             email: User's email address
-            topic: Topic name to subscribe to
+            topic: List of topics name to subscribe to
 
         Returns:
             Dict with operation status and message
@@ -30,29 +30,42 @@ class RedditSubscriptionService:
         try:
             # Ensure user exists
             user_data = {"email": email}
-            user_response = RedditSubscriptionService._create_document(
-                "users", user_data
-            )
-            if not user_response:
-                raise Exception("Failed to create user")
-
-            # Ensure topic exists
-            topic_data = {"name": topic}
-            topic_response = RedditSubscriptionService._create_document(
-                "topics", topic_data
-            )
-            if not topic_response:
-                raise Exception("Failed to create topic")
 
             # Create subscription
             subscription_data = {
                 "email": email,
-                "topic": topic,
-                "created_at": datetime.now(pytz.UTC).isoformat()
+                "topic": topic
             }
-            sub_response = RedditSubscriptionService._create_document(
-                "subscriptions", subscription_data
-            )
+            start_time = datetime.now()
+            if RedditSubscriptionService._find_documents(
+                    "subscriptions",
+                    user_data):
+                logger.info(f"complete find_documents {datetime.now() - start_time}")
+                start_time = datetime.now()
+                if RedditSubscriptionService._find_documents(
+                        "subscriptions", subscription_data):
+                    sub_response = True
+                    logger.info(
+                        f"complete find_document {datetime.now() - start_time}")
+                else:
+                    subscription_data["updated_at"] = datetime.now(
+                        pytz.UTC
+                    ).isoformat()
+                    subscription_tmp_data = {"filter": user_data,
+                                             "update": subscription_data}
+                    start_time = datetime.now()
+                    sub_response = RedditSubscriptionService._update_document(
+                        "subscriptions", subscription_tmp_data
+                    )
+                    logger.info(
+                        f"complete update_document"
+                        f" {datetime.now() - start_time}")
+            else:
+                subscription_data["created_at"] = datetime.now(
+                    pytz.UTC
+                ).isoformat()
+                sub_response = RedditSubscriptionService._create_document(
+                    "subscriptions", subscription_data)
             if not sub_response:
                 raise Exception("Failed to create subscription")
 
@@ -116,6 +129,16 @@ class RedditSubscriptionService:
         return response.status_code == 200
 
     @staticmethod
+    def _update_document(collection: str, data: dict) -> bool:
+        """Create a document in the specified collection."""
+        response = requests.put(
+            f"{MONGODB_API_BASE}/document/update",
+            params={"db": DB_NAME, "collection": collection},
+            json=data
+        )
+        return response.status_code == 200
+
+    @staticmethod
     def _find_documents(
         collection: str,
         filter_query: dict
@@ -131,7 +154,7 @@ class RedditSubscriptionService:
         )
         if response.status_code != 200:
             return []
-        return response.json().get('documents', [])
+        return response.json()
 
     @staticmethod
     def get_user_subscriptions(email: str) -> Dict[str, Any]:
@@ -175,14 +198,18 @@ class RedditSubscriptionService:
             Dict containing all subscriptions organized by email
         """
         try:
-            response = requests.get(f"{MONGODB_API_BASE}/document/find",
-                params={"db": DB_NAME, "collection": "subscriptions",
-                    "filter": "{}"})
+            response = requests.get(
+                f"{MONGODB_API_BASE}/document/find",
+                params={
+                    "db": DB_NAME, "collection": "subscriptions",
+                    "filter": "{}"
+                }
+            )
 
             if response.status_code != 200:
                 raise Exception("Failed to fetch subscriptions")
 
-            subscriptions = response.json().get('documents', [])
+            subscriptions = response.json()
 
             # Organize subscriptions by email
             organized_subs = {}
@@ -192,18 +219,23 @@ class RedditSubscriptionService:
                 created_at = sub.get('created_at')
 
                 if email not in organized_subs:
-                    organized_subs[email] = {'topics': [],
-                        'subscription_count': 0, 'subscriptions': []}
+                    organized_subs[email] = {
+                        'topics': [],
+                        'subscription_count': 0,
+                        'subscriptions': []
+                    }
 
                 organized_subs[email]['topics'].append(topic)
                 organized_subs[email]['subscription_count'] += 1
                 organized_subs[email]['subscriptions'].append(
                     {'topic': topic, 'created_at': created_at})
 
-            return {"status": "success",
+            return {
+                "status": "success",
                 "total_subscriptions": len(subscriptions),
                 "total_subscribers": len(organized_subs),
-                "subscriptions": organized_subs}
+                "subscriptions": organized_subs
+            }
 
         except Exception as e:
             logger.error(f"Error fetching all subscriptions: {str(e)}")

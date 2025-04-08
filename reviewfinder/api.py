@@ -127,7 +127,8 @@ class SubscriptionManagement(Resource):
         if not data or 'email' not in data or 'topic' not in data:
             abort(400, description="Missing email or topic in request body")
 
-        result = RedditSubscriptionService.subscribe(data['email'], data['topic'])
+        result = RedditSubscriptionService.subscribe(data['email'],
+                                                     data['topic'])
         if result['status'] == 'error':
             abort(500, description=result['message'])
         return jsonify(result)

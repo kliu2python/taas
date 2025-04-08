@@ -1,90 +1,117 @@
+import json
 from datetime import datetime
-from typing import Dict, Any, List
 import asyncio
 
 from reviewfinder.services.smtp_server import SMTPServer
 from reviewfinder.services.reddit.client import RedditClient
+from reviewfinder.services.reddit.subscription import RedditSubscriptionService
 from reviewfinder.services.reddit.util import (
-    filter_posts_by_topics, format_email_body
+    filter_posts_by_topics,
+    format_email_body
 )
 from utils.logger import get_logger
 
-logger = get_logger(__name__)
-
-MONITORED_TOPICS = ["FortiToken Mobile", "Fortigate", "FAC", "FortiToken Cloud"]
+logger = get_logger()
 
 
 class RedditService:
     """Service for managing Reddit post collection and email notifications."""
-
     def __init__(self):
         self.smtp_server = SMTPServer.from_config()
         self.reddit_client = None
 
+    async def send_email_to_recipient(
+            self, recipient, subject, email_body
+    ):
+        # Wrap your SMTP call asynchronously if needed
+        await self.smtp_server.send_email(subject=subject, body=email_body,
+                                          recipients=[recipient])
+        return recipient
+
+    async def process_recipient_group(
+            self, recipient_group, subject, email_body
+    ):
+        tasks = [
+            self.send_email_to_recipient(recipient, subject, email_body) for
+            recipient in recipient_group
+        ]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        return results
+
     async def send_daily_summary(self,
-                                 additional_recipients: List[str] = None
-                                 ) -> Dict[str, Any]:
-        """Send daily summary to subscribers.
-
-        Args:
-            additional_recipients: Optional list of additional email addresses
-
-        Returns:
-            Dict containing status and details of the operation
-        """
+                                 additional_recipients: dict = None) -> dict:
         try:
             logger.info("Starting daily summary generation...")
             await self.initialize_reddit_client()
 
-            # Fetch and filter posts
+            # Group recipients by their interest topics (
+            # assuming additional_recipients is a dict
+            # where keys are email addresses and values are interests or topics)
+            recipient_groups = {}
+            for recipient, interests in additional_recipients.items():
+                # Group by topic, assuming each
+                # recipient may have one primary interest
+                for topic in interests.get("topics"):
+                    topic = json.dumps(topic)
+                    recipient_groups.setdefault(topic, []).append(recipient)
+
             logger.info("Fetching recent posts...")
             posts = await self.reddit_client.fetch_recent_posts(hours=24)
             logger.info(f"Found {len(posts)} posts in past 24 hours")
 
-            filtered_posts = filter_posts_by_topics(posts, MONITORED_TOPICS)
-            filtered_count = sum(
-                len(posts) for posts in filtered_posts.values())
+            # Pre-filter posts for each topic
+            filtered_posts_by_topic = {
+                topic: filter_posts_by_topics(posts, json.loads(topic)) for
+                topic in recipient_groups
+            }
 
-            topics_str = ', '.join(MONITORED_TOPICS)
-            logger.info(f"Filtered to {filtered_count} posts matching topics: "
-                        f"{topics_str}")
+            # Use one subject and email body per topic group
+            tasks = []
+            current_date = datetime.now().strftime('%Y-%m-%d')
+            for topic, group in recipient_groups.items():
+                filtered_posts = filtered_posts_by_topic.get(topic, {})
+                filtered_count = sum(
+                    len(post_list) for post_list in filtered_posts.values())
+                if filtered_count == 0:
+                    logger.info(
+                        f"No relevant posts for topic {topic}, "
+                        f"skipping email for this group")
+                    continue
 
-            # If no relevant posts, return early
-            if filtered_count == 0:
-                logger.info("No relevant posts found, skipping email")
+                email_body = format_email_body(filtered_posts)
+                subject = f"Daily Reddit Summary - {current_date} - {topic}"
+                tasks.append(
+                    self.process_recipient_group(group, subject, email_body)
+                )
+
+            if not tasks:
+                logger.info(
+                    "No emails to send, no relevant posts found for topics."
+                )
                 return {
                     "status": "success",
-                    "summary_date": datetime.now().isoformat(), "topics": [],
-                    "message": "No relevant posts found"}
+                    "summary_date": datetime.now().isoformat(),
+                    "topics": [],
+                    "message": "No relevant posts found"
+                }
 
-            # Prepare and send email
-            logger.info("Preparing email content...")
-            email_body = format_email_body(filtered_posts)
-            current_date = datetime.now().strftime('%Y-%m-%d')
-            subject = f"Daily Reddit Summary - {current_date}"
-
-            logger.info("Sending email...")
-            self.smtp_server.send_email(
-                subject=subject, body=email_body,
-                recipients=additional_recipients)
-            logger.info("Email sent successfully")
-
+            # Run all email sending tasks concurrently
+            await asyncio.gather(*tasks)
+            logger.info("Emails sent successfully")
             return {
                 "status": "success",
                 "summary_date": datetime.now().isoformat(),
-                "topics": list(filtered_posts.keys()),
-                "post_counts": {
-                    topic: len(posts) for topic, posts in
-                    filtered_posts.items()}
+                "topics": list(filtered_posts_by_topic.keys())
             }
 
         except Exception as e:
-            logger.error(
-                f"Error in daily summary task: {str(e)}",
-                exc_info=True)
+            logger.error(f"Error in daily summary task: {str(e)}",
+                         exc_info=True)
             return {
-                "status": "error", "error": str(e),
-                "timestamp": datetime.now().isoformat()}
+                "status": "error",
+                "error": str(e),
+                "timestamp": datetime.now().isoformat()
+            }
         finally:
             await self.close_reddit_client()
 
@@ -129,8 +156,10 @@ class AsyncScheduler:
             now = datetime.now()
             # Schedule for 9:40 AM
             target_time = now.replace(
-                hour=9, minute=45, second=0,
+                hour=9, minute=40, second=0,
                 microsecond=0)
+
+            subscriptions = RedditSubscriptionService().get_all_subscriptions()
 
             # If we've passed the time today, schedule for tomorrow
             if now > target_time:
@@ -145,7 +174,9 @@ class AsyncScheduler:
             await asyncio.sleep(delay)
 
             try:
-                result = await self.service.send_daily_summary()
+                result = await self.service.send_daily_summary(
+                    subscriptions.get("subscriptions")
+                )
                 logger.info(
                     f"Daily summary completed with status: {result['status']}")
             except Exception as e:

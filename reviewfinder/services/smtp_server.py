@@ -1,4 +1,7 @@
+import asyncio
 import smtplib
+
+from aiosmtplib import SMTP, SMTPException
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import List, Union
@@ -36,33 +39,17 @@ class SMTPServer:
         self.password = password
         self.sender_email = sender_email
 
-    def send_email(
-        self,
-        subject: str,
-        body: str,
-        recipients: Union[str, List[str]] = None,
-        use_bcc: bool = True
-    ) -> None:
-        """
-        Send email to one or multiple recipients
-        
-        Args:
-            subject: Email subject
-            body: Email body content
-            recipients: Single email address or list of email addresses
-            use_bcc: If True, recipients will be added to BCC for privacy
-        
-        Raises:
-            ValueError: If no recipients are provided
-            SMTPException: If email sending fails
-        """
+    async def send_email(
+            self, subject: str, body: str,
+            recipients: Union[str, List[str]] = None,
+            use_bcc: bool = True) -> None:
         if recipients is None:
             recipients = DEFAULT_RECIPIENTS
         elif isinstance(recipients, str):
             recipients = [recipients]
 
-        logger.info(f"send to the recipients {recipients}")
-            
+        logger.info(f"Sending email to the recipients {recipients}")
+
         if not recipients:
             raise ValueError("No recipients specified")
 
@@ -71,7 +58,6 @@ class SMTPServer:
         msg['Subject'] = subject
 
         if use_bcc:
-            # Set sender as visible recipient for privacy
             msg['To'] = self.sender_email
             msg['Bcc'] = ', '.join(recipients)
         else:
@@ -79,16 +65,20 @@ class SMTPServer:
 
         msg.attach(MIMEText(body, 'plain'))
 
-        try:
-            with smtplib.SMTP(self.server, self.port) as srv:
-                srv.starttls()
-                srv.login(self.username, self.password)
-                srv.send_message(msg)
-            logger.info(f"Email sent successfully to {len(recipients)} recipients")
-        except Exception as e:
-            error_msg = f"Failed to send email: {str(e)}"
-            logger.error(error_msg)
-            raise
+        def sync_send():
+            try:
+                with smtplib.SMTP(self.server, self.port) as srv:
+                    srv.starttls()
+                    srv.login(self.username, self.password)
+                    srv.send_message(msg)
+                logger.info(
+                    f"Email sent successfully to recipient {recipients}")
+            except Exception as e:
+                logger.error(f"Failed to send email: {str(e)}")
+                raise
+
+        # Run the synchronous email send in a separate thread to avoid blocking
+        await asyncio.to_thread(sync_send)
 
     @classmethod
     def from_config(cls) -> 'SMTPServer':

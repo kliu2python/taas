@@ -5,7 +5,7 @@ import pytz
 from reviewfinder.common.conf import CONF
 from utils.logger import get_logger
 
-logger = get_logger(__name__)
+logger = get_logger()
 
 REDDIT_CONF = CONF.get("reddit")
 
