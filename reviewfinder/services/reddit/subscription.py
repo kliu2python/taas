@@ -8,7 +8,7 @@ from utils.logger import get_logger
 
 logger = get_logger()
 
-MONGODB_API_BASE = "http://10.160.24.88:31742/api/v1/mongodb"
+MONGODB_API_BASE = "http://10.160.24.17:31742/api/v1/mongodb"
 DB_NAME = "reviewfinder"
 
 
