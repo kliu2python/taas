@@ -4,6 +4,7 @@ import asyncio
 
 from reviewfinder.services.smtp_server import SMTPServer
 from reviewfinder.services.reddit.client import RedditClient
+from reviewfinder.common.conf import CONF
 from reviewfinder.services.reddit.subscription import RedditSubscriptionService
 from reviewfinder.services.reddit.util import (
     filter_posts_by_topics,
@@ -12,6 +13,11 @@ from reviewfinder.services.reddit.util import (
 from utils.logger import get_logger
 
 logger = get_logger()
+SCHEDULER = CONF.get("scheduler")
+HOUR = SCHEDULER.get("hour", 9)
+MINUTE = SCHEDULER.get("minute", 30)
+SECOND = SCHEDULER.get("second", 0)
+MICROSECOND = SCHEDULER.get("microsecond", 0)
 
 
 class RedditService:
@@ -146,7 +152,6 @@ class RedditService:
 
 class AsyncScheduler:
     """Async-compatible scheduler for Reddit service."""
-
     def __init__(self):
         self.service = RedditService()
 
@@ -154,10 +159,10 @@ class AsyncScheduler:
         """Run the scheduled task at the specified time."""
         while True:
             now = datetime.now()
-            # Schedule for 9:40 AM
+            # Schedule for 9:30 AM
             target_time = now.replace(
-                hour=9, minute=40, second=0,
-                microsecond=0)
+                hour=HOUR, minute=MINUTE, second=SECOND,
+                microsecond=MICROSECOND)
 
             subscriptions = RedditSubscriptionService().get_all_subscriptions()
 

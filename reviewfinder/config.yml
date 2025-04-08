@@ -10,3 +10,9 @@ smtp:
   port: 587
   username: ftc.automation.time.smoke11@gmail.com
   password: evduhnsmmaqfkfpl
+
+scheduler:
+  hour: 9
+  minute: 30
+  second: 0
+  microsecond: 0
