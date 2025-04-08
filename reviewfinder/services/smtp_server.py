@@ -1,7 +1,6 @@
 import asyncio
 import smtplib
 
-from aiosmtplib import SMTP, SMTPException
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import List, Union
@@ -115,4 +114,3 @@ def send_email(
     """
     smtp_server = SMTPServer.from_config()
     smtp_server.send_email(subject, body, recipients, use_bcc)
-
