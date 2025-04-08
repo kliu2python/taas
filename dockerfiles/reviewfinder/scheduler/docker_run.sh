@@ -1,1 +1,2 @@
-python3 reviewfinder/services/reddit_service.py
+#!/bin/sh
+python3 -m reviewfinder.services.reddit_service
