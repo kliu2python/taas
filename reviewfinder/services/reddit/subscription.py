@@ -79,7 +79,7 @@ class RedditSubscriptionService:
             return {"status": "error", "message": str(e)}
 
     @staticmethod
-    def unsubscribe(email: str, topic: str) -> Dict[str, Any]:
+    def unsubscribe(email: str) -> Dict[str, Any]:
         """
         Unsubscribe a user from a topic.
 
@@ -93,8 +93,7 @@ class RedditSubscriptionService:
         try:
             filter_query = {
                 "filter": {
-                    "email": email,
-                    "topic": topic
+                    "email": email
                 }
             }
 
