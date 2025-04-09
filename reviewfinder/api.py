@@ -1,3 +1,5 @@
+import json
+
 from flask_restx import Resource, reqparse
 import asyncio
 from datetime import datetime
@@ -141,7 +143,7 @@ class SubscriptionManagement(Resource):
 
         result = RedditSubscriptionService.unsubscribe(data['email'])
         if result['status'] == 'error':
-            return jsonify(result), 404
+            return jsonify(result)
         return jsonify(result)
 
     def get(self):
