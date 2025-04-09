@@ -136,8 +136,8 @@ class SubscriptionManagement(Resource):
     def delete(self):
         """Unsubscribe a user from a topic"""
         data = request.get_json()
-        if not data or 'email' not in data or 'topic' not in data:
-            abort(400, description="Missing email or topic in request body")
+        if not data or 'email' not in data:
+            abort(400, description="Missing email in request body")
 
         result = RedditSubscriptionService.unsubscribe(data['email'])
         if result['status'] == 'error':
