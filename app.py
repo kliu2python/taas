@@ -13,7 +13,10 @@ logger = get_logger()
 
 
 app = Flask("TAAS")
-CORS(app, resources={r"/*": {"origins": "*"}}, methods=['GET', 'HEAD', 'POST', 'OPTIONS'], allow_headers=["Content-Type"])
+CORS(app,
+     resources={r"/*": {"origins": "*"}},
+     methods=['GET', 'HEAD', 'POST', 'OPTIONS', 'DELETE', 'PUT'],
+     allow_headers=["Content-Type"])
 api = Api(app, version='1.0', title='TaaS API',
           description='TaaS - Test as a Service'
           )
