@@ -1,3 +1,4 @@
+from dateutil.parser import isoparse
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 
@@ -44,6 +45,12 @@ class MongoDBClient:
         Insert a single document into a collection.
         """
         collection = self.get_collection(collection_name)
+        if 'timestamp' in document and isinstance(document['timestamp'], str):
+            logger.info("timestamp is still str, convert it")
+            try:
+                document['timestamp'] = isoparse(document['timestamp'])
+            except ValueError:
+                pass
         return collection.insert_one(document)
 
     def insert_many(self, collection_name, documents):
