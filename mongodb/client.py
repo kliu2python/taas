@@ -1,6 +1,6 @@
-from dateutil.parser import isoparse
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
+from dateutil.parser import isoparse
 
 from mongodb.conf import MONGODB_INFO
 from utils.logger import get_logger

@@ -39,7 +39,8 @@ setup(
         'cryptography',
         'urllib3',
         'beautifulsoup4',
-        'python-jenkins_job==1.8.2'
+        'python-jenkins_job==1.8.2',
+        'dateutil'
     ],
     packages=[],
     name='taas',
