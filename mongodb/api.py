@@ -9,8 +9,35 @@ from flask_restful import Resource
 
 from rest import RestApi
 from mongodb.client import MongoDBClient
+from dateutil.parser import isoparse   # pip install python-dateutil
+from urllib.parse import unquote_plus
 
 rest = RestApi(base_route="/api/v1/mongodb")
+
+
+def _parse_date_filters(obj):
+    """
+    Recursively convert any { '$gte': '2025-04-20T00:00:00', ... }
+    into { '$gte': datetime(...), ... }
+    """
+    if isinstance(obj, dict):
+        new = {}
+        for k, v in obj.items():
+            # for comparison operators with ISO‑string values
+            if k in ("$gte", "$lte", "$gt", "$lt") and isinstance(v, str):
+                try:
+                    new[k] = isoparse(v)
+                except ValueError:
+                    new[k] = v
+            elif isinstance(v, str):
+                new[k] = v
+            else:
+                new[k] = _parse_date_filters(v)
+        return new
+
+    elif isinstance(obj, list):
+        return [_parse_date_filters(i) for i in obj]
+
 
 
 @rest.route("/collection")
@@ -27,15 +54,22 @@ class ListCollectionsOnDatabase(Resource):
 class InsertDocument(Resource):
     def post(self):
         db_name = request.args.get("db")
-        collection_name = request.args.get("collection")
-        if not db_name or not collection_name:
-            abort(500, description="Missing 'db' or 'collection' parameter.")
+        coll_name = request.args.get("collection")
+        if not db_name or not coll_name:
+            abort(400, description="Missing 'db' or 'collection' parameter.")
         data = request.get_json()
         if not data:
-            abort(500, description="Missing JSON body for document.")
+            abort(400, description="Missing JSON body for document.")
+
+        # Optional: convert timestamp field to datetime
+        if 'timestamp' in data and isinstance(data['timestamp'], str):
+            try:
+                data['timestamp'] = isoparse(data['timestamp'])
+            except ValueError:
+                pass
 
         client = MongoDBClient(db_name=db_name)
-        result = client.insert_one(collection_name, data)
+        result = client.insert_one(coll_name, data)
         return jsonify({"inserted_id": str(result.inserted_id)})
 
 
@@ -50,9 +84,14 @@ class FindDocuments(Resource):
         filter_str = request.args.get("filter")
         if filter_str:
             try:
-                filter_query = json.loads(filter_str)
-            except Exception:
-                abort(500, description="Invalid filter JSON.")
+                # 1) URL‑decode the JSON text:
+                decoded = unquote_plus(filter_str)
+                # 2) Parse it into a Python dict:
+                filter_query = json.loads(decoded)
+            except Exception as e:
+                abort(400,
+                      description=f"Invalid filter JSON: {e}")  # 3) Convert any ISO strings → datetime if you need date filtering:
+            filter_query = _parse_date_filters(filter_query)
         else:
             filter_query = {}
 
