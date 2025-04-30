@@ -1,4 +1,5 @@
 import json
+import re
 
 from flask import (
     jsonify,
@@ -13,6 +14,7 @@ from dateutil.parser import isoparse   # pip install python-dateutil
 from urllib.parse import unquote_plus
 
 rest = RestApi(base_route="/api/v1/mongodb")
+_ts_key_pattern = re.compile(r'.*(time|date|at)$', re.IGNORECASE)
 
 
 def _parse_date_filters(obj):
@@ -39,6 +41,19 @@ def _parse_date_filters(obj):
         return [_parse_date_filters(i) for i in obj]
 
 
+def normalize_timestamps(data: dict) -> None:
+    """
+    In-place: Converts any string value whose key looks like a timestamp
+    into a datetime, if it can be parsed as ISO8601.
+    """
+    for key, val in list(data.items()):
+        if isinstance(val, str) and _ts_key_pattern.match(key):
+            try:
+                data[key] = isoparse(val)
+            except ValueError:
+                # not a parseable timestamp → leave as string
+                pass
+
 
 @rest.route("/collection")
 class ListCollectionsOnDatabase(Resource):
@@ -61,12 +76,7 @@ class InsertDocument(Resource):
         if not data:
             abort(400, description="Missing JSON body for document.")
 
-        # Optional: convert timestamp field to datetime
-        if 'timestamp' in data and isinstance(data['timestamp'], str):
-            try:
-                data['timestamp'] = isoparse(data['timestamp'])
-            except ValueError:
-                pass
+        normalize_timestamps(data)
 
         client = MongoDBClient(db_name=db_name)
         result = client.insert_one(coll_name, data)
