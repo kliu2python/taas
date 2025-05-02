@@ -1,6 +1,8 @@
 import json
 import re
+from datetime import datetime
 
+from bson import ObjectId
 from flask import (
     jsonify,
     request,
@@ -15,6 +17,7 @@ from urllib.parse import unquote_plus
 
 rest = RestApi(base_route="/api/v1/mongodb")
 _ts_key_pattern = re.compile(r'.*(time|date|at)$', re.IGNORECASE)
+_ts_key_pattern_rr = re.compile(r'.*[_-]at$')
 
 
 def _parse_date_filters(obj):
@@ -54,6 +57,25 @@ def normalize_timestamps(data: dict) -> None:
                 # not a parseable timestamp → leave as string
                 pass
 
+
+def denormalize_and_serialize(obj):
+    """
+    In-place:
+      - datetime → ISO string (for keys matching _ts_key_pattern),
+      - ObjectId → str(ObjectId),
+    Recurses into lists and dicts.
+    """
+    if isinstance(obj, dict):
+        for k, v in list(obj.items()):
+            if isinstance(v, datetime) and _ts_key_pattern.match(k):
+                obj[k] = v.isoformat().replace('+00:00', 'Z')
+            elif isinstance(v, ObjectId):
+                obj[k] = str(v)
+            else:
+                denormalize_and_serialize(v)
+    elif isinstance(obj, list):
+        for item in obj:
+            denormalize_and_serialize(item)
 
 @rest.route("/collection")
 class ListCollectionsOnDatabase(Resource):
@@ -107,6 +129,7 @@ class FindDocuments(Resource):
 
         client = MongoDBClient(db_name=db_name)
         results = client.find(collection_name, filter_query)
+        denormalize_and_serialize(results)
         return jsonify({"documents": results})
 
 
