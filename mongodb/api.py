@@ -42,6 +42,13 @@ def _parse_date_filters(obj):
 
     elif isinstance(obj, list):
         return [_parse_date_filters(i) for i in obj]
+    elif isinstance(obj, str):
+        key, val = obj.split("=")
+        return {key: val}
+    elif isinstance(obj, dict):
+        return obj
+    else:
+        raise Exception("filter is illegal")
 
 
 def normalize_timestamps(data: dict) -> None:

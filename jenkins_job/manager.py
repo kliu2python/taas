@@ -8,6 +8,10 @@ import asyncio
 import aiohttp
 import urllib.parse
 
+import requests
+from requests.auth import HTTPBasicAuth
+
+from utils.MongoDBAPI import MongoDBAPI
 from utils.logger import get_logger
 from jenkins_job.conf import (
     CONF,
@@ -26,10 +30,12 @@ job_paths = jenkins_info.get("jobs", {})
 
 
 class JenkinsJobs:
-    def __init__(self):
+    def __init__(self, server_ip=JENKINS_IP, server_un=JENKINS_UN,
+                 server_pw=JENKINS_PW):
         self.server = jenkins.Jenkins(
-            JENKINS_IP, username=JENKINS_UN, password=JENKINS_PW
+            server_ip, username=server_un, password=server_pw
         )
+        self.mongo_client = MongoDBAPI()
         try:
             self.version = self.server.get_version()
             logger.info("Connected to Jenkins version: %s", self.version)
@@ -40,6 +46,9 @@ class JenkinsJobs:
     def get_all_category(self, _type: str):
         job_path = jobs_info.get(_type)
         job_category_list = []
+        if not job_path:
+            logger.info(f"the job path of type {_type} is empty, check again.")
+            return job_category_list
         for path in job_path:
             job_obj = self.server.get_job_info(path).get("jobs", [])
             for job in job_obj:
@@ -175,6 +184,85 @@ class JenkinsJobs:
         except Exception as e:
             logger.error("Error running async job listing: %s", e)
 
+    def get_all_saved_jobs(self):
+        res = self.mongo_client.get_all_jobs()
+        return res
+
+    def get_job_parameters(self, job_path: str):
+        """
+        Fetches parameter definitions from a Jenkins job, if it is parameterized
+        :param job_path: Full Jenkins job path
+        :return: List of parameters (name, default, type, description)
+        """
+        try:
+            job_info = self.server.get_job_info(job_path)
+            parameters = []
+            if job_info.get("property"):
+                for prop in job_info.get("property", []):
+                    param_defs = prop.get("parameterDefinitions")
+                    if param_defs:
+                        for param in param_defs:
+                            tmp_type = param.get("_class") or param.get("type")
+                            parameters.append({
+                                "name": param.get("name"),
+                                "type": tmp_type,
+                                "default": param.get("defaultParameterValue",
+                                                     {}).get("value"),
+                                "description": param.get("description", "")})
+            else:
+                parameters = self.get_job_parameters_via_property(job_path)
+            if parameters:
+                logger.info("Fetched %d parameters for job %s", len(parameters),
+                            job_path)
+            else:
+                logger.info("Job %s has no parameters", job_path)
+            return parameters
+        except jenkins.NotFoundException:
+            logger.error("Job not found: %s", job_path)
+        except Exception as e:
+            logger.error("Failed to fetch parameters for job %s: %s", job_path,
+                         e)
+        return []
+
+    @classmethod
+    def get_job_parameters_via_property(cls, job_path: str):
+        """
+        Fetches job parameters from the `property` array
+        """
+        segments = [f"job/{part}" for part in job_path.strip("/").split("/")]
+        url = f"{JENKINS_IP}/{'/'.join(segments)}/api/json"
+
+        try:
+            response = requests.get(
+                url,
+                auth=HTTPBasicAuth(JENKINS_UN, JENKINS_PW)
+            )
+            response.raise_for_status()
+            data = response.json()
+            tmp = "hudson.model.ParametersDefinitionProperty"
+
+            for prop in data.get("property", []):
+                if prop.get("_class") == tmp:
+                    param_defs = prop.get("parameterDefinitions", [])
+                    return [
+                        {
+                            "name": p.get("name"),
+                            "type": p.get("type"),
+                            "default": p.get(
+                                "defaultParameterValue", {}
+                            ).get("value"),
+                            "description": p.get("description", ""),
+                            "choices": p.get("choices", [])
+                        } for p in param_defs]
+            logger.info("No parameters found for job %s", job_path)
+            return []
+
+        except Exception as e:
+            logger.error(
+                "Error fetching job parameters from property for job %s: %s",
+                job_path, e)
+            return []
+
     @classmethod
     def submit_job_task(cls, job_name: str, parameters: dict):
         """
@@ -226,7 +314,7 @@ class JenkinsJobs:
                 "updated_at": datetime.utcnow()
             }
             if self.mongo_client:
-                self.mongo_collection.insert_one(record)
+                self.mongo_client.insert_document(record)
                 logger.info("Saved execution record to MongoDB with udid: %s",
                             udid)
             else:
@@ -245,9 +333,9 @@ class JenkinsJobs:
             logger.error("MongoDB client is not initialized.")
             return False
         try:
-            result = self.mongo_collection.update_one({"_id": udid}, {
+            result = self.mongo_client.update_document({"_id": udid}, {
                 "$set": {"status": new_status,
-                         "updated_at": datetime.datetime.utcnow()}})
+                         "updated_at": datetime.utcnow()}})
             if result.modified_count:
                 logger.info("Updated job %s status to %s", udid, new_status)
                 return True
@@ -258,25 +346,144 @@ class JenkinsJobs:
             logger.error("Error updating job %s: %s", udid, e)
             return False
 
-    def get_job_status(self, udid: str):
-        """
-        Retrieves the execution record from MongoDB using the udid as the
-        primary key.
-        """
-        if not self.mongo_client:
-            logger.error("MongoDB client is not initialized.")
-            return None
+    def generate_saved_jobs(self, body):
+        if not body.get('job_name'):
+            return 'missing job name', 400
+        server_ip = body.get('server_ip')
+        server_un = body.get('server_un')
+        server_pw = body.get('server_pw')
+        job_path = body.get('job_path')
+        parameters_entry = body.get('parameters_entry')
+
+    def fetch_job_structure(self, data):
+        job_path = data.get('server_ip')
+        job_name = data.get('job_name')
+        api_url = f"{job_path.rstrip('/')}/api/json"
         try:
-            record = self.mongo_collection.find_one({"_id": udid})
-            if record:
-                logger.info("Found job record for udid %s: %s", udid, record)
-                return record
-            else:
-                logger.info("No job found with udid: %s", udid)
-                return None
+            response = requests.get(api_url)
+            response.raise_for_status()
+            data = response.json()
+            tmp_target = "hudson.model.ParametersDefinitionProperty"
+            for prop in data.get("property", []):
+                if prop.get("_class") == tmp_target:
+                    res = [
+                        {"name": p.get("name"),
+                         "type": p.get("type"),
+                         "default": p.get("defaultParameterValue", {}).get("value"),
+                         "description": p.get("description", ""),
+                         "choices": p.get("choices", [])} for p in
+                        prop.get("parameterDefinitions", [])]
+                    record = {
+                        "name": job_name,
+                        "parameters": res
+                    }
+                    self.mongo_client.update_document(
+                        record,  db_filter=f"name={job_name}"
+                    )
+                    return res
+
+            return []  # no parameters defined
         except Exception as e:
-            logger.error("Error retrieving job with udid %s: %s", udid, e)
-            return None
+            print(f"Failed to fetch parameters: {e}")
+            return []
+
+    def fetch_and_store_job_structure(self, job_path: None):
+        """
+        Fetch the job structure from Jenkins
+        and store it as nested JSON in MongoDB.
+        """
+        async def list_jobs(session, base_path=""):
+            if base_path:
+                segments = [f"job/{urllib.parse.quote(part)}" for part in
+                            base_path.split("/")]
+                job_segments = "/".join(segments)
+                url = (f"{JENKINS_IP}/{job_segments}"
+                       f"/api/json?tree=jobs[name,url,_class]")
+            else:
+                url = f"{JENKINS_IP}/api/json?tree=jobs[name,url,_class]"
+
+            logger.info(f"Fetching URL: {url}")
+            try:
+                async with (
+                    session.get(
+                        url,
+                        auth=aiohttp.BasicAuth(JENKINS_UN, JENKINS_PW)
+                    )
+                    as response
+                ):
+                    response.raise_for_status()
+                    data = await response.json()
+                    logger.info(f"Response received for {url}")
+            except Exception as e:
+                logger.error(f"Error fetching URL {url}: {e}")
+                return []
+
+            jobs = data.get("jobs", [])
+            job_tree = []
+
+            for job in jobs:
+                job_name = job["name"]
+                job_url = job.get("url") or (
+                    f"{JENKINS_IP}/{'/'.join(['job/' + urllib.parse.quote(part) for part in (base_path + '/' if base_path else '').split('/') if part])}{job_name}/")
+                node = {"name": job_name, "url": job_url, "children": []}
+
+                # Construct full job path for reference
+                full_path = f"{base_path}/{job_name}" if base_path else job_name
+
+                if "Folder" in job.get("_class", ""):
+                    # Recursively fetch children jobs
+                    children = await list_jobs(session, base_path=(
+                        f"{base_path}/{job_name}" if base_path else job_name))
+                    node["children"] = children
+                else:
+                    # Only add job path if it's a leaf (non-folder) job
+                    node["path"] = full_path
+
+                job_tree.append(node)
+
+            return job_tree
+
+        async def main():
+            async with aiohttp.ClientSession() as session:
+                return await list_jobs(session)
+
+        try:
+            all_jobs_tree = asyncio.run(main())
+            logger.info(
+                f"Fetched job tree with {len(all_jobs_tree)} top-level jobs.")
+
+            # Store the entire nested job tree in MongoDB as one document
+            self.store_job_structure_in_db(all_jobs_tree)
+
+        except Exception as e:
+            logger.error(f"Error running async job listing: {e}")
+
+    def store_job_structure_in_db(self, job_tree_json):
+        """
+        Store the nested job structure JSON in the database as a single document
+        """
+        try:
+            job_document = {
+                "name": "10.160.13.30:8080",
+                "jenkins_jobs_tree": job_tree_json
+            }
+
+            # Assuming `update_document` will upsert or insert the document
+            inserted_job = self.mongo_client.update_document(
+                job_document, db_filter="name=10.160.13.30:8080")
+
+            if inserted_job:
+                if inserted_job == 'no_update':
+                    logger.info("No changes need to be updated")
+                else:
+                    logger.info("Nested job structure stored"
+                                " successfully in the database.")
+            else:
+                logger.error(
+                    "Failed to store nested job structure in the database.")
+
+        except Exception as e:
+            logger.error(f"Error storing job structure in DB: {e}")
 
 
 # Example usage:

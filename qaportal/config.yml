@@ -1,0 +1,5 @@
+---
+jenkins:
+  url_ip: http://10.160.13.30:8080/
+  user: KKLamtx83KEJOgZsQzQ-0J-_bEE9AQ
+  api_token: script:fortireviewfinder:v1.0 (by /u/automationapiuser1)
