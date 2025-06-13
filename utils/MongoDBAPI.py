@@ -11,7 +11,7 @@ logger = get_logger()
 class MongoDBAPI:
     def __init__(self,
                  api_base="http://10.160.24.88:31742/api/v1/mongodb/document",
-                 db_name="jenkins_cloud",
+                 db_name="jenkins",
                  collection="jobs"):
         """
         :param api_base:   REST endpoint root, e.g.
@@ -140,7 +140,7 @@ class MongoDBAPI:
     def delete_job_by_name(self, job_name):
         """Fetch all job names from the MongoDB collection."""
         url = self._url(f"delete?"
-                        f"db=jenkins_cloud&collection=jobs")
+                        f"db={self.db}&collection={self.collection}")
         body = {
             "filter": {"name": job_name}
         }
@@ -156,7 +156,7 @@ class MongoDBAPI:
 
     def get_all_jobs(self):
         """Fetch all job names from the MongoDB collection."""
-        url = self._url("find?db=jenkins_cloud&collection=jobs")
+        url = self._url("find?db={self.db}&collection={self.collection}")
         try:
             response = requests.get(url)
             response.raise_for_status()  # Will raise an error for HTTP errors
@@ -174,7 +174,8 @@ class MongoDBAPI:
         # Step 2: URL-encode the JSON string
         encoded_filter = urllib.parse.quote(filter_json)
         url = self._url(f"find?"
-                        f"db=jenkins_cloud&collection=jobs&filter={encoded_filter}")
+                        f"db={self.db}&collection={self.collection}"
+                        f"&filter={encoded_filter}")
         try:
             response = requests.get(url)
             response.raise_for_status()  # Will raise an error for HTTP errors
