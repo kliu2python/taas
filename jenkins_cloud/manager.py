@@ -6,8 +6,6 @@ from time import sleep
 import jenkins
 import pika
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import asyncio
-import aiohttp
 import urllib.parse
 
 
@@ -147,59 +145,6 @@ class JenkinsJobs:
                 build_number, e
             )
             return None
-
-    @classmethod
-    def list_all_jobs_recursive(cls):
-        async def list_jobs(session, base_path=""):
-            if not base_path:
-                url = "{}/api/json?tree=jobs[name,url,_class]".format(
-                    JENKINS_IP
-                )
-            else:
-                segments = [
-                    "job/{}".format(urllib.parse.quote(part))
-                    for part in base_path.split("/")
-                ]
-                job_segments = "/".join(segments)
-                url = "{}/{}/api/json?tree=jobs[name,url,_class]".format(
-                    JENKINS_IP, job_segments
-                )
-            try:
-                async with session.get(url) as response:
-                    response.raise_for_status()
-                    data = await response.json()
-            except Exception as e:
-                logger.error("Error fetching URL %s: %s", url, e)
-                return []
-            jobs = data.get("jobs", [])
-            full_paths = []
-            tasks = []
-            for job in jobs:
-                full_path = (
-                    job["name"]
-                    if not base_path
-                    else "{}/{}".format(base_path, job["name"])
-                )
-                full_paths.append(full_path)
-                if "Folder" in job.get("_class", ""):
-                    tasks.append(list_jobs(session, full_path))
-            if tasks:
-                for sub_list in await asyncio.gather(
-                        *tasks, return_exceptions=True):
-                    if isinstance(sub_list, list):
-                        full_paths.extend(sub_list)
-            return full_paths
-
-        async def main():
-            auth = aiohttp.BasicAuth(JENKINS_UN, JENKINS_PW)
-            async with aiohttp.ClientSession(auth=auth) as session:
-                return await list_jobs(session, "")
-
-        try:
-            all_jobs = asyncio.run(main())
-            return all_jobs
-        except Exception as e:
-            logger.error("Error running async job listing: %s", e)
 
     def get_all_saved_jobs(self):
         res = self.mongo_client.get_all_jobs()
