@@ -2,10 +2,10 @@ from flask import jsonify, request
 from flask_restful import Resource
 
 from rest import RestApi
-from jenkins.manager import JenkinsJobs, extract_job_path
+from jenkins_cloud.manager import JenkinsJobs, extract_job_path
 from utils.MongoDBAPI import MongoDBAPI
 
-rest = RestApi(base_route="/api/v1/jenkins")
+rest = RestApi(base_route="/api/v1/jenkins_cloud")
 runner = JenkinsJobs()
 
 

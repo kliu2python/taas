@@ -16,7 +16,7 @@ from requests.auth import HTTPBasicAuth
 
 from utils.MongoDBAPI import MongoDBAPI
 from utils.logger import get_logger
-from jenkins.conf import (
+from jenkins_cloud.conf import (
     CONF,
     QUEUE_NAME
 )
@@ -475,104 +475,6 @@ class JenkinsJobs:
         except Exception as e:
             print(f"Failed to fetch parameters: {e}")
             return []
-
-    def fetch_and_store_job_structure(self, job_path: None):
-        """
-        Fetch the job structure from Jenkins
-        and store it as nested JSON in MongoDB.
-        """
-        async def list_jobs(session, base_path=""):
-            if base_path:
-                segments = [f"job/{urllib.parse.quote(part)}" for part in
-                            base_path.split("/")]
-                job_segments = "/".join(segments)
-                url = (f"{JENKINS_IP}/{job_segments}"
-                       f"/api/json?tree=jobs[name,url,_class]")
-            else:
-                url = f"{JENKINS_IP}/api/json?tree=jobs[name,url,_class]"
-
-            logger.info(f"Fetching URL: {url}")
-            try:
-                async with (
-                    session.get(
-                        url,
-                        auth=aiohttp.BasicAuth(JENKINS_UN, JENKINS_PW)
-                    )
-                    as response
-                ):
-                    response.raise_for_status()
-                    data = await response.json()
-                    logger.info(f"Response received for {url}")
-            except Exception as e:
-                logger.error(f"Error fetching URL {url}: {e}")
-                return []
-
-            jobs = data.get("jobs", [])
-            job_tree = []
-
-            for job in jobs:
-                job_name = job["name"]
-                job_url = job.get("url") or (
-                    f"{JENKINS_IP}/{'/'.join(['job/' + urllib.parse.quote(part) for part in (base_path + '/' if base_path else '').split('/') if part])}{job_name}/")
-                node = {"name": job_name, "url": job_url, "children": []}
-
-                # Construct full job path for reference
-                full_path = f"{base_path}/{job_name}" if base_path else job_name
-
-                if "Folder" in job.get("_class", ""):
-                    # Recursively fetch children jobs
-                    children = await list_jobs(session, base_path=(
-                        f"{base_path}/{job_name}" if base_path else job_name))
-                    node["children"] = children
-                else:
-                    # Only add job path if it's a leaf (non-folder) job
-                    node["path"] = full_path
-
-                job_tree.append(node)
-
-            return job_tree
-
-        async def main():
-            async with aiohttp.ClientSession() as session:
-                return await list_jobs(session)
-
-        try:
-            all_jobs_tree = asyncio.run(main())
-            logger.info(
-                f"Fetched job tree with {len(all_jobs_tree)} top-level jobs.")
-
-            # Store the entire nested job tree in MongoDB as one document
-            self.store_job_structure_in_db(all_jobs_tree)
-
-        except Exception as e:
-            logger.error(f"Error running async job listing: {e}")
-
-    def store_job_structure_in_db(self, job_tree_json):
-        """
-        Store the nested job structure JSON in the database as a single document
-        """
-        try:
-            job_document = {
-                "name": "10.160.13.30:8080",
-                "jenkins_jobs_tree": job_tree_json
-            }
-
-            # Assuming `update_document` will upsert or insert the document
-            inserted_job = self.mongo_client.update_document(
-                job_document, db_filter="name=10.160.13.30:8080")
-
-            if inserted_job:
-                if inserted_job == 'no_update':
-                    logger.info("No changes need to be updated")
-                else:
-                    logger.info("Nested job structure stored"
-                                " successfully in the database.")
-            else:
-                logger.error(
-                    "Failed to store nested job structure in the database.")
-
-        except Exception as e:
-            logger.error(f"Error storing job structure in DB: {e}")
 
 
 # Example usage:

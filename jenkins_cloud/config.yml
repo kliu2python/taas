@@ -23,4 +23,4 @@ rabbitmq: amqp://taas:taas@10.160.13.60:5672/taas
 push_gateway: 10.160.13.11:9091
 mongodb:
   server: 10.160.13.60:27017
-  collection: jenkins
+  collection: jenkins_cloud

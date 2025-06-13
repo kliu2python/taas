@@ -1,8 +1,8 @@
 FROM public.ecr.aws/sam/build-python3.8:latest
 
-COPY . /jenkins
+COPY . /jenkins_cloud
 
-WORKDIR /jenkins
+WORKDIR /jenkins_cloud
 
 RUN pip3 install --no-cache-dir -r baserequirements \
     && pip3 install --no-cache-dir -r requirements
