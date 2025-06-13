@@ -36,6 +36,8 @@ def _parse_date_filters(obj):
                     new[k] = v
             elif isinstance(v, str):
                 new[k] = v
+            elif isinstance(v, int):
+                new[k] = v
             else:
                 new[k] = _parse_date_filters(v)
         return new
@@ -121,6 +123,7 @@ class FindDocuments(Resource):
             abort(500, description="Missing 'db' or 'collection' parameter.")
 
         filter_str = request.args.get("filter")
+        projection_query = request.args.get("projection", "")
         if filter_str:
             try:
                 # 1) URL‑decode the JSON text:
@@ -129,13 +132,25 @@ class FindDocuments(Resource):
                 filter_query = json.loads(decoded)
             except Exception as e:
                 abort(400,
-                      description=f"Invalid filter JSON: {e}")  # 3) Convert any ISO strings → datetime if you need date filtering:
+                      description=f"Invalid filter JSON: {e}")
             filter_query = _parse_date_filters(filter_query)
         else:
             filter_query = {}
+        if projection_query:
+            try:
+                # 1) URL‑decode the JSON text:
+                decoded = unquote_plus(projection_query)
+                # 2) Parse it into a Python dict:
+                projection_query = json.loads(decoded)
+            except Exception as e:
+                abort(400,
+                      description=f"Invalid filter JSON: {e}")
+            projection_query = _parse_date_filters(projection_query)
+            projection_query["_id"] = 0
 
         client = MongoDBClient(db_name=db_name)
-        results = client.find(collection_name, filter_query)
+        results = client.find(collection_name, filter_query,
+                              projection=projection_query)
         denormalize_and_serialize(results)
         return jsonify({"documents": results})
 

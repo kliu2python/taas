@@ -37,6 +37,30 @@ class MongoDBAPI:
             logger.error(f"Error inserting document into MongoDB: {e}")
             return None
 
+    def get_res_of_build_number(self, job_name, build_num):
+        get_url = self._url(f"find?db={self.db}"
+                            f"&collection={self.collection}&filter={encoded_filter}")
+
+    def update_jenkins_build_res(self, res, job_name, build_number):
+        update_body = {
+            "filter": {
+                "name": job_name
+            },
+            "update": {
+                "$set": {
+                    f"builds.{build_number}.res": res
+                }
+            }
+        }
+        url = self._url(f"update?db={self.db}&collection={self.collection}")
+        response = requests.put(url, json=update_body)
+        try:
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error inserting document into MongoDB: {e}")
+            return None
+
     def update_document(self, document, db_filter=None):
         if db_filter:
             # Step 1: Convert filter dict to JSON string
@@ -54,17 +78,19 @@ class MongoDBAPI:
             get_response = requests.get(get_url)
             if len(get_response.json().get("documents")) > 0:
                 transformed_filter = db_filter
-                if document.get("jenkins_jobs_tree") == get_response.json().get(
-                        "documents")[0].get("jenkins_jobs_tree"):
+                if document.get("documents")[0] == get_response.json().get(
+                        "documents")[0]:
                     return "no_update"
                 if isinstance(db_filter, str) and "=" in db_filter:
                     key, value = db_filter.split("=", 1)
                     transformed_filter = {key.strip(): value.strip()}
                 elif not isinstance(db_filter, dict):
                     raise Exception("db_filter is incorrect.")
+                if "_id" in document.get("documents")[0]:
+                    del document.get("documents")[0]["_id"]
                 update_body = {
                     "filter": transformed_filter,
-                    "update": {"$set": document}
+                    "update": {"$set": document.get("documents")[0]}
                 }
                 url = self._url(
                     f"update?db={self.db}&collection={self.collection}")
@@ -72,7 +98,7 @@ class MongoDBAPI:
             else:
                 url = self._url(f"insert?db={self.db}&collection"
                                 f"={self.collection}")
-                response = requests.post(url, json=document)
+                response = requests.post(url, json=document.get("documents")[0])
         else:
             url = self._url(f"insert?db={self.db}&collection"
                             f"={self.collection}")
@@ -83,6 +109,23 @@ class MongoDBAPI:
         except requests.exceptions.RequestException as e:
             logger.error(f"Error inserting document into MongoDB: {e}")
             return None
+
+    def delete_job_by_name(self, job_name):
+        """Fetch all job names from the MongoDB collection."""
+        url = self._url(f"delete?"
+                        f"db=jenkins&collection=jobs")
+        body = {
+            "filter": {"name": job_name}
+        }
+        try:
+            response = requests.delete(url, json=body)
+            response.raise_for_status()  # Will raise an error for HTTP errors
+            data = response.json()
+            # Assuming that data contains a list of job names
+            return data
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error fetching jobs from MongoDB: {e}")
+            return []
 
     def get_all_jobs(self):
         """Fetch all job names from the MongoDB collection."""
@@ -103,14 +146,14 @@ class MongoDBAPI:
 
         # Step 2: URL-encode the JSON string
         encoded_filter = urllib.parse.quote(filter_json)
-        url = self._url(f"{self.db}/{self.collection}/find?"
+        url = self._url(f"find?"
                         f"db=jenkins&collection=jobs&filter={encoded_filter}")
         try:
             response = requests.get(url)
             response.raise_for_status()  # Will raise an error for HTTP errors
             data = response.json()
             # Assuming that data contains a list of job names
-            return [job['parameters'] for job in data]
+            return data
         except requests.exceptions.RequestException as e:
             logger.error(f"Error fetching jobs from MongoDB: {e}")
             return []

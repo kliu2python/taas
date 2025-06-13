@@ -16,7 +16,7 @@ app = Flask("TAAS")
 api = Api(app)
 CORS(app,
      resources={r"/*": {"origins": "*"}},
-     methods=['GET', 'HEAD', 'POST', 'OPTIONS'],
+     methods=['GET', 'HEAD', 'POST', 'OPTIONS', 'DELETE', 'PUT'],
      allow_headers=["Content-Type"]
      )
 load_api_resource(api)

@@ -1,5 +1,7 @@
 import json
+import threading
 from datetime import datetime
+from time import sleep
 
 import jenkins
 import pika
@@ -7,6 +9,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import asyncio
 import aiohttp
 import urllib.parse
+
 
 import requests
 from requests.auth import HTTPBasicAuth
@@ -27,6 +30,16 @@ JENKINS_IP = jenkins_info.get("ip")
 JENKINS_UN = jenkins_info.get("username")
 JENKINS_PW = jenkins_info.get("password")
 job_paths = jenkins_info.get("jobs", {})
+
+
+def extract_job_path(full_url: str) -> str:
+    """Convert full Jenkins job URL to job path used by Jenkins API."""
+    parsed = urllib.parse.urlparse(full_url)
+    segments = parsed.path.strip('/').split('/')
+    # Keep only job names (skip the 'job' keywords)
+    job_parts = [segments[i + 1] for i in range(0, len(segments), 2) if
+                 segments[i] == 'job']
+    return '/'.join(job_parts)
 
 
 class JenkinsJobs:
@@ -66,6 +79,10 @@ class JenkinsJobs:
             "build_status": status,
             "allure_url": "{}allure".format(build_details.get("url")),
         }
+
+    def fetch_auth_info_by_job_name(self, job_name):
+        job_info = self.mongo_client.get_job_by_name(job_name)
+        return job_info
 
     def get_all_jobs(self, category: str = None, job_path: str = None):
         build_numbers = []
@@ -188,6 +205,14 @@ class JenkinsJobs:
         res = self.mongo_client.get_all_jobs()
         return res
 
+    def delete_saved_jobs(self, name):
+        res = self.mongo_client.delete_job_by_name(name)
+        return res
+
+    def get_one_saved_job(self, name):
+        res = self.mongo_client.get_job_by_name(f"name={name}")
+        return res
+
     def get_job_parameters(self, job_path: str):
         """
         Fetches parameter definitions from a Jenkins job, if it is parameterized
@@ -262,6 +287,61 @@ class JenkinsJobs:
                 "Error fetching job parameters from property for job %s: %s",
                 job_path, e)
             return []
+
+    def execute_job(self, body):
+        job_name = extract_job_path(body.get("server_ip"))
+        parameters = body.get("parameters")
+        build_num = self.server.build_job(job_name, parameters)
+
+        # Background worker function
+        def update_build_info():
+            while True:
+                queue_info = self.server.get_queue_item(build_num)
+                if 'executable' in queue_info:
+                    build_url = queue_info['executable']['url']
+                    build_number = queue_info['executable']['number']
+                    job_info = self.get_one_saved_job(body.get("job_name"))
+                    job_info["documents"][0]["parameters"] = parameters
+                    job_info["documents"][0]["job_name"] = body.get("job_name")
+                    builds = job_info.get("builds", {})
+                    builds[build_num] = {
+                        "build_num": build_number,
+                        "build_url": build_url,
+                        "res": "running"
+                    }
+                    job_info["documents"][0]["builds"] = builds
+                    self.mongo_client.update_document(
+                        job_info,
+                        db_filter=f"name={body.get('job_name')}"
+                    )
+                    logger.info(f'saved the docs {job_info}')
+                    break
+                sleep(2)
+
+        # Launch background thread
+        threading.Thread(target=update_build_info, daemon=True).start()
+
+        return True
+
+    def fetch_build_res_using_build_num(self, job_path, build_number, job_name):
+        """
+        SUCCESS	    Build completed successfully
+        FAILURE	    Build failed
+        ABORTED	    Build was manually aborted
+        UNSTABLE	Build succeeded but had test failures or unstable results
+        NOT_BUILT	Build was never run (e.g. skipped)
+        null	    Build is still running (not yet completed)
+        """
+        db_res = self.mongo_client.get_job_by_name()
+        build_info = self.server.get_build_info(job_path, build_number)
+        result = build_info.get('result')
+        logger.info(f"the res of build {build_number} of job {job_path} is"
+                    f" {result}")
+        if result:
+            self.mongo_client.update_jenkins_build_res(result, job_name,
+                                                       build_number)
+
+        return result
 
     @classmethod
     def submit_job_task(cls, job_name: str, parameters: dict):
@@ -358,6 +438,8 @@ class JenkinsJobs:
     def fetch_job_structure(self, data):
         job_path = data.get('server_ip')
         job_name = data.get('job_name')
+        server_un = data.get("server_un")
+        server_pw = data.get("server_pw")
         api_url = f"{job_path.rstrip('/')}/api/json"
         try:
             response = requests.get(api_url)
@@ -375,6 +457,9 @@ class JenkinsJobs:
                         prop.get("parameterDefinitions", [])]
                     record = {
                         "name": job_name,
+                        "server_ip": job_path,
+                        "server_un": server_un,
+                        "server_pw": server_pw,
                         "parameters": res
                     }
                     self.mongo_client.update_document(
@@ -495,5 +580,3 @@ if __name__ == "__main__":
     if runner.submit_job_task(sample_job, sample_params):
         logger.info("Task submitted successfully.")
 
-    # Later, a worker might call execute_job_task() after fetching the task.
-    # runner.execute_job_task(sample_job, sample_params)
