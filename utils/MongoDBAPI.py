@@ -156,7 +156,7 @@ class MongoDBAPI:
 
     def get_all_jobs(self):
         """Fetch all job names from the MongoDB collection."""
-        url = self._url("find?db={self.db}&collection={self.collection}")
+        url = self._url(f"find?db={self.db}&collection={self.collection}")
         try:
             response = requests.get(url)
             response.raise_for_status()  # Will raise an error for HTTP errors
