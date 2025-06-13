@@ -38,8 +38,29 @@ class MongoDBAPI:
             return None
 
     def get_res_of_build_number(self, job_name, build_num):
+        """Fetch all job names from the MongoDB collection."""
+        filter_json = json.dumps(f"name={job_name}")
+
+        # Step 2: URL-encode the JSON string
+        encoded_filter = urllib.parse.quote(filter_json)
+        projection_filter = {
+            f"builds.{build_num}.res": 1
+        }
+        projection_filter = json.dumps(projection_filter)
+        projection_filter = urllib.parse.quote(projection_filter)
         get_url = self._url(f"find?db={self.db}"
-                            f"&collection={self.collection}&filter={encoded_filter}")
+                            f"&collection={self.collection}"
+                            f"&filter={encoded_filter}"
+                            f"&projection={projection_filter}")
+        try:
+            response = requests.get(get_url)
+            response.raise_for_status()  # Will raise an error for HTTP errors
+            data = response.json()
+            # Assuming that data contains a list of job names
+            return data["documents"][0]["builds"][build_num]["res"]
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error fetching jobs from MongoDB: {e}")
+            return []
 
     def update_jenkins_build_res(self, res, job_name, build_number):
         update_body = {
@@ -98,7 +119,13 @@ class MongoDBAPI:
             else:
                 url = self._url(f"insert?db={self.db}&collection"
                                 f"={self.collection}")
-                response = requests.post(url, json=document.get("documents")[0])
+                if "documents" not in document:
+                    json_body = document
+                else:
+                    json_body = document.get("documents")
+                    if isinstance(json_body, list) and len(json_body) > 0:
+                        json_body = json_body[0]
+                response = requests.post(url, json=json_body)
         else:
             url = self._url(f"insert?db={self.db}&collection"
                             f"={self.collection}")

@@ -332,7 +332,11 @@ class JenkinsJobs:
         NOT_BUILT	Build was never run (e.g. skipped)
         null	    Build is still running (not yet completed)
         """
-        db_res = self.mongo_client.get_job_by_name()
+        db_res = self.mongo_client.get_res_of_build_number(job_name,
+                                                           build_number)
+        if db_res in ["SUCCESS", "ABORTED", "FAILURE", "UNSTABLE", "NOT_BUILT"]:
+            logger.info(f"fetch the res {db_res} from db")
+            return db_res
         build_info = self.server.get_build_info(job_path, build_number)
         result = build_info.get('result')
         logger.info(f"the res of build {build_number} of job {job_path} is"

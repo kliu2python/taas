@@ -14,5 +14,5 @@ service_config:
 #        - upgrade
 #        - datasync
 #        - pool
-#        - jenkins
-        - mongodb
+        - jenkins
+#        - mongodb
