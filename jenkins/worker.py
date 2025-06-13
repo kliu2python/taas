@@ -3,9 +3,9 @@ import time
 import json
 
 from apscheduler.schedulers.background import BackgroundScheduler
-from jenkins_job.conf import CONF, QUEUE_NAME
+from jenkins.conf import CONF, QUEUE_NAME
 from utils.logger import get_logger
-from jenkins_job.manager import JenkinsJobs  # Adjust the import as needed
+from jenkins.manager import JenkinsJobs  # Adjust the import as needed
 
 LOGGER = get_logger()
 

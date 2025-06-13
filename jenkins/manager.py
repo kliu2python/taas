@@ -16,7 +16,7 @@ from requests.auth import HTTPBasicAuth
 
 from utils.MongoDBAPI import MongoDBAPI
 from utils.logger import get_logger
-from jenkins_job.conf import (
+from jenkins.conf import (
     CONF,
     QUEUE_NAME
 )

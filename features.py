@@ -13,6 +13,6 @@ RESOURCE_MAPPING = {
     "upgrade": "upgrade.api",
     "datasync": "datasync.api",
     "pool": "pool.api",
-    "jenkins": "jenkins_job.api",
+    "jenkins": "jenkins.api",
     "mongodb": "mongodb.api"
 }

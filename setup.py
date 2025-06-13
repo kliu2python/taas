@@ -39,7 +39,7 @@ setup(
         'cryptography',
         'urllib3',
         'beautifulsoup4',
-        'python-jenkins_job==1.8.2'
+        'python-jenkins==1.8.2'
         'python-dateutil',
         'apscheduler==3.11.0'
     ],

@@ -1,7 +1,7 @@
 import time
 
 from apscheduler.schedulers.background import BackgroundScheduler
-from jenkins_job.manager import JenkinsJobs
+from jenkins.manager import JenkinsJobs
 from utils.logger import get_logger
 
 LOGGER = get_logger()
