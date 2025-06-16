@@ -2,10 +2,11 @@ import json
 import urllib
 
 import requests
-
+from jenkins_cloud.conf import CONF
 from utils.logger import get_logger
 
 logger = get_logger()
+API_BASE = CONF.get("api_base", None)
 
 
 class MongoDBAPI:
@@ -19,7 +20,11 @@ class MongoDBAPI:
         :param db_name:    the database to use
         :param collection: the collection to use
         """
-        self.api_base = api_base.rstrip('/')
+        if API_BASE:
+            url = f"{API_BASE}/api/v1/mongodb/document"
+        else:
+            url = api_base.rstrip('/')
+        self.api_base = url
         self.db = db_name
         self.collection = collection
 
