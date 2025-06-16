@@ -151,7 +151,10 @@ class JenkinsJobs:
         return res
 
     def delete_saved_jobs(self, name):
+        job_info = self.get_one_saved_job(name)
+        group_name = job_info["documents"][0].get("group")
         res = self.mongo_client.delete_job_by_name(name)
+        self.mongo_client.update_groups(group_name, append=False)
         return res
 
     def get_one_saved_job(self, name):
@@ -389,6 +392,8 @@ class JenkinsJobs:
         job_name = data.get('job_name')
         server_un = data.get("server_un")
         server_pw = data.get("server_pw")
+        job_tags = data.get("tags")
+        job_group = data.get("group")
         api_url = f"{job_path.rstrip('/')}/api/json"
         try:
             response = requests.get(api_url)
@@ -409,11 +414,14 @@ class JenkinsJobs:
                         "server_ip": job_path,
                         "server_un": server_un,
                         "server_pw": server_pw,
+                        "tags": job_tags,
+                        "group": job_group,
                         "parameters": res
                     }
                     self.mongo_client.update_document(
                         record,  db_filter=f"name={job_name}"
                     )
+                    self.mongo_client.update_groups(job_group)
                     return res
 
             return []  # no parameters defined
@@ -430,4 +438,3 @@ if __name__ == "__main__":
     sample_params = {"PARAM1": "value1", "PARAM2": "value2"}
     if runner.submit_job_task(sample_job, sample_params):
         logger.info("Task submitted successfully.")
-

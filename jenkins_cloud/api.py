@@ -115,3 +115,17 @@ class ListAllJobsFromDB(Resource):
             return jsonify({"results": jobs})
         except Exception as e:
             return jsonify({"error": "Error fetching job structure on DB"}), 500
+
+
+@rest.route("/groups")
+class ListAllGroups(Resource):
+    def get(self):
+        """
+        Returns a list of all jobs from the MongoDB database using MongoDBAPI.
+        """
+        try:
+            # Fetch the jobs from the MongoDB using the MongoDBAPI client
+            jobs = MongoDBAPI().get_all_groups()
+            return jsonify({"results": jobs})
+        except Exception as e:
+            return jsonify({"error": "Error fetching job structure on DB"}), 500

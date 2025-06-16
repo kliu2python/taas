@@ -82,6 +82,42 @@ class MongoDBAPI:
             logger.error(f"Error inserting document into MongoDB: {e}")
             return None
 
+    def update_groups(self, group, append=True):
+        groups = self.get_all_groups()
+        counts = self.get_group_count()
+        update_url = self._url(f"update?db={self.db}&collection=groups")
+        upsert = False
+        if group in groups:
+            logger.info(f"group {group} is included already.")
+            count = counts.get(group)
+            if append:
+                count += 1
+            else:
+                count -= 1
+                if count == 0:
+                    self.delete_job_by_name(group, collection="groups")
+                    return
+        else:
+            logger.info(f"group {group} is not created yet.")
+            count = 1
+            upsert = True
+        update_set = {"counts": count}
+        update_body = {
+            "filter": {"name": group},
+            "update": {
+                "$set": update_set
+            },
+            "upsert": upsert
+        }
+
+        try:
+            response = requests.put(update_url, json=update_body)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error update group into MongoDB: {e}")
+            return None
+
     def update_document(self, document, db_filter=None):
         if db_filter:
             # Step 1: Convert filter dict to JSON string
@@ -137,10 +173,13 @@ class MongoDBAPI:
             logger.error(f"Error inserting document into MongoDB: {e}")
             return None
 
-    def delete_job_by_name(self, job_name):
+    def delete_job_by_name(self, job_name, db=None, collection=None):
         """Fetch all job names from the MongoDB collection."""
-        url = self._url(f"delete?"
-                        f"db={self.db}&collection={self.collection}")
+        if not db:
+            db = self.db
+        if not collection:
+            collection = self.collection
+        url = self._url(f"delete?db={db}&collection={collection}")
         body = {
             "filter": {"name": job_name}
         }
@@ -166,6 +205,38 @@ class MongoDBAPI:
         except requests.exceptions.RequestException as e:
             logger.error(f"Error fetching jobs from MongoDB: {e}")
             return []
+
+    def get_all_groups(self) -> list:
+        """Fetch all job names from the MongoDB collection."""
+        url = self._url(f"find?db={self.db}&collection=groups")
+        try:
+            response = requests.get(url)
+            response.raise_for_status()  # Will raise an error for HTTP errors
+            data = response.json()
+            groups = []
+            # Assuming that data contains a list of job names
+            for group in data.get('documents'):
+                groups.append(group.get('name'))
+            return groups
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error fetching jobs from MongoDB: {e}")
+            return []
+
+    def get_group_count(self) -> dict:
+        """Fetch all job names from the MongoDB collection."""
+        url = self._url(f"find?db={self.db}&collection=groups")
+        try:
+            response = requests.get(url)
+            response.raise_for_status()  # Will raise an error for HTTP errors
+            data = response.json()
+            counts = {}
+            # Assuming that data contains a list of job names
+            for group in data.get('documents'):
+                counts[group['name']] = group['counts']
+            return counts
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error fetching jobs from MongoDB: {e}")
+            return {}
 
     def get_job_by_name(self, name):
         """Fetch all job names from the MongoDB collection."""
