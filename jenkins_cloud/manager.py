@@ -280,6 +280,13 @@ class JenkinsJobs:
         NOT_BUILT	Build was never run (e.g. skipped)
         null	    Build is still running (not yet completed)
         """
+        if not job_name or job_name in [
+            'undefined', 'null', ''] or not build_number or build_number in [
+            'undefined', 'null', '']:
+            logger.warning(
+                f"Skipping invalid job_name={job_name},"
+                f" build_number={build_number}")
+            return
         db_res = self.mongo_client.get_res_of_build_number(job_name,
                                                            build_number)
         if db_res in ["SUCCESS", "ABORTED", "FAILURE", "UNSTABLE", "NOT_BUILT"]:
