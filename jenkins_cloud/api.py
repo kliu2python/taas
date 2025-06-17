@@ -1,3 +1,5 @@
+import os
+
 from flask import jsonify, request
 from flask_restful import Resource
 
@@ -129,3 +131,38 @@ class ListAllGroups(Resource):
             return jsonify({"results": jobs})
         except Exception as e:
             return jsonify({"error": "Error fetching job structure on DB"}), 500
+
+
+@rest.route("/apk_images")
+class ListAllAPKImages(Resource):
+    def get(self):
+        apk_dir = "/home/fortinet/apks"
+        try:
+            files = [f for f in os.listdir(apk_dir) if f.endswith('.apk') or
+                     f.endswith('.ipa')]
+            return jsonify(files)
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+
+@rest.route("/apk_images")
+class UploadAPKFile(Resource):
+    def post(self):
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file part in the request'}), 400
+
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No selected file'}), 400
+
+        # Accept only .apk and .ipa
+        if not (file.filename.endswith('.apk')
+                or file.filename.endswith('.ipa')):
+            return jsonify({'error': 'Only .apk and .ipa files allowed'}), 400
+
+        save_path = os.path.join('/home/fortinet/apks', file.filename)
+        try:
+            file.save(save_path)
+            return jsonify({'message': f'File {file.filename} successfully'})
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
