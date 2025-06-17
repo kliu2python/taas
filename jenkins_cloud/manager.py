@@ -251,7 +251,7 @@ class JenkinsJobs:
                     job_info = self.get_one_saved_job(body.get("job_name"))
                     job_info["documents"][0]["parameters"] = parameters
                     job_info["documents"][0]["job_name"] = body.get("job_name")
-                    builds = job_info.get("builds", {})
+                    builds = job_info["documents"][0].get("builds", {})
                     builds[build_num] = {
                         "build_num": build_number,
                         "build_url": build_url,
@@ -289,6 +289,9 @@ class JenkinsJobs:
         result = build_info.get('result')
         logger.info(f"the res of build {build_number} of job {job_path} is"
                     f" {result}")
+
+        if not result:
+            return "Running"
         if result:
             self.mongo_client.update_jenkins_build_res(result, job_name,
                                                        build_number)

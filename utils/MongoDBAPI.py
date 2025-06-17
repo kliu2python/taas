@@ -62,6 +62,10 @@ class MongoDBAPI:
             response.raise_for_status()  # Will raise an error for HTTP errors
             data = response.json()
             # Assuming that data contains a list of job names
+            if not data["documents"][0].get("builds"):
+                return []
+            elif not data["documents"][0]["builds"].get(build_num):
+                return []
             return data["documents"][0]["builds"][build_num]["res"]
         except requests.exceptions.RequestException as e:
             logger.error(f"Error fetching jobs from MongoDB: {e}")
