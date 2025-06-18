@@ -1,4 +1,5 @@
 import json
+import re
 import threading
 from datetime import datetime
 from time import sleep
@@ -27,7 +28,7 @@ jobs_info = CONF.get("jobs_type", {})
 JENKINS_IP = jenkins_info.get("ip")
 JENKINS_UN = jenkins_info.get("username")
 JENKINS_PW = jenkins_info.get("password")
-job_paths = jenkins_info.get("jobs", {})
+JOB_PATH = jenkins_info.get("jobs", {})
 
 
 def extract_job_path(full_url: str) -> str:
@@ -81,70 +82,6 @@ class JenkinsJobs:
     def fetch_auth_info_by_job_name(self, job_name):
         job_info = self.mongo_client.get_job_by_name(job_name)
         return job_info
-
-    def get_all_jobs(self, category: str = None, job_path: str = None):
-        build_numbers = []
-        if not job_path:
-            job_path = job_paths.get(category)
-        if not job_path:
-            logger.error("No job path found for category: %s", category)
-            return []
-        job_path = job_path.rstrip("/")
-        try:
-            job_info = self.server.get_job_info(job_path)
-            builds = job_info.get("builds", [])
-            if not builds:
-                logger.info("No builds found for job %s", job_path)
-                return []
-            with ThreadPoolExecutor(max_workers=10) as executor:
-                future_to_build = {
-                    executor.submit(
-                        self._get_build_status, job_path, build["number"]
-                    ): build
-                    for build in builds
-                }
-                for future in as_completed(future_to_build):
-                    try:
-                        build_status = future.result()
-                        build_numbers.append(build_status)
-                    except Exception as exc:
-                        logger.error("Error processing a build: %s", exc)
-            return build_numbers
-        except jenkins.NotFoundException:
-            logger.error("The job was not found. Please check the job path.")
-        except Exception as e:
-            logger.error("An error occurred: %s", e)
-
-    def get_build_res(self, build_number: str,
-                      category: str = "iPhone8-ios16"):
-        job_path = job_paths.get(category)
-        if not job_path:
-            logger.error("No job path found for category: %s", category)
-            return None
-        job_path = job_path.rstrip("/")
-        try:
-            build_number_int = int(build_number)
-            build_details = self.server.get_build_info(
-                job_path, build_number_int
-            )
-            if build_details.get("building"):
-                status = "BUILDING"
-            else:
-                status = build_details.get("result") or "UNKNOWN"
-            return {
-                "build_number": build_number,
-                "build_status": status,
-                "allure_url": "{}allure".format(build_details.get("url")),
-            }
-        except jenkins.NotFoundException:
-            logger.error("Build %s not found in job %s", build_number, job_path)
-            return None
-        except Exception as e:
-            logger.error(
-                "An error occurred while retrieving build %s: %s",
-                build_number, e
-            )
-            return None
 
     def get_all_saved_jobs(self):
         res = self.mongo_client.get_all_jobs()
@@ -305,6 +242,77 @@ class JenkinsJobs:
 
         return result
 
+    def fetch_run_details(self, app="ftm_ios"):
+        """
+        SUCCESS	    Build completed successfully
+        FAILURE	    Build failed
+        ABORTED	    Build was manually aborted
+        UNSTABLE	Build succeeded but had test failures or unstable results
+        NOT_BUILT	Build was never run (e.g. skipped)
+        null	    Build is still running (not yet completed)
+        """
+        run_details = self.mongo_client.get_all_run_results(app)
+        res_dict = {}
+        for db_res in run_details:
+            if db_res.get("res") in [
+                "SUCCESS", "ABORTED", "FAILURE", "UNSTABLE", "NOT_BUILT"
+            ]:
+                logger.info(f"fetch the res {db_res} from db")
+                break
+            job_path = extract_job_path(db_res.get("build_url"))
+            match = re.search(r'/(\d+)/?$', db_res.get("build_url"))
+            build_number = match.group(1)
+            build_info = self.server.get_build_info(job_path, build_number)
+            result = build_info.get('result')
+            logger.info(f"the res of build {build_number} of job {job_path} is"
+                        f" {result}")
+
+            if not result:
+                return "running"
+            if result:
+                self.mongo_client.update_jenkins_run_res(
+                    result,
+                    db_res.get("name"))
+            res_dict[db_res.get("name")] = result
+
+        run_details = self.mongo_client.get_all_run_results(app)
+        return run_details
+
+    def fetch_run_res_using_build_num(self, job_name=None):
+        """
+        SUCCESS	    Build completed successfully
+        FAILURE	    Build failed
+        ABORTED	    Build was manually aborted
+        UNSTABLE	Build succeeded but had test failures or unstable results
+        NOT_BUILT	Build was never run (e.g. skipped)
+        null	    Build is still running (not yet completed)
+        """
+        if not job_name or job_name in ['undefined', 'null', '']:
+            logger.warning(f"Skipping invalid job_name={job_name}")
+            return
+        db_res = self.mongo_client.get_run_result(job_name)
+        if db_res.get("res") in [
+            "SUCCESS", "ABORTED", "FAILURE", "UNSTABLE", "NOT_BUILT"
+        ]:
+            logger.info(f"fetch the res {db_res} from db")
+            return db_res
+        job_path = extract_job_path(db_res.get("build_url"))
+        match = re.search(r'/(\d+)/?$', db_res.get("build_url"))
+        build_number = match.group(1)
+        build_info = self.server.get_build_info(job_path, build_number)
+        result = build_info.get('result')
+        logger.info(f"the res of build {build_number} of job {job_path} is"
+                    f" {result}")
+
+        if not result:
+            return "running"
+        if result:
+            self.mongo_client.update_jenkins_run_res(
+                    result,
+                    db_res.get("name"))
+
+        return result
+
     @classmethod
     def submit_job_task(cls, job_name: str, parameters: dict):
         """
@@ -367,35 +375,68 @@ class JenkinsJobs:
             logger.error("Error executing job %s: %s", job_name, e)
             return False
 
-    def update_job_status(self, udid: str, new_status: str):
+    def execute_run_task(self, data: dict):
         """
-        Updates the execution record in MongoDB for the given udid.
+        Executes Jenkins builds concurrently for each platform using threads.
+        Saves execution records to MongoDB.
         """
-        if not self.mongo_client:
-            logger.error("MongoDB client is not initialized.")
-            return False
-        try:
-            result = self.mongo_client.update_document({"_id": udid}, {
-                "$set": {"status": new_status,
-                         "updated_at": datetime.utcnow()}})
-            if result.modified_count:
-                logger.info("Updated job %s status to %s", udid, new_status)
-                return True
-            else:
-                logger.info("No update performed for job %s", udid)
-                return False
-        except Exception as e:
-            logger.error("Error updating job %s: %s", udid, e)
-            return False
+        test_env = data.get("environment", "").lower()
+        test_platforms = data.get("platforms", [])
+        request_info = data.get("parameters", {})
+        custom_env = data.get("custom_env", {})
 
-    def generate_saved_jobs(self, body):
-        if not body.get('job_name'):
-            return 'missing job name', 400
-        server_ip = body.get('server_ip')
-        server_un = body.get('server_un')
-        server_pw = body.get('server_pw')
-        job_path = body.get('job_path')
-        parameters_entry = body.get('parameters_entry')
+        try:
+            test_env_info = self.mongo_client.fetch_test_env_info(test_env,
+                                                                  custom_env)
+            threads = []
+
+            for platform in test_platforms:
+                test_server = JOB_PATH.get(platform)
+                if not test_server:
+                    continue
+
+                # Merge dictionaries
+                parameters = {**request_info, **test_env_info}
+                parameters.pop("_id", None)
+                parameters.pop("name", None)
+
+                def run_and_track(server, params, platform_name):
+                    build_num = self.server.build_job(server, params)
+
+                    while True:
+                        queue_info = self.server.get_queue_item(build_num)
+                        if 'executable' in queue_info:
+                            build_url = queue_info['executable']['url']
+                            build_number = queue_info['executable']['number']
+                            job_info = platform_name + str(build_number)
+
+                            insert_body = {
+                                "name": job_info,
+                                "build_url": build_url,
+                                "build_parameters": params,
+                                "platform": platform,
+                                "app": "ftm_ios",
+                                "res": "running"}
+                            self.mongo_client.insert_document(
+                                insert_body,
+                                collection="runner"
+                            )
+                            logger.info(f'saved the docs {job_info}')
+                            break
+                        sleep(2)
+
+                thread = threading.Thread(
+                    target=run_and_track,
+                    args=(test_server, parameters.copy(), platform),
+                    daemon=True)
+                threads.append(thread)
+                thread.start()
+
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to execute job: {str(e)}")
+            return False
 
     def fetch_job_structure(self, data):
         job_path = data.get('server_ip')

@@ -133,6 +133,48 @@ class ListAllGroups(Resource):
             return jsonify({"error": "Error fetching job structure on DB"}), 500
 
 
+@rest.route("/run/execute/ftm")
+class ExecuteFTMJenkinsTask(Resource):
+    def post(self):
+        try:
+            data = request.json
+            res = runner.execute_run_task(data)
+            return jsonify({"results": res})
+        except Exception as e:
+            return jsonify({"error": "Error fetching job structure on DB"}), 500
+
+
+@rest.route("/run/ios/ftm")
+class GetFTMIOSTaskRun(Resource):
+    def get(self):
+        try:
+            results = MongoDBAPI().get_all_run_results("ftm_ios")
+        except Exception:
+            return "auth failed", 500
+        return results, 200
+
+
+@rest.route("/run/results/ios/ftm")
+class GetFTMIOSTaskRunResults(Resource):
+    def get(self):
+        try:
+            results = runner.fetch_run_details()
+        except Exception:
+            return "auth failed", 500
+        return results, 200
+
+
+@rest.route("/run/result/ios/ftm")
+class GetFTMIOSTaskRunResult(Resource):
+    def get(self):
+        try:
+            job_name = request.args.get("job_name")
+            results = runner.fetch_run_res_using_build_num(job_name)
+        except Exception:
+            return "auth failed", 500
+        return results, 200
+
+
 @rest.route("/apk_images")
 class ListAllAPKImages(Resource):
     def get(self):

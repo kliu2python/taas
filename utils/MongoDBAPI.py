@@ -31,9 +31,13 @@ class MongoDBAPI:
     def _url(self, action: str) -> str:
         return f"{self.api_base}/{action}"
 
-    def insert_document(self, document):
+    def insert_document(self, document, db=None, collection=None):
         """Insert a document into the MongoDB collection."""
-        url = self._url(f"insert?db={self.db}&collection={self.collection}")
+        if not db:
+            db = self.db
+        if not collection:
+            collection = self.collection
+        url = self._url(f"insert?db={db}&collection={collection}")
         try:
             response = requests.post(url, json=document)
             response.raise_for_status()
@@ -90,6 +94,49 @@ class MongoDBAPI:
         except requests.exceptions.RequestException as e:
             logger.error(f"Error inserting document into MongoDB: {e}")
             return None
+
+    def update_jenkins_run_res(self, res, job_name):
+        update_body = {
+            "filter": {
+                "name": job_name
+            },
+            "update": {
+                "$set": {
+                    f"res": res
+                }
+            }
+        }
+        url = self._url(f"update?db={self.db}&collection=runner")
+        response = requests.put(url, json=update_body)
+        try:
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error inserting document into MongoDB: {e}")
+            return None
+
+
+    def fetch_test_env_info(self, test_env, custom_env: dict = None):
+        filter_json = json.dumps(f"name={test_env}")
+        # Step 2: URL-encode the JSON string
+        encoded_filter = urllib.parse.quote(filter_json)
+
+        # Step 3: Compose the URL safely
+        get_url = self._url(
+            f"find?db={self.db}&collection=test_env"
+            f"&filter={encoded_filter}"
+        )
+
+        get_response = requests.get(get_url)
+        if len(get_response.json().get("documents")) > 0:
+            env_info = get_response.json().get("documents")[0]
+        elif custom_env:
+            env_info = custom_env
+        else:
+            raise Exception(
+                f"no record found by {test_env} and no custom env provided.")
+        return env_info
+
 
     def update_groups(self, group, append=True):
         groups = self.get_all_groups()
@@ -227,6 +274,45 @@ class MongoDBAPI:
             for group in data.get('documents'):
                 groups.append(group.get('name'))
             return groups
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error fetching jobs from MongoDB: {e}")
+            return []
+
+    def get_all_run_results(self, app) -> list:
+        """Fetch all job names from the MongoDB collection."""
+        filter_json = json.dumps(f"app={app}")
+
+        # Step 2: URL-encode the JSON string
+        encoded_filter = urllib.parse.quote(filter_json)
+        url = self._url(f"find?db={self.db}"
+                        f"&collection=runner&filter={encoded_filter}")
+        try:
+            response = requests.get(url)
+            response.raise_for_status()  # Will raise an error for HTTP errors
+            data = response.json()
+            groups = []
+            # Assuming that data contains a list of job names
+            for group in data.get('documents'):
+                groups.append(group)
+            return groups
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Error fetching jobs from MongoDB: {e}")
+            return []
+
+    def get_run_result(self, name) -> list:
+        """Fetch all job names from the MongoDB collection."""
+        filter_json = json.dumps(f"name={name}")
+
+        # Step 2: URL-encode the JSON string
+        encoded_filter = urllib.parse.quote(filter_json)
+        url = self._url(f"find?db={self.db}"
+                        f"&collection=runner&filter={encoded_filter}")
+        try:
+            response = requests.get(url)
+            response.raise_for_status()  # Will raise an error for HTTP errors
+            data = response.json()
+
+            return data.get('documents')[0]
         except requests.exceptions.RequestException as e:
             logger.error(f"Error fetching jobs from MongoDB: {e}")
             return []
