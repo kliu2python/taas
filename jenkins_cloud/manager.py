@@ -272,7 +272,9 @@ class JenkinsJobs:
             if result:
                 self.mongo_client.update_jenkins_run_res(
                     result,
-                    db_res.get("name"))
+                    db_res.get("name"),
+                    datetime.utcnow().isoformat()
+                )
             res_dict[db_res.get("name")] = result
 
         run_details = self.mongo_client.get_all_run_results(app)
@@ -309,9 +311,22 @@ class JenkinsJobs:
         if result:
             self.mongo_client.update_jenkins_run_res(
                     result,
-                    db_res.get("name"))
+                    db_res.get("name"),
+                    datetime.utcnow().isoformat()
+            )
 
         return result
+
+    def delete_run_result(self, job_name=None):
+        if not job_name or job_name in ['undefined', 'null', '']:
+            logger.warning(f"Skipping invalid job_name={job_name}")
+            return
+        db_res = self.mongo_client.get_run_result(job_name)
+        if db_res.get("res") in ["running"]:
+            logger.info(f"the test is still running")
+            self.fetch_run_res_using_build_num(job_name)
+            return
+        self.mongo_client.delete_job_by_name(job_name, collection="runner")
 
     @classmethod
     def submit_job_task(cls, job_name: str, parameters: dict):
@@ -360,8 +375,8 @@ class JenkinsJobs:
                 "job_name": job_name,
                 "parameters": parameters,
                 "status": "running",
-                "started_at": datetime.utcnow(),
-                "updated_at": datetime.utcnow()
+                "started_at": datetime.utcnow().isoformat(),
+                "updated_at": datetime.utcnow().isoformat()
             }
             if self.mongo_client:
                 self.mongo_client.insert_document(record)
@@ -383,7 +398,8 @@ class JenkinsJobs:
         test_env = data.get("environment", "").lower()
         test_platforms = data.get("platforms", [])
         request_info = data.get("parameters", {})
-        custom_env = data.get("custom_env", {})
+        custom_env = data.get("custom", {})
+        test_project = data.get("project", "ftm_ios")
 
         try:
             test_env_info = self.mongo_client.fetch_test_env_info(test_env,
@@ -415,8 +431,11 @@ class JenkinsJobs:
                                 "build_url": build_url,
                                 "build_parameters": params,
                                 "platform": platform,
-                                "app": "ftm_ios",
-                                "res": "running"}
+                                "app": test_project,
+                                "res": "running",
+                                "started_at": datetime.utcnow().isoformat(),
+                                "updated_at": datetime.utcnow().isoformat()
+                            }
                             self.mongo_client.insert_document(
                                 insert_body,
                                 collection="runner"

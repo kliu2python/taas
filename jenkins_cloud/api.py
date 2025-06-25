@@ -175,6 +175,17 @@ class GetFTMIOSTaskRunResult(Resource):
         return results, 200
 
 
+@rest.route("/run/result/ios/ftm/delete")
+class DeleteFTMiOSResult(Resource):
+    def delete(self):
+        try:
+            job_name = request.args.get("job_name")
+            results = runner.delete_run_result(job_name)
+        except Exception:
+            return "auth failed", 500
+        return results, 200
+
+
 @rest.route("/apk_images")
 class ListAllAPKImages(Resource):
     def get(self):

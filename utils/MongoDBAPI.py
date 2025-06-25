@@ -95,14 +95,15 @@ class MongoDBAPI:
             logger.error(f"Error inserting document into MongoDB: {e}")
             return None
 
-    def update_jenkins_run_res(self, res, job_name):
+    def update_jenkins_run_res(self, res, job_name, updated_at):
         update_body = {
             "filter": {
                 "name": job_name
             },
             "update": {
                 "$set": {
-                    f"res": res
+                    "res": res,
+                    "updated_at": updated_at
                 }
             }
         }
@@ -114,7 +115,6 @@ class MongoDBAPI:
         except requests.exceptions.RequestException as e:
             logger.error(f"Error inserting document into MongoDB: {e}")
             return None
-
 
     def fetch_test_env_info(self, test_env, custom_env: dict = None):
         filter_json = json.dumps(f"name={test_env}")
@@ -299,7 +299,7 @@ class MongoDBAPI:
             logger.error(f"Error fetching jobs from MongoDB: {e}")
             return []
 
-    def get_run_result(self, name) -> list:
+    def get_run_result(self, name) -> dict:
         """Fetch all job names from the MongoDB collection."""
         filter_json = json.dumps(f"name={name}")
 
