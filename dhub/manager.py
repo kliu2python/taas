@@ -392,7 +392,7 @@ def launch_selenium_node(data: dict):
     datastore.set("pools", [json.dumps({
         "pod_name": name
     })])
-    logger.info(f"going to create emulator {str(data)}")
+    logger.info(f"going to create selenium pod using {str(data)}")
     return name
 
 
@@ -418,7 +418,7 @@ def do_delete_selenium_node(pod_name: str):
 def check_selenium_node(pod_name: str):
     session = node(pod_name)
     res = session.check_selenium_node_status()
-    logger.info(f"The res of delete pod {pod_name} is {res}")
+    logger.info(f"The res of checking pod {pod_name} is {res}")
     return res
 
 
