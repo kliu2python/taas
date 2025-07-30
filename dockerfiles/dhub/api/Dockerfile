@@ -1,4 +1,4 @@
-FROM python:3.8.19
+FROM public.ecr.aws/sam/build-python3.8:1.90
 
 COPY . /taas
 
