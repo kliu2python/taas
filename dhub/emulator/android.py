@@ -92,6 +92,10 @@ class AndroidEmulator:
         pod["metadata"]["labels"]["app"] = unique_name
         pod["spec"]["containers"][0]["image"] = image
         pod["spec"]["containers"][0]["volumeMounts"][1]["subPath"] = unique_name
+        pod["spec"]["volumes"][1][
+            "hostPath"
+        ]["path"] = f"/home/fortinet/snapshots/api_1.0.{api_level}"
+
         service = yaml.safe_load(contents[1])
         service["metadata"]["name"] = unique_name
         service["spec"]["selector"]["app"] = unique_name

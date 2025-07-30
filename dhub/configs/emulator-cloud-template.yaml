@@ -24,6 +24,8 @@ spec:
         - name: log-volume
           mountPath: /home/fortinet/appium_log
           subPath: appium.log  # Mount the specific log file
+        - name: snapshot-volume
+          mountPath: /home/fortinet/.android/avd
       env:
         - name: ANDROID_SDK_ROOT
           value: "/opt/android-sdk"
@@ -33,6 +35,9 @@ spec:
     - name: apk-volume
       hostPath:
         path: /home/fortinet/apk
+    - name: snapshot-volume
+      hostPath:
+        path: /home/fortinet/snapshots
     - name: log-volume
       hostPath:
         path: /home/fortinet/appium_log
