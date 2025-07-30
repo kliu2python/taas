@@ -203,16 +203,16 @@ class Node:
             response.raise_for_status()
         except requests.exceptions.HTTPError as errh:
             print(f"Http Error: {errh}")
-            return None
+            return "None"
         except requests.exceptions.ConnectionError as errc:
             print(f"Error Connecting: {errc}")
-            return None
+            return "None"
         except requests.exceptions.Timeout as errt:
             print(f"Timeout Error: {errt}")
-            return None
+            return "None"
         except requests.exceptions.RequestException as err:
             print(f"OOps: Something Else: {err}")
-            return None
+            return "None"
 
         status_data = response.json()
         nodes = status_data['value']['nodes']

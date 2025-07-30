@@ -2,5 +2,5 @@ opsgenie-sdk==2.1.1
 prometheus-client==0.8.0
 redis==3.5.3
 alembic==1.5.4
-pymysql==0.10.0
+pymysql
 cryptography
