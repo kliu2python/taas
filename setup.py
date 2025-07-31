@@ -39,7 +39,7 @@ setup(
         'rq',
         'celery',
         'cryptography',
-        'urllib3',
+        'urllib3<2.0',
         'beautifulsoup4',
         'kubernetes==29.0.0',
         'flask-cors==3.0.9'
