@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route} from 'react-router-dom';
-import 'slick-carousel/slick/slick.css'; 
-import 'slick-carousel/slick/slick-theme.css'; 
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import 'slick-carousel/slick/slick.css';
+import 'slick-carousel/slick/slick-theme.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 import ResourcePage from './components/EmulatorCloud';
 import CustomModal from './components/CustomModal';
 import LoadingModal from './components/LoadingModal';
-import HomePage from './components/HomePage'; // Import the new HomePage component
+import HomePage from './components/HomePage';
 import NavigateBar from './components/NavigateBar';
 import ReportError from './components/ReportError';
 import ResourceManagement from './components/ResourceManagement';
@@ -27,13 +27,16 @@ interface Resource {
   vnc_port: number;
 }
 
-const App: React.FC = () => {
+const AppRoutes: React.FC = () => {
   const [nickname, setNickname] = useState<string>('');
   const [resources, setResources] = useState<Resource[]>([]);
   const [rememberNickname] = useState<boolean>(true);
   const [modalIsOpen, setModalIsOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [os, setOS] = useState<string | null>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
+  const location = useLocation();
+  const isHome = location.pathname === '/';
 
   useEffect(() => {
     const storedNickname = localStorage.getItem('nickname');
@@ -58,10 +61,10 @@ const App: React.FC = () => {
     setNickname('');
   };
 
-  const fetchResources = async (nickname: string) => {
+  const fetchResources = async (nicknameValue: string) => {
     setLoading(true);
     try {
-      const response = await fetch(`${config.emulatorBaseUrl}/dhub/emulator/list/${nickname}`, {
+      const response = await fetch(`${config.emulatorBaseUrl}/dhub/emulator/list/${nicknameValue}`, {
         method: 'GET',
       });
       if (!response.ok) {
@@ -76,7 +79,7 @@ const App: React.FC = () => {
     }
   };
 
-  const createEmulator = async (os: string, version: string) => {
+  const createEmulator = async (osValue: string, version: string) => {
     setLoading(true);
     try {
       const response = await fetch(`${config.emulatorBaseUrl}/dhub/emulator/create`, {
@@ -84,7 +87,7 @@ const App: React.FC = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ os, version, creator: nickname }),
+        body: JSON.stringify({ os: osValue, version, creator: nickname }),
       });
       if (!response.ok) {
         throw new Error('Failed to create emulator');
@@ -126,8 +129,8 @@ const App: React.FC = () => {
     setOS(selectedOS);
   };
 
-  const handleVersionSubmit = (os: string, version: string) => {
-    createEmulator(os, version);
+  const handleVersionSubmit = (osValue: string, version: string) => {
+    createEmulator(osValue, version);
   };
 
   const updateResourceStatus = (name: string, status: string) => {
@@ -136,70 +139,55 @@ const App: React.FC = () => {
     );
   };
 
+  const toggleSidebar = () => {
+    setSidebarCollapsed((prev) => !prev);
+  };
+
   return (
-    <Router>
+    <>
       <div className="app-shell">
-        <aside className="app-sidebar">
-          <NavigateBar />
+        <aside className={`app-sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
+          <NavigateBar collapsed={sidebarCollapsed} />
         </aside>
         <div className="app-main">
-          <Header nickname={nickname} resetNickname={resetNickname} handleNicknameSubmit={handleNicknameSubmit} />
-          <main className="app-content">
+          <Header
+            nickname={nickname}
+            resetNickname={resetNickname}
+            handleNicknameSubmit={handleNicknameSubmit}
+            onToggleSidebar={toggleSidebar}
+            sidebarCollapsed={sidebarCollapsed}
+          />
+          <main className={`app-content ${isHome ? 'is-home' : ''}`}>
             <Routes>
-            {/* Home Page */}
-            <Route path="/" element={
-              <HomePage
-                nickName={nickname}
-              />}
-            />
-            {/* Emulator Cloud Page */}
-            <Route
-              path="/emulator-cloud"
-              element={
-                <ResourcePage
-                  resources={resources}
-                  createResource={createEmulator}
-                  deleteResource={deleteResource}
-                  launchVNC={launchVNC}
-                  refreshPage={() => fetchResources(nickname)}
-                  nickName={nickname}
-                  resetNickname={resetNickname}
-                  handleCreateNew={() => setModalIsOpen(true)}
-                  updateResourceStatus={updateResourceStatus}
-                  handleNicknameSubmit={handleNicknameSubmit}
-                />
-              }
-            />
-            <Route path="/browser-cloud" element={
-              <BrowserCloud 
-                nickName={nickname}
-              />}
-            />
-            <Route path="/jenkins-cloud" element={
-              <JenkinsCloudPage 
-              />}
-            />
-            <Route path="/reviewfinder" element={
-              <ReviewFinder />}
-            />
-            <Route path="/resource" element={
-              <ResourceManagement 
-                nickName={nickname}
-              />} 
-            />
-            <Route path="/report-error" element={
-              <ReportError
-                nickName={nickname}
+              <Route path="/" element={<HomePage nickName={nickname} />} />
+              <Route
+                path="/emulator-cloud"
+                element={
+                  <ResourcePage
+                    resources={resources}
+                    createResource={createEmulator}
+                    deleteResource={deleteResource}
+                    launchVNC={launchVNC}
+                    refreshPage={() => fetchResources(nickname)}
+                    nickName={nickname}
+                    resetNickname={resetNickname}
+                    handleCreateNew={() => setModalIsOpen(true)}
+                    updateResourceStatus={updateResourceStatus}
+                    handleNicknameSubmit={handleNicknameSubmit}
+                  />
+                }
               />
-              } 
-            />
-            <Route path="/jenkins-cloud/:jobName" element={<JobDetailPage />} />
+              <Route path="/browser-cloud" element={<BrowserCloud nickName={nickname} />} />
+              <Route path="/jenkins-cloud" element={<JenkinsCloudPage />} />
+              <Route path="/reviewfinder" element={<ReviewFinder />} />
+              <Route path="/resource" element={<ResourceManagement nickName={nickname} />} />
+              <Route path="/report-error" element={<ReportError nickName={nickname} />} />
+              <Route path="/jenkins-cloud/:jobName" element={<JobDetailPage />} />
             </Routes>
           </main>
         </div>
       </div>
 
-      {/* Modals */}
       <CustomModal
         isOpen={modalIsOpen}
         onClose={() => setModalIsOpen(false)}
@@ -208,8 +196,14 @@ const App: React.FC = () => {
         os={os}
       />
       <LoadingModal isOpen={loading} />
-    </Router>
+    </>
   );
 };
+
+const App: React.FC = () => (
+  <Router>
+    <AppRoutes />
+  </Router>
+);
 
 export default App;

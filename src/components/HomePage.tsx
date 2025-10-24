@@ -67,28 +67,16 @@ const features: FeatureCard[] = [
   },
 ];
 
-const HomePage: React.FC<HomePageProps> = ({ nickName }) => {
-  const userName = nickName || 'Guest';
-
+const HomePage: React.FC<HomePageProps> = () => {
   return (
     <div className="home-page">
-      <section className="home-hero">
-        <span className="home-hero-badge">Test as a Service</span>
-        <h1>
-          Welcome back, <span>{userName}</span>
-        </h1>
+      <section className="home-overview">
+        <span className="home-overview-badge">Test as a Service</span>
+        <h1>Launch everything you need to validate faster</h1>
         <p>
-          Power every stage of your validation workflow with a unified dashboard that brings emulators,
-          browsers, CI pipelines, and resource management together.
+          Orchestrate devices, browsers, CI pipelines, and shared lab resources without hopping across
+          different tools. Pick a workspace to get started.
         </p>
-        <div className="home-hero-actions">
-          <Link to="/emulator-cloud" className="cta-primary">
-            Go to Emulator Cloud
-          </Link>
-          <Link to="/report-error" className="cta-secondary">
-            Report an Issue
-          </Link>
-        </div>
       </section>
 
       <section className="home-feature-grid" aria-label="Available services">
@@ -96,9 +84,7 @@ const HomePage: React.FC<HomePageProps> = ({ nickName }) => {
           const iconElement = React.createElement(icon as React.ComponentType);
           return (
             <Link key={title} to={to} className={`home-feature-card ${accent}`}>
-              <span className="home-feature-icon">
-                {iconElement}
-              </span>
+              <span className="home-feature-icon">{iconElement}</span>
               <div className="home-feature-content">
                 <h3>{title}</h3>
                 <p>{description}</p>

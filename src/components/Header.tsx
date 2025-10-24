@@ -2,6 +2,7 @@ import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { Dropdown } from 'react-bootstrap';
 import NickNamePage from './nickname';
+import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
 import { unslugify } from '../utils/slugify';
 
@@ -9,9 +10,17 @@ interface HeaderProps {
   nickname: string;
   resetNickname: () => void;
   handleNicknameSubmit: (nickname: string) => void;
+  onToggleSidebar: () => void;
+  sidebarCollapsed: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ nickname, resetNickname, handleNicknameSubmit }) => {
+const Header: React.FC<HeaderProps> = ({
+  nickname,
+  resetNickname,
+  handleNicknameSubmit,
+  onToggleSidebar,
+  sidebarCollapsed,
+}) => {
   const location = useLocation();
 
   const getTitle = (path: string): string => {
@@ -70,8 +79,18 @@ const Header: React.FC<HeaderProps> = ({ nickname, resetNickname, handleNickname
 
   const description = getDescription(location.pathname);
 
+  const ToggleIcon = (sidebarCollapsed ? FiChevronRight : FiChevronLeft) as React.ComponentType;
+
   return (
     <header className="page-header">
+      <button
+        type="button"
+        className="sidebar-toggle"
+        onClick={onToggleSidebar}
+        aria-label={sidebarCollapsed ? 'Expand navigation' : 'Collapse navigation'}
+      >
+        {React.createElement(ToggleIcon)}
+      </button>
       <div className="page-title-group">
         <span className="page-eyebrow">Fortinet TaaS</span>
         <h1>{title}</h1>
