@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route} from 'react-router-dom';
-import { Container} from 'react-bootstrap';
 import 'slick-carousel/slick/slick.css'; 
 import 'slick-carousel/slick/slick-theme.css'; 
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -139,21 +138,19 @@ const App: React.FC = () => {
 
   return (
     <Router>
-      <div className="d-flex">
-        {/* Sidebar */}
-        <NavigateBar />
-        {/* Main Content */}
-        <div className="flex-grow-1">
-        <Header nickname={nickname} resetNickname={resetNickname} handleNicknameSubmit={handleNicknameSubmit} />
-          
-
-          <Container fluid>
-          <Routes>
+      <div className="app-shell">
+        <aside className="app-sidebar">
+          <NavigateBar />
+        </aside>
+        <div className="app-main">
+          <Header nickname={nickname} resetNickname={resetNickname} handleNicknameSubmit={handleNicknameSubmit} />
+          <main className="app-content">
+            <Routes>
             {/* Home Page */}
             <Route path="/" element={
-              <HomePage 
+              <HomePage
                 nickName={nickname}
-              />} 
+              />}
             />
             {/* Emulator Cloud Page */}
             <Route
@@ -197,8 +194,8 @@ const App: React.FC = () => {
               } 
             />
             <Route path="/jenkins-cloud/:jobName" element={<JobDetailPage />} />
-          </Routes>
-          </Container>
+            </Routes>
+          </main>
         </div>
       </div>
 
