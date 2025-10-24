@@ -4,17 +4,18 @@ const express = require('express');
 const path = require('path');
 
 const app = express();
+const buildPath = path.resolve(__dirname, '../../apps/frontend/build');
 
 // Load TLS cert and key (mounted from Kubernetes secret)
 const key = fs.readFileSync('/etc/tls/tls.key');
 const cert = fs.readFileSync('/etc/tls/tls.crt');
 
 // Serve static React files
-app.use(express.static(path.join(__dirname, 'build')));
+app.use(express.static(buildPath));
 
 // SPA fallback
 app.get('*', (_, res) => {
-  res.sendFile(path.join(__dirname, 'build', 'index.html'));
+  res.sendFile(path.join(buildPath, 'index.html'));
 });
 
 // Start HTTPS server
