@@ -1,9 +1,0 @@
-node_modules
-apps/frontend/node_modules
-services/**/node_modules
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-Dockerfile
-.git
-.gitignore

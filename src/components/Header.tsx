@@ -1,7 +1,6 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { Dropdown } from 'react-bootstrap';
-import { FiMenu, FiSidebar } from 'react-icons/fi';
 import NickNamePage from './nickname';
 
 import { unslugify } from '../utils/slugify';
@@ -10,47 +9,38 @@ interface HeaderProps {
   nickname: string;
   resetNickname: () => void;
   handleNicknameSubmit: (nickname: string) => void;
-  sidebarCollapsed: boolean;
-  onToggleSidebar: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({
-  nickname,
-  resetNickname,
-  handleNicknameSubmit,
-  sidebarCollapsed,
-  onToggleSidebar,
-}) => {
+const Header: React.FC<HeaderProps> = ({ nickname, resetNickname, handleNicknameSubmit }) => {
   const location = useLocation();
-
-  const ToggleIcon = (sidebarCollapsed ? FiMenu : FiSidebar) as React.ElementType;
 
   const getTitle = (path: string): string => {
     if (path.startsWith('/jenkins-cloud/')) {
+      // Extract server slug after "/jenkins-cloud/"
       const serverSlug = path.replace('/jenkins-cloud/', '');
       if (serverSlug) {
         return unslugify(serverSlug);
       }
       return 'Jenkins Cloud';
     }
-
+    
     switch (path) {
-      case '/emulator-cloud':
-        return 'Emulator Resources';
-      case '/browser-cloud':
-        return 'Browser Resources';
-      case '/reviewfinder':
-        return 'FTNT Review Finder';
-      case '/jenkins-cloud':
-        return 'Jenkins Cloud';
-      case '/resource':
-        return 'Resource Dashboard';
-      case '/report-error':
-        return 'Report an Error';
-      case '/':
-        return 'Home';
-      default:
-        return 'TaaS Cloud';
+        case '/emulator-cloud':
+            return 'Emulator Resources';
+        case '/browser-cloud':
+            return 'Browser Resources';
+        case '/reviewfinder':
+            return 'FTNT Review Finder';
+        case '/jenkins-cloud':
+          return 'Jenkins Cloud';
+        case '/resource':
+            return 'Resource Dashboard';
+        case '/report-error':
+            return 'Report an Error';
+        case '/':
+            return 'Home';
+        default:
+            return 'TaaS Cloud';
     }
   };
 
@@ -75,21 +65,13 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   const loginEnabledPaths = ['/emulator-cloud', '/browser-cloud', '/report-error'];
+  // Check if the path is one of the specific ones where nickname and login should be shown
   const showLogin = loginEnabledPaths.some((path) => location.pathname.startsWith(path));
 
   const description = getDescription(location.pathname);
 
   return (
     <header className="page-header">
-      <button
-        type="button"
-        className="header-sidebar-toggle"
-        onClick={onToggleSidebar}
-        aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        aria-expanded={!sidebarCollapsed}
-      >
-        {React.createElement(ToggleIcon)}
-      </button>
       <div className="page-title-group">
         <span className="page-eyebrow">Fortinet TaaS</span>
         <h1>{title}</h1>
