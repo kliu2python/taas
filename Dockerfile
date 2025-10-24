@@ -1,23 +1,29 @@
-# Use an official Node.js image as a base
+# Use official Node.js base image
 FROM node:14-alpine
 
-# Set the working directory inside the container
+# Set working directory
 WORKDIR /app
 
-# Copy package.json and package-lock.json to the working directory
+# Copy package files
 COPY package*.json ./
 
-# Install dependencies
+# Install dependencies (including react-scripts & express)
 RUN npm install
 
-# Copy the rest of the application code
+# Copy rest of the application
 COPY . .
 
-# Build the TypeScript code
+# Build the React app (creates /app/build)
 RUN npm run build
 
-# Expose the port the app runs on
+# Install express (if not already included in package.json)
+RUN npm install express
+
+# Copy HTTPS server entry point
+COPY server.js .
+
+# Expose HTTPS port
 EXPOSE 3000
 
-# Command to run the app
-CMD ["npm", "start"]
+# Start HTTPS server
+CMD ["node", "server.js"]

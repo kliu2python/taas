@@ -16,8 +16,7 @@ import Header from './components/Header';
 import BrowserCloud from './components/BrowserCloud';
 import config from './config/config';
 import ReviewFinder from './components/ReviewFinder';
-import ServerListPage from './components/JenkinsCloud';
-import ServerDetailPage from './components/ServerDetailPage'; // You’ll create this below
+import JenkinsCloudPage from './components/JenkinsCloud';
 import JobDetailPage from './components/ServerDetailPage';
 
 interface Resource {
@@ -32,7 +31,7 @@ interface Resource {
 const App: React.FC = () => {
   const [nickname, setNickname] = useState<string>('');
   const [resources, setResources] = useState<Resource[]>([]);
-  const [rememberNickname, setRememberNickname] = useState<boolean>(true);
+  const [rememberNickname] = useState<boolean>(true);
   const [modalIsOpen, setModalIsOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [os, setOS] = useState<string | null>(null);
@@ -180,7 +179,7 @@ const App: React.FC = () => {
               />}
             />
             <Route path="/jenkins-cloud" element={
-              <ServerListPage 
+              <JenkinsCloudPage 
               />}
             />
             <Route path="/reviewfinder" element={

@@ -1,22 +1,19 @@
 import React, { useState } from 'react';
 import { Table, Button, Modal } from 'react-bootstrap';
-import Slider from 'react-slick'; // Import React Slick for the carousel
+import Slider from 'react-slick';
 
-// Define the ResourceManageProps interface
 interface ResourceManageProps {
   nickName: string;
 }
 
-// Define the Resource interface
 interface Resource {
   name: string;
   description: string;
   link: string;
-  introImages: string[]; // Array to hold images for the slideshow
+  introImages: string[];
 }
 
 const ResourceManagement: React.FC<ResourceManageProps> = ({ nickName }) => {
-  // Define the resources with intro images for slideshow
   const resources: Resource[] = [
     {
       name: 'Jupyter Server',
@@ -68,26 +65,32 @@ const ResourceManagement: React.FC<ResourceManageProps> = ({ nickName }) => {
         '/static/imgs/search3.png',
       ],
     },
-    // Add more resources with intro images here
+    {
+      name: 'Add Ollama Server into VSCode as code assist',
+      description: 'Step to add the Continus as the code assist to connect with Ollama server as the code assist',
+      link: 'http://172.30.91.194:11434/',
+      introImages: [
+        '/static/imgs/continue1.png',
+        '/static/imgs/continue2.png',
+        '/static/imgs/continue3.png',
+      ],
+    },
   ];
 
-  // State to manage modal visibility and current resource's intro images
   const [showModal, setShowModal] = useState(false);
   const [currentResource, setCurrentResource] = useState<Resource | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
-  // Handle modal opening and passing the resource data
   const handleOpenModal = (resource: Resource) => {
     setCurrentResource(resource);
     setShowModal(true);
   };
 
-  // Handle modal closing
   const handleCloseModal = () => {
     setShowModal(false);
     setCurrentResource(null);
   };
 
-  // Slick Carousel settings for the slideshow
   const carouselSettings = {
     dots: true,
     infinite: true,
@@ -96,14 +99,12 @@ const ResourceManagement: React.FC<ResourceManageProps> = ({ nickName }) => {
     slidesToScroll: 1,
   };
 
-  // Function to handle button click (open the link)
   const handleLinkClick = (link: string) => {
     window.open(link, '_blank');
   };
 
   return (
     <div style={{ padding: '20px' }}>
-      {/* Resource Table */}
       <div style={{ marginTop: '30px' }}>
         <Table striped bordered hover responsive variant="light">
           <thead>
@@ -139,7 +140,7 @@ const ResourceManagement: React.FC<ResourceManageProps> = ({ nickName }) => {
         </Table>
       </div>
 
-      {/* Modal for intro */}
+      {/* Modal for intro slideshow */}
       <Modal show={showModal} onHide={handleCloseModal} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>How to Use {currentResource?.name}</Modal.Title>
@@ -149,7 +150,12 @@ const ResourceManagement: React.FC<ResourceManageProps> = ({ nickName }) => {
             <Slider {...carouselSettings}>
               {currentResource.introImages.map((image, index) => (
                 <div key={index}>
-                  <img src={image} alt={`Step ${index + 1}`} style={{ width: '100%', height: 'auto' }} />
+                  <img
+                    src={image}
+                    alt={`Step ${index + 1}`}
+                    style={{ width: '100%', height: 'auto', cursor: 'zoom-in' }}
+                    onClick={() => setLightboxIndex(index)}
+                  />
                 </div>
               ))}
             </Slider>
@@ -161,6 +167,58 @@ const ResourceManagement: React.FC<ResourceManageProps> = ({ nickName }) => {
           </Button>
         </Modal.Footer>
       </Modal>
+
+      {/* Lightbox Modal */}
+      {currentResource && (
+        <Modal show={lightboxIndex !== null} onHide={() => setLightboxIndex(null)} size="xl" centered>
+          <Modal.Body style={{ padding: 0, backgroundColor: '#000', position: 'relative' }}>
+            <img
+              src={currentResource.introImages[lightboxIndex ?? 0]}
+              alt="Enlarged"
+              style={{ width: '100%', height: 'auto', display: 'block', margin: '0 auto' }}
+            />
+            {/* Prev Button */}
+            <Button
+              variant="light"
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightboxIndex((prev) => (prev! > 0 ? prev! - 1 : prev));
+              }}
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: '10px',
+                transform: 'translateY(-50%)',
+                opacity: 0.8,
+              }}
+              disabled={lightboxIndex === 0}
+            >
+              ‹
+            </Button>
+
+            {/* Next Button */}
+            <Button
+              variant="light"
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightboxIndex((prev) =>
+                  prev! < currentResource.introImages.length - 1 ? prev! + 1 : prev
+                );
+              }}
+              style={{
+                position: 'absolute',
+                top: '50%',
+                right: '10px',
+                transform: 'translateY(-50%)',
+                opacity: 0.8,
+              }}
+              disabled={lightboxIndex === currentResource.introImages.length - 1}
+            >
+              ›
+            </Button>
+          </Modal.Body>
+        </Modal>
+      )}
     </div>
   );
 };

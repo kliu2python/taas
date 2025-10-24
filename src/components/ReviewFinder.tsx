@@ -357,13 +357,6 @@ const ReviewFinder: React.FC = () => {
     return filteredReviews.slice(startIndex, endIndex);
   };
 
-  const toggleExpand = (reviewIndex: number) => {
-    const globalIndex = (currentPage - 1) * reviewsPerPage + reviewIndex; // Calculate the global index
-    const updatedReviews = [...reviews];
-    updatedReviews[globalIndex].isExpanded = !updatedReviews[globalIndex].isExpanded;
-    setReviews(updatedReviews);
-  };
-
   const handleShowMore = (content: string) => {
     setModalContent(content);
     setShowModal(true);
