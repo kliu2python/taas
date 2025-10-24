@@ -11,7 +11,7 @@ import {
 } from 'react-icons/fi';
 
 interface HomePageProps {
-  nickName?: string; // Made it optional to handle cases where it might not be passed
+  nickName?: string;
 }
 
 interface FeatureCard {
@@ -25,42 +25,42 @@ interface FeatureCard {
 const features: FeatureCard[] = [
   {
     title: 'Launch Emulator Labs',
-    description: 'Request Android or iOS devices on demand and manage them with fine-grained controls.',
+    description: 'Spin up Android or iOS devices instantly and manage them in one view.',
     to: '/emulator-cloud',
     icon: FiSmartphone,
     accent: 'accent-blue',
   },
   {
     title: 'Explore Browser Cloud',
-    description: 'Spawn isolated browser environments for exploratory, regression, and compatibility testing.',
+    description: 'Open disposable browser sessions tailored to every testing workflow.',
     to: '/browser-cloud',
     icon: FiCommand,
     accent: 'accent-teal',
   },
   {
     title: 'Monitor Jenkins Pipelines',
-    description: 'Stay on top of build health, investigate failures, and relaunch jobs when needed.',
+    description: 'Track job health and restart builds without leaving the dashboard.',
     to: '/jenkins-cloud',
     icon: FiCloud,
     accent: 'accent-purple',
   },
   {
     title: 'Review Customer Feedback',
-    description: 'Surface trends from Fortinet reviews to inform release readiness and prioritization.',
+    description: 'Surface Fortinet review trends to guide release priorities.',
     to: '/reviewfinder',
     icon: FiSearch,
     accent: 'accent-orange',
   },
   {
     title: 'Manage Shared Resources',
-    description: 'Track capacity, reservations, and utilization metrics across shared lab assets.',
+    description: 'Watch utilization, reservations, and capacity in real time.',
     to: '/resource',
     icon: FiActivity,
     accent: 'accent-cyan',
   },
   {
     title: 'Report an Issue',
-    description: 'Quickly alert the TaaS team about outages, anomalies, or urgent needs.',
+    description: 'Alert the TaaS team about outages or urgent incidents with context.',
     to: '/report-error',
     icon: FiAlertTriangle,
     accent: 'accent-rose',
@@ -78,8 +78,7 @@ const HomePage: React.FC<HomePageProps> = ({ nickName }) => {
           Welcome back, <span>{userName}</span>
         </h1>
         <p>
-          Power every stage of your validation workflow with a unified dashboard that brings emulators,
-          browsers, CI pipelines, and resource management together.
+          Launch devices, browsers, CI insights, and resource intelligence without hopping between tools.
         </p>
         <div className="home-hero-actions">
           <Link to="/emulator-cloud" className="cta-primary">
@@ -96,9 +95,7 @@ const HomePage: React.FC<HomePageProps> = ({ nickName }) => {
           const iconElement = React.createElement(icon as React.ComponentType);
           return (
             <Link key={title} to={to} className={`home-feature-card ${accent}`}>
-              <span className="home-feature-icon">
-                {iconElement}
-              </span>
+              <span className="home-feature-icon">{iconElement}</span>
               <div className="home-feature-content">
                 <h3>{title}</h3>
                 <p>{description}</p>
@@ -114,17 +111,17 @@ const HomePage: React.FC<HomePageProps> = ({ nickName }) => {
           <article className="home-info-step">
             <span>1</span>
             <h3>Authenticate instantly</h3>
-            <p>Use your assigned nickname in the header to unlock emulator, browser, and reporting tools.</p>
+            <p>Enter your assigned nickname to unlock emulator, browser, and reporting tools.</p>
           </article>
           <article className="home-info-step">
             <span>2</span>
             <h3>Choose your workspace</h3>
-            <p>Launch the service you need, from mobile labs to Jenkins job tracking, with a single click.</p>
+            <p>Jump into the service you need—from mobile labs to Jenkins job tracking—in one click.</p>
           </article>
           <article className="home-info-step">
             <span>3</span>
             <h3>Collaborate and iterate</h3>
-            <p>Share insights, flag issues, and optimize usage with dashboards built for modern QA teams.</p>
+            <p>Share insights, flag issues, and coordinate releases with the wider QA team.</p>
           </article>
         </div>
       </section>

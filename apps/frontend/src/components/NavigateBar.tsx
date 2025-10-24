@@ -4,6 +4,8 @@ import { IconType } from 'react-icons';
 import {
   FiAlertCircle,
   FiBarChart2,
+  FiChevronLeft,
+  FiChevronRight,
   FiCloud,
   FiCommand,
   FiHome,
@@ -17,6 +19,11 @@ interface NavItem {
   description: string;
   icon: IconType;
   accent: string;
+}
+
+interface NavigateBarProps {
+  collapsed: boolean;
+  onToggleSidebar: () => void;
 }
 
 const navItems: NavItem[] = [
@@ -71,13 +78,27 @@ const navItems: NavItem[] = [
   },
 ];
 
-const NavigateBar: React.FC = () => {
+const NavigateBar: React.FC<NavigateBarProps> = ({ collapsed, onToggleSidebar }) => {
+  const ToggleGlyph = (collapsed ? FiChevronRight : FiChevronLeft) as React.ElementType;
   return (
-    <nav className="navigation-panel">
+    <nav className={`navigation-panel ${collapsed ? 'is-collapsed' : ''}`}>
       <div className="navigation-brand">
-        <span className="navigation-badge">TaaS Portal</span>
-        <h2>Test as a Service</h2>
-        <p>Your launchpad for quality engineering tools.</p>
+        <button
+          type="button"
+          className="navigation-toggle"
+          onClick={onToggleSidebar}
+          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {React.createElement(ToggleGlyph)}
+        </button>
+        {!collapsed && (
+          <>
+            <span className="navigation-badge">TaaS Portal</span>
+            <h2>Test as a Service</h2>
+            <p>Your launchpad for quality engineering tools.</p>
+          </>
+        )}
+        {collapsed && <span className="navigation-badge">TaaS</span>}
       </div>
 
       <div className="navigation-links">
@@ -91,6 +112,7 @@ const NavigateBar: React.FC = () => {
                 [
                   'navigation-link',
                   accent,
+                  collapsed ? 'collapsed' : '',
                   isActive ? 'active' : '',
                 ]
                   .filter(Boolean)
@@ -98,20 +120,25 @@ const NavigateBar: React.FC = () => {
               }
             >
               <span className="navigation-icon">{iconElement}</span>
-              <span className="navigation-copy">
-                <strong>{label}</strong>
-                <small>{description}</small>
-              </span>
+              {!collapsed && (
+                <span className="navigation-copy">
+                  <strong>{label}</strong>
+                  <small>{description}</small>
+                </span>
+              )}
+              {collapsed && <span className="sr-only">{label}</span>}
             </NavLink>
           );
         })}
       </div>
 
-      <div className="navigation-footer">
-        <p>Version 6.0.0</p>
-        <p>Maintained by Jiahao Liu</p>
-        <a href="mailto:ljiahao@fortinet.com">ljiahao@fortinet.com</a>
-      </div>
+      {!collapsed && (
+        <div className="navigation-footer">
+          <p>Version 6.0.0</p>
+          <p>Maintained by Jiahao Liu</p>
+          <a href="mailto:ljiahao@fortinet.com">ljiahao@fortinet.com</a>
+        </div>
+      )}
     </nav>
   );
 };

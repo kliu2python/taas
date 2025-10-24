@@ -1,29 +1,23 @@
-# Use official Node.js base image
-FROM node:14-alpine
-
-# Set working directory
+# Build the React frontend
+FROM node:18-alpine AS frontend-build
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+COPY apps/frontend/package.json apps/frontend/
+RUN npm install --prefix apps/frontend
 
-# Install dependencies (including react-scripts & express)
-RUN npm install
+COPY apps/frontend apps/frontend
+RUN npm run build --prefix apps/frontend
 
-# Copy rest of the application
-COPY . .
+# Build the frontend gateway service
+FROM node:18-alpine AS gateway
+WORKDIR /app
 
-# Build the React app (creates /app/build)
-RUN npm run build
+COPY services/frontend-gateway/package.json services/frontend-gateway/
+RUN npm install --prefix services/frontend-gateway
 
-# Install express (if not already included in package.json)
-RUN npm install express
+COPY services/frontend-gateway services/frontend-gateway
+COPY --from=frontend-build /app/apps/frontend/build apps/frontend/build
 
-# Copy HTTPS server entry point
-COPY server.js .
-
-# Expose HTTPS port
+WORKDIR /app/services/frontend-gateway
 EXPOSE 3000
-
-# Start HTTPS server
-CMD ["node", "server.js"]
+CMD ["npm", "start"]
