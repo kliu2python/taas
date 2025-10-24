@@ -10,6 +10,10 @@ import {
   FiSmartphone,
 } from 'react-icons/fi';
 
+interface HomePageProps {
+  nickName?: string;
+}
+
 interface FeatureCard {
   title: string;
   description: string;
@@ -63,9 +67,29 @@ const features: FeatureCard[] = [
   },
 ];
 
-const HomePage: React.FC = () => {
+const HomePage: React.FC<HomePageProps> = ({ nickName }) => {
+  const userName = nickName || 'Guest';
+
   return (
     <div className="home-page">
+      <section className="home-hero">
+        <span className="home-hero-badge">Test as a Service</span>
+        <h1>
+          Welcome back, <span>{userName}</span>
+        </h1>
+        <p>
+          Launch devices, browsers, CI insights, and resource intelligence without hopping between tools.
+        </p>
+        <div className="home-hero-actions">
+          <Link to="/emulator-cloud" className="cta-primary">
+            Go to Emulator Cloud
+          </Link>
+          <Link to="/report-error" className="cta-secondary">
+            Report an Issue
+          </Link>
+        </div>
+      </section>
+
       <section className="home-feature-grid" aria-label="Available services">
         {features.map(({ title, description, to, icon, accent }) => {
           const iconElement = React.createElement(icon as React.ComponentType);
