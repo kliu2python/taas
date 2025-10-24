@@ -96,9 +96,7 @@ const HomePage: React.FC<HomePageProps> = ({ nickName }) => {
           const iconElement = React.createElement(icon as React.ComponentType);
           return (
             <Link key={title} to={to} className={`home-feature-card ${accent}`}>
-              <span className="home-feature-icon">
-                {iconElement}
-              </span>
+              <span className="home-feature-icon">{iconElement}</span>
               <div className="home-feature-content">
                 <h3>{title}</h3>
                 <p>{description}</p>

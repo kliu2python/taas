@@ -71,9 +71,13 @@ const navItems: NavItem[] = [
   },
 ];
 
-const NavigateBar: React.FC = () => {
+interface NavigateBarProps {
+  collapsed?: boolean;
+}
+
+const NavigateBar: React.FC<NavigateBarProps> = ({ collapsed = false }) => {
   return (
-    <nav className="navigation-panel">
+    <nav className={`navigation-panel ${collapsed ? 'collapsed' : ''}`}>
       <div className="navigation-brand">
         <span className="navigation-badge">TaaS Portal</span>
         <h2>Test as a Service</h2>
@@ -92,10 +96,12 @@ const NavigateBar: React.FC = () => {
                   'navigation-link',
                   accent,
                   isActive ? 'active' : '',
+                  collapsed ? 'condensed' : '',
                 ]
                   .filter(Boolean)
                   .join(' ')
               }
+              title={label}
             >
               <span className="navigation-icon">{iconElement}</span>
               <span className="navigation-copy">
