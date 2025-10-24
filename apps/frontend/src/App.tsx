@@ -171,7 +171,7 @@ const AppLayout: React.FC = () => {
           <Routes>
             <Route
               path="/"
-              element={<HomePage nickName={nickname} />}
+              element={<HomePage />}
             />
             <Route
               path="/emulator-cloud"
