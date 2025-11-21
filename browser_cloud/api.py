@@ -8,13 +8,14 @@ from typing import Dict, List, Optional
 import os
 from urllib.parse import urlparse
 import threading
-import websocket  # pip install websocket-client
+import websocket
+
+from rest import RestApi
 from simple_websocket import ConnectionClosed
 from browser_cloud.config import Config
 
-app = Flask(__name__, static_folder='static')
-CORS(app)
-sock = Sock(app)  # Initialize WebSocket support
+rest = RestApi(base_route="/api/v1/jenkins_cloud")
+sock = Sock(rest)  # Initialize WebSocket support
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO)
@@ -314,13 +315,13 @@ def vnc_proxy(client_ws, session_id):
 #  STANDARD API ROUTES
 # ==========================================
 
-@app.route('/')
+@rest.route('/')
 def index():
     """Serve the main HTML page"""
     return send_from_directory('static', 'index.html')
 
 
-@app.route('/api/v1/browser_cloud/status', methods=['GET'])
+@rest.route('L', methods=['GET'])
 def get_status():
     """Get Grid status with parsed data"""
     try:
@@ -332,7 +333,7 @@ def get_status():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@app.route('/api/v1/browser_cloud/sessions', methods=['GET'])
+@rest.route('/api/v1/browser_cloud/sessions', methods=['GET'])
 def get_all_sessions():
     """Get all active sessions"""
     try:
@@ -343,7 +344,7 @@ def get_all_sessions():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@app.route('/api/v1/browser_cloud/session', methods=['POST'])
+@rest.route('/api/v1/browser_cloud/session', methods=['POST'])
 def create_session():
     """Create a new browser session"""
     try:
@@ -357,7 +358,7 @@ def create_session():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@app.route('/api/v1/browser_cloud/session/<session_id>', methods=['GET'])
+@rest.route('/api/v1/browser_cloud/session/<session_id>', methods=['GET'])
 def get_session_details(session_id):
     """Get details of a specific session"""
     try:
@@ -370,7 +371,7 @@ def get_session_details(session_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@app.route('/api/v1/browser_cloud/session/<session_id>', methods=['DELETE'])
+@rest.route('/api/v1/browser_cloud/session/<session_id>', methods=['DELETE'])
 def delete_session(session_id):
     """Delete a browser session"""
     try:
@@ -382,7 +383,7 @@ def delete_session(session_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@app.route('/api/v1/browser_cloud/node/<node_id>', methods=['GET'])
+@rest.route('/api/v1/browser_cloud/node/<node_id>', methods=['GET'])
 def get_node_info(node_id):
     """Get information about a specific node"""
     try:
@@ -395,7 +396,7 @@ def get_node_info(node_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@app.route('/api/v1/browser_cloud/node/<node_id>', methods=['DELETE'])
+@rest.route('/api/v1/browser_cloud/node/<node_id>', methods=['DELETE'])
 def remove_node(node_id):
     """Remove a node from the grid"""
     try:
@@ -407,7 +408,7 @@ def remove_node(node_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@app.route('/api/v1/browser_cloud/node/<node_id>/drain', methods=['POST'])
+@rest.route('/api/v1/browser_cloud/node/<node_id>/drain', methods=['POST'])
 def drain_node(node_id):
     """Drain a node (prevent new sessions)"""
     try:
@@ -419,7 +420,7 @@ def drain_node(node_id):
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@app.route('/api/v1/browser_cloud/queue', methods=['GET'])
+@rest.route('/api/v1/browser_cloud/queue', methods=['GET'])
 def get_queue():
     """Get the current session queue"""
     try:
@@ -430,7 +431,7 @@ def get_queue():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@app.route('/api/v1/browser_cloud/queue', methods=['DELETE'])
+@rest.route('/api/v1/browser_cloud/queue', methods=['DELETE'])
 def clear_queue():
     """Clear all pending session requests from the queue"""
     try:
@@ -442,7 +443,7 @@ def clear_queue():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@app.route('/api/v1/browser_cloud/config', methods=['GET'])
+@rest.route('/api/v1/browser_cloud/config', methods=['GET'])
 def get_config():
     """Get current Grid configuration"""
     try:
@@ -459,7 +460,7 @@ def get_config():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-@app.route('/api/v1/browser_cloud/health', methods=['GET'])
+@rest.route('/api/v1/browser_cloud/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
     try:

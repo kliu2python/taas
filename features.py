@@ -16,5 +16,6 @@ RESOURCE_MAPPING = {
     "jenkins_cloud": "jenkins_cloud.api",
     "mongodb": "mongodb.api",
     "reviewfinder": "reviewfinder.api",
-    "dhub": "dhub.api"
+    "dhub": "dhub.api",
+    "browser_cloud": "browser_cloud.api"
 }

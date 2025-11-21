@@ -46,7 +46,10 @@ setup(
         'python-dateutil',
         'apscheduler==3.11.0',
         'kubernetes==29.0.0',
-        'flask-cors==3.0.9'
+        'flask-cors==3.0.9',
+        'flask_sock',
+        'simple_websocket',
+        'flask_restx'
     ],
     packages=[],
     name='taas',

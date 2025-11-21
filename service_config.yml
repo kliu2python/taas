@@ -14,6 +14,7 @@ service_config:
 #        - upgrade
 #        - datasync
 #        - pool
-        - jenkins_cloud
+#        - jenkins_cloud
 #        - mongodb
 #        - reviewfinder
+        - browser_cloud

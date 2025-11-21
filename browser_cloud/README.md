@@ -63,7 +63,7 @@ Or use environment variables:
 ```bash
 cd browser_cloud
 pip install -r ../dockerfiles/browser_cloud/api/requirements
-python app.py
+python api.py
 ```
 
 Then open http://localhost:5000 in your browser.
