@@ -10,12 +10,16 @@ from urllib.parse import urlparse
 import threading
 import websocket
 
-from rest import RestApi
+from rest import RestApi, _api
 from simple_websocket import ConnectionClosed
 from browser_cloud.config import Config
 
-rest = RestApi(base_route="/api/v1/jenkins_cloud")
-sock = Sock(rest)  # Initialize WebSocket support
+# Initialize RestApi with proper base route
+rest = RestApi(base_route="/api/v1/browser_cloud")
+
+# Initialize WebSocket support with the Flask app from the global API
+# _api is set by load_api_resource() before this module is imported
+sock = Sock(_api.app)
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO)
@@ -321,7 +325,7 @@ def index():
     return send_from_directory('static', 'index.html')
 
 
-@rest.route('L', methods=['GET'])
+@rest.route('/status', methods=['GET'])
 def get_status():
     """Get Grid status with parsed data"""
     try:
