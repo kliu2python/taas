@@ -320,13 +320,13 @@ def vnc_proxy(client_ws, session_id):
 # ==========================================
 
 @rest.route('/')
-def index():
+def index(self):
     """Serve the main HTML page"""
     return send_from_directory('static', 'index.html')
 
 
 @rest.route('/status', methods=['GET'])
-def get_status():
+def get_status(self):
     """Get Grid status with parsed data"""
     try:
         status = grid_manager.get_status()
@@ -338,7 +338,7 @@ def get_status():
 
 
 @rest.route('/api/v1/browser_cloud/sessions', methods=['GET'])
-def get_all_sessions():
+def get_all_sessions(self):
     """Get all active sessions"""
     try:
         sessions = grid_manager.get_all_sessions()
@@ -349,7 +349,7 @@ def get_all_sessions():
 
 
 @rest.route('/api/v1/browser_cloud/session', methods=['POST'])
-def create_session():
+def create_session(self):
     """Create a new browser session"""
     try:
         capabilities = request.get_json()
@@ -363,7 +363,7 @@ def create_session():
 
 
 @rest.route('/api/v1/browser_cloud/session/<session_id>', methods=['GET'])
-def get_session_details(session_id):
+def get_session_details(self, session_id):
     """Get details of a specific session"""
     try:
         result = grid_manager.get_session(session_id)
@@ -376,7 +376,7 @@ def get_session_details(session_id):
 
 
 @rest.route('/api/v1/browser_cloud/session/<session_id>', methods=['DELETE'])
-def delete_session(session_id):
+def delete_session(self, session_id):
     """Delete a browser session"""
     try:
         if grid_manager.delete_session(session_id):
@@ -388,7 +388,7 @@ def delete_session(session_id):
 
 
 @rest.route('/api/v1/browser_cloud/node/<node_id>', methods=['GET'])
-def get_node_info(node_id):
+def get_node_info(self, node_id):
     """Get information about a specific node"""
     try:
         result = grid_manager.get_node_info(node_id)
@@ -401,7 +401,7 @@ def get_node_info(node_id):
 
 
 @rest.route('/api/v1/browser_cloud/node/<node_id>', methods=['DELETE'])
-def remove_node(node_id):
+def remove_node(self, node_id):
     """Remove a node from the grid"""
     try:
         if grid_manager.remove_node(node_id):
@@ -413,7 +413,7 @@ def remove_node(node_id):
 
 
 @rest.route('/api/v1/browser_cloud/node/<node_id>/drain', methods=['POST'])
-def drain_node(node_id):
+def drain_node(self, node_id):
     """Drain a node (prevent new sessions)"""
     try:
         if grid_manager.drain_node(node_id):
@@ -425,7 +425,7 @@ def drain_node(node_id):
 
 
 @rest.route('/api/v1/browser_cloud/queue', methods=['GET'])
-def get_queue():
+def get_queue(self):
     """Get the current session queue"""
     try:
         queue_data = grid_manager.get_session_queue()
@@ -436,7 +436,7 @@ def get_queue():
 
 
 @rest.route('/api/v1/browser_cloud/queue', methods=['DELETE'])
-def clear_queue():
+def clear_queue(self):
     """Clear all pending session requests from the queue"""
     try:
         if grid_manager.clear_session_queue():
@@ -448,7 +448,7 @@ def clear_queue():
 
 
 @rest.route('/api/v1/browser_cloud/config', methods=['GET'])
-def get_config():
+def get_config(self):
     """Get current Grid configuration"""
     try:
         return jsonify({
@@ -465,7 +465,7 @@ def get_config():
 
 
 @rest.route('/api/v1/browser_cloud/health', methods=['GET'])
-def health_check():
+def health_check(self):
     """Health check endpoint"""
     try:
         # Try to get grid status to verify connectivity
