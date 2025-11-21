@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser Cloud - Selenium Grid Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            opacity: 0.8;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #ecf0f1;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .controls {
+            padding: 30px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .controls h2 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-success {
+            background: #2ecc71;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #f39c12;
+            color: white;
+        }
+
+        .sessions-container {
+            padding: 30px;
+        }
+
+        .sessions-container h2 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        .session-card {
+            background: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .session-info h4 {
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .session-info p {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            margin: 4px 0;
+        }
+
+        .session-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .nodes-container {
+            padding: 30px;
+            background: #f8f9fa;
+        }
+
+        .nodes-container h2 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        .node-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .node-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .node-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .status-up {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-down {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-draining {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .slots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .slot {
+            padding: 15px;
+            border-radius: 6px;
+            border: 2px solid #dee2e6;
+        }
+
+        .slot.occupied {
+            background: #fff3cd;
+            border-color: #ffc107;
+        }
+
+        .slot.available {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.2em;
+            color: #7f8c8d;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Browser Cloud Manager</h1>
+            <p>Selenium Grid Dashboard & Control Panel</p>
+        </header>
+
+        <div class="stats" id="stats">
+            <div class="stat-card">
+                <h3>Total Nodes</h3>
+                <div class="value" id="totalNodes">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Slots</h3>
+                <div class="value" id="totalSlots">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Available Slots</h3>
+                <div class="value" id="availableSlots">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Active Sessions</h3>
+                <div class="value" id="activeSessions">-</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <h2>Grid Controls</h2>
+            <div class="btn-group">
+                <button class="btn-primary" onclick="refreshData()">
+                    <span id="refreshIcon">🔄</span> Refresh Data
+                </button>
+                <button class="btn-warning" onclick="clearQueue()">
+                    🗑️ Clear Session Queue
+                </button>
+                <button class="btn-danger" onclick="deleteAllSessions()">
+                    ⚠️ Delete All Sessions
+                </button>
+            </div>
+        </div>
+
+        <div class="sessions-container">
+            <h2>Active Sessions</h2>
+            <div id="sessions">
+                <div class="loading">Loading sessions...</div>
+            </div>
+        </div>
+
+        <div class="nodes-container">
+            <h2>Grid Nodes</h2>
+            <div id="nodes">
+                <div class="loading">Loading nodes...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api/v1/browser_cloud';
+        let refreshInterval;
+
+        async function fetchData() {
+            try {
+                const response = await fetch(`${API_BASE}/status`);
+                const result = await response.json();
+
+                if (result.success) {
+                    updateStats(result.data.statistics);
+                    updateSessions(result.data.sessions);
+                    updateNodes(result.data.nodes);
+                } else {
+                    showError('Failed to fetch grid data: ' + result.error);
+                }
+            } catch (error) {
+                showError('Error connecting to server: ' + error.message);
+            }
+        }
+
+        function updateStats(stats) {
+            document.getElementById('totalNodes').textContent = stats.totalNodes;
+            document.getElementById('totalSlots').textContent = stats.totalSlots;
+            document.getElementById('availableSlots').textContent = stats.availableSlots;
+            document.getElementById('activeSessions').textContent = stats.activeSessions;
+        }
+
+        function updateSessions(sessions) {
+            const container = document.getElementById('sessions');
+
+            if (sessions.length === 0) {
+                container.innerHTML = '<p style="color: #7f8c8d; padding: 20px;">No active sessions</p>';
+                return;
+            }
+
+            container.innerHTML = sessions.map(session => `
+                <div class="session-card">
+                    <div class="session-info">
+                        <h4>Session: ${session.sessionId}</h4>
+                        <p><strong>Browser:</strong> ${session.capabilities.browserName || 'Unknown'}</p>
+                        <p><strong>Node:</strong> ${session.nodeId}</p>
+                        <p><strong>Started:</strong> ${new Date(session.startTime).toLocaleString()}</p>
+                    </div>
+                    <div class="session-actions">
+                        <button class="btn-primary" onclick="openVNC('${session.sessionId}')">
+                            🖥️ VNC
+                        </button>
+                        <button class="btn-danger" onclick="deleteSession('${session.sessionId}')">
+                            🗑️ Delete
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateNodes(nodes) {
+            const container = document.getElementById('nodes');
+
+            if (nodes.length === 0) {
+                container.innerHTML = '<p style="color: #7f8c8d; padding: 20px;">No nodes available</p>';
+                return;
+            }
+
+            container.innerHTML = nodes.map(node => {
+                const availabilityClass = node.availability === 'UP' ? 'status-up' :
+                                        node.availability === 'DRAINING' ? 'status-draining' : 'status-down';
+
+                return `
+                    <div class="node-card">
+                        <div class="node-header">
+                            <div>
+                                <h3>${node.id}</h3>
+                                <p style="color: #7f8c8d; font-size: 0.9em;">${node.uri}</p>
+                            </div>
+                            <div>
+                                <span class="node-status ${availabilityClass}">${node.availability}</span>
+                                <button class="btn-warning" onclick="drainNode('${node.id}')" style="margin-left: 10px;">
+                                    Drain
+                                </button>
+                                <button class="btn-danger" onclick="removeNode('${node.id}')" style="margin-left: 5px;">
+                                    Remove
+                                </button>
+                            </div>
+                        </div>
+                        <div class="slots-grid">
+                            ${node.slots.map(slot => {
+                                const isOccupied = slot.session !== null;
+                                return `
+                                    <div class="slot ${isOccupied ? 'occupied' : 'available'}">
+                                        <strong>${slot.stereotype.browserName || 'Unknown'}</strong><br>
+                                        ${isOccupied ? '🔴 Occupied' : '🟢 Available'}
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function deleteSession(sessionId) {
+            if (!confirm(`Delete session ${sessionId}?`)) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/session/${sessionId}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('Session deleted successfully');
+                    fetchData();
+                } else {
+                    alert('Failed to delete session: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function deleteAllSessions() {
+            if (!confirm('Delete ALL active sessions? This cannot be undone!')) return;
+
+            const sessions = Array.from(document.querySelectorAll('.session-card'))
+                .map(card => card.querySelector('h4').textContent.replace('Session: ', ''));
+
+            for (const sessionId of sessions) {
+                await deleteSession(sessionId);
+            }
+        }
+
+        async function drainNode(nodeId) {
+            if (!confirm(`Drain node ${nodeId}? No new sessions will be assigned.`)) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/node/${nodeId}/drain`, {
+                    method: 'POST'
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('Node drained successfully');
+                    fetchData();
+                } else {
+                    alert('Failed to drain node: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function removeNode(nodeId) {
+            if (!confirm(`Remove node ${nodeId}? This will terminate all sessions on this node!`)) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/node/${nodeId}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('Node removed successfully');
+                    fetchData();
+                } else {
+                    alert('Failed to remove node: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function clearQueue() {
+            if (!confirm('Clear the session queue?')) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/queue`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('Queue cleared successfully');
+                } else {
+                    alert('Failed to clear queue: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        function openVNC(sessionId) {
+            // Open VNC viewer in a new window
+            const vncUrl = `/vnc/${sessionId}`;
+            window.open(vncUrl, '_blank', 'width=1280,height=720');
+        }
+
+        function refreshData() {
+            const icon = document.getElementById('refreshIcon');
+            icon.innerHTML = '<span class="spinner"></span>';
+            fetchData().then(() => {
+                setTimeout(() => {
+                    icon.textContent = '🔄';
+                }, 500);
+            });
+        }
+
+        function showError(message) {
+            const container = document.querySelector('.container');
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.textContent = message;
+            container.insertBefore(errorDiv, container.firstChild);
+
+            setTimeout(() => errorDiv.remove(), 5000);
+        }
+
+        // Initial load and auto-refresh every 5 seconds
+        fetchData();
+        refreshInterval = setInterval(fetchData, 5000);
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            clearInterval(refreshInterval);
+        });
+    </script>
+</body>
+</html>

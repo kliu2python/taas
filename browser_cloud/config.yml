@@ -1,0 +1,8 @@
+---
+# Browser Cloud Configuration
+grid_url: "http://10.160.24.88:31590"
+vnc_password: "secret"
+registration_secret: ""
+host: "0.0.0.0"
+port: 5000
+debug: false
