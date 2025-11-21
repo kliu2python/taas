@@ -5,7 +5,7 @@ from cassandra.cqlengine.models import Model
 from benchmark.common.conf import DATACENTER
 
 __keyspace__ = "benchmark"
-__dc_replication_map__ = {DATACENTER: 1}
+__dc_replication_map__ = {DATACENTER: 3}
 
 
 class Result(Model):
@@ -15,14 +15,15 @@ class Result(Model):
 
     job_name = columns.Text(primary_key=True, partition_key=True)
     build_id = columns.Text(primary_key=True, partition_key=True)
-    test = columns.Text()
+    case_name = columns.Text(primary_key=True, partition_key=True)
     platform = columns.Text()
     version = columns.Text()
-    user = columns.Text()
     settings = columns.Text()
     start_time = columns.DateTime()
     end_time = columns.DateTime()
     result = columns.Text()
+    average = columns.Text()
+    cpu_max = columns.Text()
 
 
 class CaseInfo(Model):

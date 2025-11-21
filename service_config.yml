@@ -13,4 +13,4 @@ service_config:
 #        - bpmanager
 #        - upgrade
 #        - datasync
-        - dhub
+        - reviewfinder

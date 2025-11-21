@@ -3,6 +3,7 @@ import datetime
 import json
 import uuid
 
+import cassandra
 from cassandra.cqlengine import ValidationError
 
 from utils.logger import get_logger
@@ -68,6 +69,15 @@ class ApiBase:
                 else:
                     raise ItemExistsError
             else:
+                if "end_time" in data or "start_time" in data:
+                    if isinstance(data["end_time"], str):
+                        data["end_time"] = datetime.datetime.fromisoformat(
+                            data["end_time"]
+                        )
+                    if isinstance(data["start_time"], str):
+                        data["start_time"] = datetime.datetime.fromisoformat(
+                            data["start_time"]
+                        )
                 cls.__db_model__.create(**data)
         except ValidationError as e:
             ret_msg = f"Validation Error, please check your input data, {e}"
@@ -186,6 +196,10 @@ class ApiBase:
             **filters
         ).all().allow_filtering().order_by(*order_by).limit(limit)
         ret = []
-        for item in items:
-            ret.append(dict(zip(item.keys(), item.values())))
-        return ret
+        try:
+            for item in items:
+                ret.append(dict(zip(item.keys(), item.values())))
+        except cassandra.ReadFailure as e:
+            logger.info('fetch data failed and timeout')
+        finally:
+            return ret

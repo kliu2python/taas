@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: login-prod-pod
+  namespace: selenium-grid
+spec:
+  containers:
+  - env:
+    - name: SE_EVENT_BUS_HOST
+      value: selenium-hub
+    - name: SE_EVENT_BUS_SUBSCRIBE_PORT
+      value: '4443'
+    - name: SE_EVENT_BUS_PUBLISH_PORT
+      value: '4442'
+    - name: SE_NODE_BROWSER_NAME
+      value: chrome
+    - name: SE_NODE_BROWSER_VERSION
+      value: '119.0'
+    - name: SE_NODE_STEREOTYPE
+      value: '{"browserName":"firefox","browserVersion":"125.0","nodename:applicationName":"login-prod-pod","platformName":
+        "Linux","moz:firefoxOptions": {"binary": "/usr/bin/firefox"}}'
+    - name: SE_SCREEN_WIDTH
+      value: '1920'
+    - name: SE_SCREEN_HEIGHT
+      value: '1080'
+    - name: SE_SCREEN_DEPTH
+      value: '24'
+    - name: SE_SCREEN_DPI
+      value: '80'
+    image: selenium/node-firefox:125.0
+    name: selenium-node-chrome-121
+    ports:
+    - containerPort: 5555
+    resources:
+      limits:
+        cpu: '1'
+        memory: null
+      requests:
+        cpu: '1'
+        memory: null
+    volumeMounts:
+    - mountPath: /dev/shm
+      name: dshm
+  nodeSelector:
+    platform: no-gpu
+  volumes:
+  - emptyDir:
+      medium: Memory
+    name: dshm

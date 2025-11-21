@@ -12,5 +12,6 @@ RESOURCE_MAPPING = {
     "k8s": "k8s.api",
     "upgrade": "upgrade.api",
     "datasync": "datasync.api",
+    "reviewfinder": "reviewfinder.api",
     "dhub": "dhub.api"
 }

@@ -1,0 +1,18 @@
+---
+reddit:
+  client_id: FZlRVoOhOjWptJkvRK8R8w
+  client_secret: KKLamtx83KEJOgZsQzQ-0J-_bEE9AQ
+  user_agent: script:fortireviewfinder:v1.0 (by /u/automationapiuser1)
+  subreddit_name: fortinet
+
+smtp:
+  server: smtp.gmail.com
+  port: 587
+  username: ftc.automation.time.smoke11@gmail.com
+  password: evduhnsmmaqfkfpl
+
+scheduler:
+  hour: 9
+  minute: 30
+  second: 0
+  microsecond: 0
