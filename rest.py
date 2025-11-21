@@ -1,7 +1,8 @@
 import os
 import yaml
 import features
-from flask_restx import Namespace  # Import Flask-RESTX Namespace
+from flask_restx import Namespace, Resource  # Import Flask-RESTX Namespace and Resource
+from functools import wraps
 
 _api = None
 _load_resource = __import__
@@ -24,7 +25,7 @@ class RestApi:
         for k, v in self.callbacks.items():
             getattr(_api.app, k)(v)
 
-    def route(self, route_path):
+    def route(self, route_path, methods=None):
         def wrap(func):
             # Create routes for the given path
             routes = []
@@ -38,7 +39,34 @@ class RestApi:
                     for route_item in route_list[1:]:
                         last_route = f"{last_route}<{route_item}"
                         routes.append(last_route.rstrip("/"))
-            _api.add_resource(func, *routes)
+
+            # Create a Resource class dynamically from the function
+            # Determine which HTTP methods to support (default to GET)
+            supported_methods = methods if methods else ['GET']
+
+            # Create a Resource class that wraps the function
+            class DynamicResource(Resource):
+                pass
+
+            # Map the function to the appropriate HTTP method handlers
+            for method in supported_methods:
+                method_lower = method.lower()
+                if method_lower == 'get':
+                    DynamicResource.get = func
+                elif method_lower == 'post':
+                    DynamicResource.post = func
+                elif method_lower == 'delete':
+                    DynamicResource.delete = func
+                elif method_lower == 'put':
+                    DynamicResource.put = func
+                elif method_lower == 'patch':
+                    DynamicResource.patch = func
+
+            # Set a meaningful name for the Resource class
+            DynamicResource.__name__ = f"{func.__name__}_Resource"
+
+            # Register the Resource class with Flask-RESTX
+            _api.add_resource(DynamicResource, *routes)
             return func
 
         return wrap
