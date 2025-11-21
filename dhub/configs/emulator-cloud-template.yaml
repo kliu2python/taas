@@ -22,7 +22,10 @@ spec:
         - name: apk-volume
           mountPath: /home/fortinet/apk
         - name: log-volume
-          mountPath: /home/fortinet/logs
+          mountPath: /home/fortinet/appium_log
+          subPath: appium.log  # Mount the specific log file
+        - mountPath: /home/fortinet/.android/avd
+          name: emulator-snapshots
       env:
         - name: ANDROID_SDK_ROOT
           value: "/opt/android-sdk"
@@ -32,9 +35,12 @@ spec:
     - name: apk-volume
       hostPath:
         path: /home/fortinet/apk
+    - name: emulator-snapshots
+      persistentVolumeClaim:
+        claimName: emulator-snapshots-pvc
     - name: log-volume
       hostPath:
-        path: /home/fortinet/logs
+        path: /home/fortinet/appium_log
         type: DirectoryOrCreate
   nodeSelector:
     platform: gpu

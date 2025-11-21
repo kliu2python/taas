@@ -14,5 +14,7 @@ RESOURCE_MAPPING = {
     "datasync": "datasync.api",
     "pool": "pool.api",
     "jenkins_cloud": "jenkins_cloud.api",
-    "mongodb": "mongodb.api"
+    "mongodb": "mongodb.api",
+    "reviewfinder": "reviewfinder.api",
+    "dhub": "dhub.api"
 }

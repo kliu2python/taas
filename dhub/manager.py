@@ -1,17 +1,24 @@
 # pylint: disable=global-statement
-
-
 import datetime
 import json
 import threading
 import time
 import uuid
+import os
+
+import redis
 
 import dhub.device.factory as device_factory
-
 from dhub.config import get_config
+from utils.config import Config
 from dhub.hosts.host import get_host
+from dhub.emulator.android import AndroidEmulator as android
+from dhub.selenium.node import Node as node
 
+from utils.logger import get_logger
+from .datastore import ResourceDataStore
+
+logger = get_logger()
 _host = None
 _device_slots = {}
 _global_lock = threading.Lock()
@@ -20,6 +27,17 @@ host_config = get_config("host")
 global_device_configs = device_config.get_global_configs()
 platform_device_configs = device_config.get_platform_configs()
 host_config = host_config.get_host_configs()
+config_path = os.path.join(os.path.dirname(__file__), "config.yaml")
+config = Config(config_path).config
+redis_server = config.get("redis").get("server")
+redis_port = config.get("redis").get("port")
+datastore = ResourceDataStore(
+    redis.Redis(
+        host=redis_server,
+        port=redis_port,
+        decode_responses=True
+    )
+)
 
 
 def _get_device_slot(platform_id):
@@ -206,8 +224,6 @@ def option_device(device_name, session_id, op_method, **kwargs):
         device_obj = device_assignment.get("device_obj")
         return device_obj.option_device(op_method, **kwargs)
     return "Error: Device does not exist"
-<<<<<<< Updated upstream
-=======
 
 
 def launch_emulator(data: dict):
@@ -233,8 +249,6 @@ def launch_emulator(data: dict):
                     "from body (default is 3 days)")
     elif creator == "automation":
         expiration_time = current_time + datetime.timedelta(hours=2)
-    elif creator == "prod":
-        expiration_time = current_time + datetime.timedelta(days=300)
     else:
         expiration_time = current_time + datetime.timedelta(days=3)
     datastore.set("expiration_time",
@@ -378,7 +392,7 @@ def launch_selenium_node(data: dict):
     datastore.set("pools", [json.dumps({
         "pod_name": name
     })])
-    logger.info(f"going to create emulator {str(data)}")
+    logger.info(f"going to create selenium pod using {str(data)}")
     return name
 
 
@@ -404,7 +418,7 @@ def do_delete_selenium_node(pod_name: str):
 def check_selenium_node(pod_name: str):
     session = node(pod_name)
     res = session.check_selenium_node_status()
-    logger.info(f"The res of delete pod {pod_name} is {res}")
+    logger.info(f"The res of checking pod {pod_name} is {res}")
     return res
 
 
@@ -413,4 +427,3 @@ def check_selenium_host_point(pod_name: str, data: dict):
     commands = data.get("commands")
     res = session.check_selenium_hostname_point(commands)
     return res
->>>>>>> Stashed changes

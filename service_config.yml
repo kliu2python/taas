@@ -16,3 +16,4 @@ service_config:
 #        - pool
         - jenkins_cloud
 #        - mongodb
+#        - reviewfinder

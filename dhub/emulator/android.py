@@ -1,4 +1,3 @@
-import datetime
 import os
 import traceback
 import uuid
@@ -93,6 +92,10 @@ class AndroidEmulator:
         pod["metadata"]["labels"]["app"] = unique_name
         pod["spec"]["containers"][0]["image"] = image
         pod["spec"]["containers"][0]["volumeMounts"][1]["subPath"] = unique_name
+        pod["spec"]["volumes"][1][
+            "hostPath"
+        ]["path"] = f"/home/fortinet/snapshots/api_1.0.{api_level}"
+
         service = yaml.safe_load(contents[1])
         service["metadata"]["name"] = unique_name
         service["spec"]["selector"]["app"] = unique_name
@@ -170,19 +173,13 @@ class AndroidEmulator:
             logger.info(f"adb command input text {text} done failed: {e}")
 
     def launch_emulator_command(self, dns=None, emulator_name="google_api"):
-        unique_time = datetime.datetime.now().isoformat()
-        unique_time = abs(hash(unique_time)) % 10000
         try:
             command = f"emulator -avd {emulator_name} -gpu host -read-only"
             if dns:
                 command += f" -dns-server {dns}"
 
             # Run the command in the background and save its PID
-            exec_command = ["sh",
-                            "-c",
-                            f"{command} > "
-                            f"/home/fortinet/logs/em_{unique_time}.log 2>&1 & "
-                            f"echo $!"]
+            exec_command = ["sh", "-c", f"{command} > /dev/null 2>&1 & echo $!"]
 
             # Capture the response (which includes the PID)
             resp = stream(
